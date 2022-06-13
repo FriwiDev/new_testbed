@@ -18,7 +18,7 @@ class TestTopo(Topo):
 def main():
     topo = TestTopo()
     print(topo.export_topo())
-    print(Topo.import_topo(topo.export_topo()))
+    print(Topo.import_topo(topo.export_topo()).export_topo())
 
 
 if __name__ == '__main__':

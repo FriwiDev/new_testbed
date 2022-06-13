@@ -7,31 +7,16 @@ from topo.service import Service
 
 
 class Topo(object):
-    def __init__(self, *args, **params):
-        # Init from json when receiving dict
-        if 'skip_constructor' in params:
-            return
-        # Init normally else
-        self.nodes = {}
-        self.links = []
-        self.services = {}
-        self.network_implementation = params.pop('network_implementation', {})  # TODO Add default
-        self.create(*args, **params)
-
-    @classmethod
-    def from_dict(cls, in_dict: dict, sel = None):
-        """Internal method to initialize from dictionary."""
-        if not sel:
-            sel = Topo(skip_constructor=True)
-        sel.nodes = {}
-        for x in in_dict['nodes']:
-            sel.nodes[x['name']] = eval(x['class'])(x)  # TODO Use an internal dict
-        sel.services = {}
-        for x in in_dict['services']:
-            sel.services[x['name']] = eval(x['class'])(sel, x)  # TODO Use an internal dict
-        sel.links = []
-        for x in in_dict['links']:
-            sel.links.append(eval(x['class'])(sel, x))  # TODO Use an internal dict
+    def __init__(self, nodes: dict[str, Node] = {},
+                 links: list[Link] = [],
+                 services: dict[str, Service] = {},
+                 network_implementation=None,
+                 *args, **params):
+        self.nodes = nodes
+        self.links = links
+        self.services = services
+        self.network_implementation = network_implementation
+        self.create(args, params)
 
     def to_dict(self) -> dict:
         nodes = []
@@ -49,12 +34,24 @@ class Topo(object):
             'links': links
         }
 
-    def export_topo(self):
+    @classmethod
+    def from_dict(cls, in_dict: dict) -> 'Topo':
+        """Internal method to initialize from dictionary."""
+        ret = Topo()
+        for x in in_dict['nodes']:
+            ret.nodes[x['name']] = eval(x['class']).from_dict(x)  # TODO Use an internal dict
+        for x in in_dict['services']:
+            ret.services[x['name']] = eval(x['class']).from_dict(ret, x)  # TODO Use an internal dict
+        for x in in_dict['links']:
+            ret.links.append(eval(x['class']).from_dict(ret, x))  # TODO Use an internal dict
+        return ret
+
+    def export_topo(self) -> str:
         return json.dumps(self.to_dict(), indent=4)
 
     @classmethod
     def import_topo(cls, in_json: str) -> 'Topo':
-        return Topo(json.loads(in_json))
+        return Topo.from_dict(json.loads(in_json))
 
     @abstractmethod
     def create(self, *args, **params):

@@ -2,36 +2,17 @@ from ipaddress import ip_address, ip_network
 
 
 class Interface(object):
-    name: str
-    ips: list[ip_address] = []
-    networks: list[ip_network] = []
-    mac_address: str
+    def __init__(self, name: str, mac_address: str = None):
+        self.name = name
+        self.mac_address = mac_address
+        self.ips: list[ip_address] = []
+        self.networks: list[ip_network] = []
 
-    # name: str, mac_address: str = None
-    def __init__(self, *args, **params):
-        # Init from json when receiving dict
-        if args and len(args) > 0 \
-                and args[0] and isinstance(args[0], dict):
-            self._init_from_dict(args[0])
-            return
-        # Init normally else
-        # TODO Check presence and include hinted optional params above
-        self.name = params['name']
-        self.mac_address = params['mac_address'] if 'mac_address' in params else None
-
-    def _init_from_dict(self, in_dict: dict):
-        """Internal method to initialize from dictionary."""
-        self.name = in_dict['name']
-        for ip in in_dict['ips']:
-            self.ips.append(ip_address(ip))
-        for network in in_dict['networks']:
-            self.networks.append(ip_network(network))
-        self.mac_address = in_dict['mac_addr']
-
-    def add_ip(self, ip: str, network: str) -> repr('Interface'):
-        return self.add_ip(ip_address(ip), ip_network(network))
-
-    def add_ip(self, ip: ip_address, network: ip_network) -> repr('Interface'):
+    def add_ip(self, ip: str or ip_address, network: str or ip_network) -> 'Interface':
+        if isinstance(ip, str):
+            ip = ip_address(ip)
+        if isinstance(network, str):
+            network = ip_network(network)
         self.ips.append(ip)
         self.networks.append(network)
         return self
@@ -49,3 +30,15 @@ class Interface(object):
             'networks': network_str,
             'mac_addr': self.mac_address
         }
+
+    @classmethod
+    def from_dict(cls, in_dict: dict) -> 'Interface':
+        """Internal method to initialize from dictionary."""
+        name = in_dict['name']
+        mac_address = in_dict['mac_addr']
+        ret = Interface(name, mac_address)
+        for ip in in_dict['ips']:
+            ret.ips.append(ip_address(ip))
+        for network in in_dict['networks']:
+            ret.networks.append(ip_network(network))
+        return ret
