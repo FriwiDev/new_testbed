@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from enum import Enum
 
 from topo.interface import Interface
@@ -22,6 +23,10 @@ class Node(object):
 
     def new_port(self):
         # TODO
+        pass
+
+    @abstractmethod
+    def get_configuration_builder(self, topo: 'Topo'):
         pass
 
     def to_dict(self) -> dict:

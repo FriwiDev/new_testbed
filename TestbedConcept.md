@@ -1,6 +1,7 @@
 # Testbed Concept
 
 Sketch:
+
 ```
 TOPO <-> JSON
   |
@@ -17,6 +18,7 @@ Exporter   Exporter
 ```
 
 Goals:
+
 - Implement topology structure close to original distrinet to enable quick reuse of already implemented types
 - Topology structures can be saved and loaded from json as a reference for future script executions
 - Remove requirement of central host which manages the network (in comparison to distrinet)
@@ -30,9 +32,11 @@ either to a bash script or execute it remotely via ssh.
 
 Testing capabilities:
 Due to the json export of the topology, one can automatically connect to remote servers using ssh (like distrinet)
-and perform traffic testing and monitoring there. This could also be done automatically by a script. More on that coming soon.
+and perform traffic testing and monitoring there. This could also be done automatically by a script. More on that coming
+soon.
 
 Time plan:
+
 - 13.6.-14.6. Polish new topology implementation
 - 15.6.-17.6. Build the configuration builder for linux servers from the original testbed
 - 20.6. Build the file configuration exporter (indirect configuration)
