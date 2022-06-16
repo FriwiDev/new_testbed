@@ -1,6 +1,7 @@
 import json
 from abc import abstractmethod
 
+from network.vxlan_network import VxLanNetworkImplementation
 from topo.link import Link
 from topo.node import Node
 from topo.service import Service
@@ -10,13 +11,14 @@ class Topo(object):
     def __init__(self, nodes: dict[str, Node] = {},
                  links: list[Link] = [],
                  services: dict[str, Service] = {},
-                 network_implementation=None,
+                 network_implementation: 'NetworkImplementation' = VxLanNetworkImplementation("239.1.1.1"),
                  *args, **params):
         self.nodes = nodes
         self.links = links
         self.services = services
         self.network_implementation = network_implementation
         self.create(args, params)
+        self.network_implementation.configure(self)
 
     def to_dict(self) -> dict:
         nodes = []
@@ -31,7 +33,8 @@ class Topo(object):
         return {
             'nodes': nodes,
             'services': services,
-            'links': links
+            'links': links,
+            'network_implementation': self.network_implementation.to_dict()
         }
 
     @classmethod
@@ -44,6 +47,8 @@ class Topo(object):
             ret.services[x['name']] = eval(x['class']).from_dict(ret, x)  # TODO Use an internal dict
         for x in in_dict['links']:
             ret.links.append(eval(x['class']).from_dict(ret, x))  # TODO Use an internal dict
+        x = in_dict['network_implementation']
+        ret.network_implementation = eval(x['class']).from_dict(x)  # TODO Use an internal dict
         return ret
 
     def export_topo(self) -> str:

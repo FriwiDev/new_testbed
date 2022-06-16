@@ -11,6 +11,9 @@ class LinuxConfigurationBuilder(ConfigurationBuilder):
     def build(self) -> Configuration:
         # TODO emit an actual configuration
         config = Configuration()
+        # Generate network infrastructure
+        self.topo.network_implementation.generate(self.node, config)
+        # Generate our own containers
         config.add_command(Command("startcommand"), Command("stopcommand"))
         file = File("testfile")
         file.append("Hello world! :)")

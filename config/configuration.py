@@ -1,8 +1,10 @@
 class Command(object):
-    def __init__(self, cmd: str):
+    def __init__(self, cmd: str = None):
         self.cmd = cmd
 
     def to_str(self) -> str:
+        if self.cmd is None:
+            return ""
         return self.cmd
 
 

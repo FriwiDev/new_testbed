@@ -1,5 +1,6 @@
 from config.export.console_exporter import ConsoleConfigurationExporter
 from platform.linux_server.linux_node import LinuxNode
+from topo.interface import Interface
 from topo.link import Link
 from topo.node import NodeType
 from topo.service import Service, ServiceType
@@ -12,6 +13,7 @@ class TestTopo(Topo):
         node = LinuxNode(name="testnode", node_type=NodeType.LINUX_DEBIAN)
         self.add_node(node)
         service = Service(name="testservice", service_type=ServiceType.NONE, executor=node)
+        service.add_interface(Interface("testintf", "95:34:76:29:21:55").add_ip("192.168.178.2", "192.168.178.0/24"))
         self.add_service(service)
         self.add_link(Link(service1=service, service2=service))
         pass
