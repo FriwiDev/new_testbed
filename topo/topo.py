@@ -5,6 +5,7 @@ from network.vxlan_network import VxLanNetworkImplementation
 from topo.link import Link
 from topo.node import Node
 from topo.service import Service
+from topo.util import MacUtil
 
 
 class Topo(object):
@@ -13,6 +14,7 @@ class Topo(object):
                  services: dict[str, Service] = {},
                  network_implementation: 'NetworkImplementation' = VxLanNetworkImplementation("239.1.1.1"),
                  *args, **params):
+        self.mac_util = MacUtil()
         self.nodes = nodes
         self.links = links
         self.services = services
@@ -68,6 +70,9 @@ class Topo(object):
         if service.name in self.services:
             raise Exception(f"Service with name {service.name} already exists")
         self.services[service.name] = service
+        for intf in service.intfs:
+            if intf.mac_address is None:
+                intf.mac_address = self.mac_util.generate_new_mac()
 
     def get_service(self, name: str) -> Service:
         if name not in self.services:
@@ -78,6 +83,9 @@ class Topo(object):
         if node.name in self.nodes:
             raise Exception(f"Node with name {node.name} already exists")
         self.nodes[node.name] = node
+        for intf in node.intfs:
+            if intf.mac_address is None:
+                intf.mac_address = self.mac_util.generate_new_mac()
 
     def get_node(self, name: str) -> Node:
         if name not in self.nodes:

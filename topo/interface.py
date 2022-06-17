@@ -1,5 +1,7 @@
 from ipaddress import ip_address, ip_network
 
+from topo.subnet import Subnet
+
 
 class Interface(object):
     def __init__(self, name: str, mac_address: str = None):
@@ -7,6 +9,9 @@ class Interface(object):
         self.mac_address = mac_address
         self.ips: list[ip_address] = []
         self.networks: list[ip_network] = []
+
+    def add_ip_from_subnet(self, subnet: Subnet) -> 'Interface':
+        return self.add_ip(subnet.generate_next_ip(), subnet.network)
 
     def add_ip(self, ip: str or ip_address, network: str or ip_network) -> 'Interface':
         if isinstance(ip, str):
