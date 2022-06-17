@@ -9,8 +9,8 @@ class Link(object):
                  mac_addr1: str = None, mac_addr2: str = None):
         self.service1 = service1
         self.service2 = service2
-        self.port1 = port1 if port1 else service1.executor.new_port()
-        self.port2 = port2 if port2 else service1.executor.new_port()
+        self.port1 = port1 if port1 else service1.executor.new_port(service1)
+        self.port2 = port2 if port2 else service2.executor.new_port(service2)
         self.intf_name1 = intf_name1 if intf_name1 else Link.inf_name(service1.executor, port1)
         self.intf_name2 = intf_name2 if intf_name2 else Link.inf_name(service2.executor, port2)
         self.mac_addr1 = mac_addr1  # TODO default initialization
