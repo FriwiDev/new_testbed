@@ -17,7 +17,7 @@ class File(object):
         self.content += content
 
     def to_str(self) -> str:
-        return f"<<File \"{self.name}\">>\n{self.content}<<EOF>>\n"
+        return self.content
 
 
 class Instruction(object):

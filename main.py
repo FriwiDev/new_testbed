@@ -1,4 +1,4 @@
-from config.export.console_exporter import ConsoleConfigurationExporter
+from config.export.file_exporter import FileConfigurationExporter
 from platform.linux_server.linux_node import LinuxNode
 from topo.interface import Interface
 from topo.link import Link
@@ -28,7 +28,7 @@ def main():
     for name in topo.nodes:
         node = topo.nodes[name]
         config = node.get_configuration_builder(topo).build()
-        exporter = ConsoleConfigurationExporter(config, node)
+        exporter = FileConfigurationExporter(config, node, "export")
         exporter.export()
 
 

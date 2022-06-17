@@ -21,5 +21,5 @@ class ConsoleConfigurationExporter(ConfigurationExporter):
 
         print("Files:")
         for file in self.config.files:
-            print(file.to_str())
+            print(f"<<{file.name}>>\n{file.to_str()}<<EOF>>")
         print("No files" if len(self.config.files) == 0 else "")

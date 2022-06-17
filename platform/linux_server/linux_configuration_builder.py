@@ -1,4 +1,4 @@
-from config.configuration import Configuration, Command, File, Instruction
+from config.configuration import Configuration, Command, File
 from config.configuration_builder import ConfigurationBuilder
 from topo.node import Node
 from topo.topo import Topo
@@ -18,5 +18,5 @@ class LinuxConfigurationBuilder(ConfigurationBuilder):
         file = File("testfile")
         file.append("Hello world! :)")
         config.add_file(file)
-        config.add_instruction(Instruction("startinst"), Instruction("stopinst"))
+        # config.add_instruction(Instruction("startinst"), Instruction("stopinst"))
         return config
