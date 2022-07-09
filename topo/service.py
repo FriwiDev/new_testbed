@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from enum import Enum
 
 from topo.interface import Interface
@@ -5,7 +6,7 @@ from topo.node import Node
 
 
 class ServiceType(Enum):
-    NONE = range(1)
+    NONE, OVS = range(2)
 
 
 class Service(object):
@@ -43,3 +44,19 @@ class Service(object):
         for intf in in_dict['intfs']:
             ret.intfs.append(Interface(intf))
         return ret
+
+    @abstractmethod
+    def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration'):
+        """Method to be implemented by every service definition"""
+        pass
+
+    def get_interface(self, intf_name: str) -> Interface:
+        for i in self.intfs:
+            if i.name == intf_name:
+                return i
+        return None
+
+    def add_interface_by_name(self, intf_name: str) -> Interface:
+        i = Interface(intf_name)
+        self.add_interface(i)
+        return i

@@ -43,3 +43,9 @@ Time plan:
 - 21.6. Build remote ssh capabilities for testing
 - 22.6. Build the ssh configuration exporter (direct configuration)
 - 23.6.+ Start implementing the test utilities (to be planned)
+
+TODO für 30.: Link stattdessen in services packen, vxlan anpassen
+TODO für 1.: OVS + RYU fertig stellen
+TODO für 2./4.: Wireguard
+TODO für 5.: SSH beginnen
+...danach scripte

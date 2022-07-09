@@ -21,13 +21,14 @@ class FileConfigurationExporter(ConfigurationExporter):
         os.makedirs(dir)
 
         start_script = open(dir + "/start.sh", "w")
-        start_script.write("#!/bin/bash\n\n")
+        start_script.write("#!/bin/bash\nset -e\n\n")
         for i in range(0, len(self.config.start_cmds)):
+            start_script.write("echo \"" + self.config.start_cmds[i].to_str() + "\"\n")
             start_script.write(self.config.start_cmds[i].to_str() + "\n")
         start_script.close()
 
         stop_script = open(dir + "/stop.sh", "w")
-        stop_script.write("#!/bin/bash\n\n")
+        stop_script.write("#!/bin/bash\nset -e\n\n")
         for i in range(0, len(self.config.stop_cmds)).__reversed__():
             stop_script.write(self.config.stop_cmds[i].to_str() + "\n")
         stop_script.close()

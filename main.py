@@ -17,7 +17,7 @@ class TestTopo(Topo):
         service = Service(name="testservice", service_type=ServiceType.NONE, executor=node)
         service.add_interface(Interface("testintf").add_ip_from_subnet(subnet))
         self.add_service(service)
-        self.add_link(Link(service1=service, service2=service))
+        self.add_link(Link(self, service1=service, service2=service))
         pass
 
 

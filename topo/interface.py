@@ -9,6 +9,7 @@ class Interface(object):
         self.mac_address = mac_address
         self.ips: list[ip_address] = []
         self.networks: list[ip_network] = []
+        self.links: list['Link'] = []
 
     def add_ip_from_subnet(self, subnet: Subnet) -> 'Interface':
         return self.add_ip(subnet.generate_next_ip(), subnet.network)

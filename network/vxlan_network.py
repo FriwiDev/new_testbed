@@ -30,6 +30,7 @@ class VxLanNetworkImplementation(NetworkImplementation):
         config.add_command(
             Command(f"brctl addbr {self.bridge_name}; brctl addif {self.bridge_name} {self.device_name}"),
             Command(f"brctl delif {self.bridge_name} {self.device_name}; brctl delbr {self.bridge_name}"))
+        gen = 0
         # Add one device per service
         for _, service in self.topo.services.items():
             if service.executor is node:
@@ -39,8 +40,10 @@ class VxLanNetworkImplementation(NetworkImplementation):
                                    Command(f"ip netns del {service_data[0]}"))
                 for intf in service.intfs:
                     # Outer dev name, Inner dev name, ip addresses, ip networks, mac address
-                    interface_data = (f"veth-{service.name}-{intf.name}", intf.name, intf.ips, intf.networks,
+                    interface_data = (f"veth{gen}", intf.name, intf.ips, intf.networks,
+                                      # Used to be f"veth-{service.name}-{intf.name}" as name
                                       intf.mac_address)
+                    gen += 1
                     # Create veth pair
                     config.add_command(Command(f"ip link add {interface_data[0]} master br0 type veth "
                                                f"peer {interface_data[1]} netns {service_data[0]}"),
@@ -63,7 +66,7 @@ class VxLanNetworkImplementation(NetworkImplementation):
                                            Command(f"ip netns exec {service_data[0]} ip addr del "
                                                    f"{str(interface_data[2][i])}/{str(interface_data[3][i].prefixlen)} "
                                                    f"dev {interface_data[1]}"))
-                    # Set veth pair up up
+                    # Set veth pair up
                     config.add_command(Command(f"ip link set dev {interface_data[0]} up; "
                                                f"ip netns exec {service_data[0]} "
                                                f"ip link set dev {interface_data[1]} up"),

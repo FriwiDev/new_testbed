@@ -13,21 +13,31 @@ class Node(object):
         self.name = name
         self.type = node_type
         self.intfs: list[Interface] = [Interface(name="lo").add_ip("127.0.0.1", "127.0.0.0/8")]
-        self.occupied_ports: dict[int, 'Service'] = {}
+        self.occupied_ports: dict[Interface, dict[int, 'Service']] = {}
 
     def add_interface(self, intf: Interface) -> 'Node':
         for i in self.intfs:
             if i.name == intf:
                 raise Exception(f"Interface with name {intf.name} already exists in node {self.name}")
         self.intfs.append(intf)
+        self.occupied_ports[intf] = {}
         return self
 
-    def new_port(self, service: 'Service') -> int:
-        for i in range(1025, 65536):
-            if i not in self.occupied_ports:
-                self.occupied_ports[i] = service
+    def get_interface(self, intf: str) -> Interface:
+        for i in self.intfs:
+            if i.name == intf:
                 return i
-        raise Exception(f"No empty port left on node {self.name}")
+        return None
+
+    def get_occupied_ports(self, intf: Interface) -> list[int]:
+        return [i for i, _ in self.occupied_ports[intf].items()]
+
+    def new_port(self, intf: Interface, service: 'Service') -> int:
+        for i in range(1025, 65536):
+            if i not in self.occupied_ports[intf]:
+                self.occupied_ports[intf][i] = service
+                return i
+        raise Exception(f"No empty port left on interface {self.name}/{intf.name}")
 
     @abstractmethod
     def get_configuration_builder(self, topo: 'Topo'):
