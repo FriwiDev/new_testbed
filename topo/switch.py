@@ -3,7 +3,7 @@ from abc import ABC
 
 from config.configuration import Command
 from topo.interface import Interface
-from topo.service import Service
+from topo.service import Service, ServiceType
 
 
 class Switch(Service, ABC):
@@ -12,12 +12,12 @@ class Switch(Service, ABC):
     port_base = 1  # Switches start with port 1 in OpenFlow #TODO Remove?
     dpid_len = 16  # digits in dpid passed to switch
 
-    def __init__(self, name, service_type: 'ServiceType', executor: 'Node', dpid=None, opts='', listen_port=None,
+    def __init__(self, name, executor: 'Node', service_type: 'ServiceType', dpid=None, opts='', listen_port=None,
                  controllers: list['Controller'] = []):
         """dpid: dpid hex string (or None to derive from name, e.g. s1 -> 1)
            opts: additional switch options
            listenPort: port to listen on for dpctl connections"""
-        super().__init__(name, service_type, executor)
+        super().__init__(name, executor, service_type)
         self.dpid = self.default_dpid(dpid)
         self.opts = opts
         self.listen_port = listen_port
@@ -44,7 +44,7 @@ class Switch(Service, ABC):
 class OVSSwitch(Switch):
     """Open vSwitch switch. Depends on ovs-vsctl."""
 
-    def __init__(self, name, service_type: 'ServiceType', executor: 'Node', dpid=None, opts='', listen_port=None,
+    def __init__(self, name, executor: 'Node', dpid=None, opts='', listen_port=None,
                  controllers: list['Controller'] = [],
                  fail_mode='secure', datapath='kernel', inband=False, protocols=None, reconnectms=1000,
                  stp=False):
@@ -56,7 +56,7 @@ class OVSSwitch(Switch):
                       Unspecified (or old OVS version) uses OVS default
            reconnectms: max reconnect timeout in ms (0/None for default)
            stp: enable STP (False, requires failMode=standalone)"""
-        super().__init__(name, service_type, executor, dpid=dpid, opts=opts, listen_port=listen_port,
+        super().__init__(name, executor, ServiceType.OVS, dpid=dpid, opts=opts, listen_port=listen_port,
                          controllers=controllers)
         self.fail_mode = fail_mode
         self.datapath = datapath
@@ -73,7 +73,7 @@ class OVSSwitch(Switch):
         intf = intf2 if link.service1 != self else intf1
         peer = intf1 if link.service1 != self else intf2
         # ofport_request is not supported on old OVS
-        opts = ' ofport_request=%s' % self.executor.get_occupied_ports(self.executor.get_interface(intf))
+        opts = ' ofport_request=%s' % self.executor.get_occupied_ports(self.get_interface(intf))
         # Patch ports don't work well with old OVS
         opts += ' type=patch options:peer=%s' % peer
         return '' if not opts else ' -- set Interface %s' % intf + opts
@@ -99,7 +99,7 @@ class OVSSwitch(Switch):
             raise Exception("Can only configure OVS on Linux nodes")
         int(self.dpid, 16)  # DPID must be a hex string
         # Command to add interfaces
-        intfs = ''.join(' -- add-port %s %s' % (self, intf) +
+        intfs = ''.join(' -- add-port %s %s' % (self.name, intf.name) +
                         self.intf_opts(intf)
                         for intf in self.intfs
                         if len(intf.links) > 0)
@@ -120,10 +120,13 @@ class OVSSwitch(Switch):
         # Try to delete any existing bridges with the same name
         cargs += ' -- --if-exists del-br %s' % self.name
         # One ovs-vsctl command to rule them all!
-        config.add_commmand(Command('ovs-vsctl ' + cargs +
-                                    ' -- add-br %s' % self.name +
-                                    ' -- set bridge %s controller=[%s]' % (self, cids) +
-                                    self.bridge_opts() +
-                                    intfs),
-                            Command('ovs-vsctl del-br %s' % self.name))
+        netnsname = "netns-" + self.name
+        config.add_command(Command(f"ip netns exec {netnsname} " +
+                                   'ovs-vsctl ' + cargs +
+                                   ' -- add-br %s' % self.name +
+                                   ' -- set bridge %s controller=[%s]' % (self.name, cids) +
+                                   self.bridge_opts() +
+                                   intfs),
+                           Command(f"ip netns exec {netnsname} " +
+                                   'ovs-vsctl del-br %s' % self.name))
         return

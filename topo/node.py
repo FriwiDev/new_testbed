@@ -30,6 +30,8 @@ class Node(object):
         return None
 
     def get_occupied_ports(self, intf: Interface) -> list[int]:
+        if intf not in self.occupied_ports:
+            return []
         return [i for i, _ in self.occupied_ports[intf].items()]
 
     def new_port(self, intf: Interface, service: 'Service') -> int:

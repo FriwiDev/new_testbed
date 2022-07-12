@@ -6,11 +6,11 @@ from topo.node import Node
 
 
 class ServiceType(Enum):
-    NONE, OVS = range(2)
+    NONE, OVS, RYU = range(3)
 
 
 class Service(object):
-    def __init__(self, name: str, service_type: ServiceType, executor: Node):
+    def __init__(self, name: str, executor: Node, service_type: ServiceType = None):
         self.name = name
         self.type = service_type
         self.executor = executor
