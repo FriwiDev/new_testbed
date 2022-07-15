@@ -1,3 +1,7 @@
+from os import PathLike
+from pathlib import Path
+
+
 class Command(object):
     def __init__(self, cmd: str = None):
         self.cmd = cmd
@@ -33,7 +37,7 @@ class Configuration(object):
     def __init__(self):
         self.start_cmds: list[Command] = []
         self.stop_cmds: list[Command] = []
-        self.files: list[File] = []
+        self.files: list[PathLike] = []
         self.start_instructions: list[Instruction] = []
         self.stop_instructions: list[Instruction] = []
 
@@ -41,7 +45,7 @@ class Configuration(object):
         self.start_cmds.append(start_cmd)
         self.stop_cmds.append(stop_cmd)
 
-    def add_file(self, file: File):
+    def add_file(self, file: PathLike):
         self.files.append(file)
 
     def add_instruction(self, start_instruction: Instruction, stop_instruction: Instruction):

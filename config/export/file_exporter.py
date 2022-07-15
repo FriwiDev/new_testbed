@@ -1,5 +1,8 @@
+import errno
 import os
 import shutil
+import stat
+from pathlib import Path
 
 from config.configuration import Configuration
 from config.export.configuration_exporter import ConfigurationExporter
@@ -26,14 +29,25 @@ class FileConfigurationExporter(ConfigurationExporter):
             start_script.write("echo \"" + self.config.start_cmds[i].to_str() + "\"\n")
             start_script.write(self.config.start_cmds[i].to_str() + "\n")
         start_script.close()
+        os.chmod(dir + "/start.sh", os.stat(dir + "/start.sh").st_mode | stat.S_IEXEC)
 
         stop_script = open(dir + "/stop.sh", "w")
-        stop_script.write("#!/bin/bash\nset -e\n\n")
+        stop_script.write("#!/bin/bash\n\n")
         for i in range(0, len(self.config.stop_cmds)).__reversed__():
+            stop_script.write("echo \"" + self.config.stop_cmds[i].to_str() + "\"\n")
             stop_script.write(self.config.stop_cmds[i].to_str() + "\n")
         stop_script.close()
+        os.chmod(dir + "/stop.sh", os.stat(dir + "/stop.sh").st_mode | stat.S_IEXEC)
 
         for file in self.config.files:
-            out = open(dir + "/" + file.name, "w")
-            out.write(file.to_str())
-            out.close()
+            FileConfigurationExporter._copy_tree(file, Path(dir + "/" + file.name))
+
+    @classmethod
+    def _copy_tree(cls, src: os.PathLike, dst: os.PathLike):
+        try:
+            shutil.copytree(src, dst)
+        except OSError as exc:  # python >2.5
+            if exc.errno in (errno.ENOTDIR, errno.EINVAL):
+                shutil.copy(src, dst)
+            else:
+                raise

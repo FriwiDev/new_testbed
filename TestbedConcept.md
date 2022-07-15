@@ -49,3 +49,11 @@ TODO für 1.: OVS + RYU fertig stellen
 TODO für 2./4.: Wireguard
 TODO für 5.: SSH beginnen
 ...danach scripte
+
+Download for images:
+https://github.com/Giuseppe1992/Distrinet/blob/128d718ca4df714632268182fbeb6780fd31595b/mininet/mininet/provision/playbooks/install-aws-lxd.yml
+
+To import images:
+```bash
+lxc image import ~/switch.tar.gz --alias switch --public
+lxc image import ~/ubuntu-onos-2.1.0.tar.gz --alias ubuntu-onos-2.1.0 --public```

@@ -2,22 +2,24 @@ import re
 from abc import ABC
 
 from config.configuration import Command
+from platform.linux_server.lxc_service import LXCService
 from topo.interface import Interface
 from topo.service import Service, ServiceType
 
 
-class Switch(Service, ABC):
+class Switch(LXCService, ABC):
     """A Switch is a Node that is running an OpenFlow switch."""
 
     port_base = 1  # Switches start with port 1 in OpenFlow #TODO Remove?
     dpid_len = 16  # digits in dpid passed to switch
 
-    def __init__(self, name, executor: 'Node', service_type: 'ServiceType', dpid=None, opts='', listen_port=None,
+    def __init__(self, name, executor: 'Node', service_type: 'ServiceType', image: str = "ubuntu", cpu: str = None,
+                 memory: str = None, dpid=None, opts='', listen_port=None,
                  controllers: list['Controller'] = []):
         """dpid: dpid hex string (or None to derive from name, e.g. s1 -> 1)
            opts: additional switch options
            listenPort: port to listen on for dpctl connections"""
-        super().__init__(name, executor, service_type)
+        super().__init__(name, executor, service_type, image, cpu, memory)
         self.dpid = self.default_dpid(dpid)
         self.opts = opts
         self.listen_port = listen_port
@@ -44,7 +46,8 @@ class Switch(Service, ABC):
 class OVSSwitch(Switch):
     """Open vSwitch switch. Depends on ovs-vsctl."""
 
-    def __init__(self, name, executor: 'Node', dpid=None, opts='', listen_port=None,
+    def __init__(self, name, executor: 'Node', cpu: str = None, memory: str = None,
+                 dpid=None, opts='', listen_port=None,
                  controllers: list['Controller'] = [],
                  fail_mode='secure', datapath='kernel', inband=False, protocols=None, reconnectms=1000,
                  stp=False):
@@ -56,8 +59,8 @@ class OVSSwitch(Switch):
                       Unspecified (or old OVS version) uses OVS default
            reconnectms: max reconnect timeout in ms (0/None for default)
            stp: enable STP (False, requires failMode=standalone)"""
-        super().__init__(name, executor, ServiceType.OVS, dpid=dpid, opts=opts, listen_port=listen_port,
-                         controllers=controllers)
+        super().__init__(name, executor, ServiceType.OVS, "ovs", cpu, memory, dpid=dpid, opts=opts,
+                         listen_port=listen_port, controllers=controllers)
         self.fail_mode = fail_mode
         self.datapath = datapath
         self.inband = inband
@@ -95,8 +98,24 @@ class OVSSwitch(Switch):
 
     def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration'):
         from platform.linux_server.linux_configuration_builder import LinuxConfigurationBuilder
+        super().append_to_configuration(config_builder, config)
         if not isinstance(config_builder, LinuxConfigurationBuilder):
             raise Exception("Can only configure OVS on Linux nodes")
+        # Startup ovs
+        config.add_command(Command(self.lxc_prefix() + "mkdir /var/run/openvswitch"),
+                           Command())
+        config.add_command(Command(self.lxc_prefix() + "ovsdb-server --remote=punix:/var/run/openvswitch/db.sock "
+                                                       "--remote=db:Open_vSwitch,Open_vSwitch,manager_options "
+                                                       "--private-key=db:Open_vSwitch,SSL,private_key "
+                                                       "--certificate=db:Open_vSwitch,SSL,certificate "
+                                                       "--bootstrap-ca-cert=db:Open_vSwitch,SSL,ca_cert "
+                                                       "--pidfile --detach"),
+                           Command())
+        config.add_command(Command(self.lxc_prefix() + "ovs-vsctl init"),
+                           Command())
+        config.add_command(Command(self.lxc_prefix() + "ovs-vswitchd --pidfile --detach"),
+                           Command())
+        # Configure bridge
         int(self.dpid, 16)  # DPID must be a hex string
         # Command to add interfaces
         intfs = ''.join(' -- add-port %s %s' % (self.name, intf.name) +
@@ -121,12 +140,12 @@ class OVSSwitch(Switch):
         cargs += ' -- --if-exists del-br %s' % self.name
         # One ovs-vsctl command to rule them all!
         netnsname = "netns-" + self.name
-        config.add_command(Command(f"ip netns exec {netnsname} " +
+        config.add_command(Command(self.lxc_prefix() +
                                    'ovs-vsctl ' + cargs +
                                    ' -- add-br %s' % self.name +
                                    ' -- set bridge %s controller=[%s]' % (self.name, cids) +
                                    self.bridge_opts() +
                                    intfs),
-                           Command(f"ip netns exec {netnsname} " +
+                           Command(self.lxc_prefix() +
                                    'ovs-vsctl del-br %s' % self.name))
         return

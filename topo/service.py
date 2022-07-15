@@ -16,13 +16,6 @@ class Service(object):
         self.executor = executor
         self.intfs: list[Interface] = []
 
-    def add_interface(self, intf: Interface) -> 'Service':
-        for i in self.intfs:
-            if i.name == intf:
-                raise Exception(f"Interface with name {intf.name} already exists in service {self.name}")
-        self.intfs.append(intf)
-        return self
-
     def to_dict(self) -> dict:
         intfs = []
         for i in self.intfs:
@@ -56,7 +49,14 @@ class Service(object):
                 return i
         return None
 
+    def _add_interface(self, intf: Interface) -> 'Service':
+        for i in self.intfs:
+            if i.name == intf:
+                raise Exception(f"Interface with name {intf.name} already exists in service {self.name}")
+        self.intfs.append(intf)
+        return self
+
     def add_interface_by_name(self, intf_name: str) -> Interface:
         i = Interface(intf_name)
-        self.add_interface(i)
+        self._add_interface(i)
         return i
