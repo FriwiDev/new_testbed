@@ -35,25 +35,11 @@ Due to the json export of the topology, one can automatically connect to remote 
 and perform traffic testing and monitoring there. This could also be done automatically by a script. More on that coming
 soon.
 
-Time plan:
-
-- 13.6.-14.6. Polish new topology implementation
-- 15.6.-17.6. Build the configuration builder for linux servers from the original testbed
-- 20.6. Build the file configuration exporter (indirect configuration)
-- 21.6. Build remote ssh capabilities for testing
-- 22.6. Build the ssh configuration exporter (direct configuration)
-- 23.6.+ Start implementing the test utilities (to be planned)
-
-TODO für 30.: Link stattdessen in services packen, vxlan anpassen
-TODO für 1.: OVS + RYU fertig stellen
-TODO für 2./4.: Wireguard
-TODO für 5.: SSH beginnen
-...danach scripte
-
-Download for images:
-https://github.com/Giuseppe1992/Distrinet/blob/128d718ca4df714632268182fbeb6780fd31595b/mininet/mininet/provision/playbooks/install-aws-lxd.yml
-
-To import images:
+### Importing images
 ```bash
-lxc image import ~/switch.tar.gz --alias switch --public
-lxc image import ~/ubuntu-onos-2.1.0.tar.gz --alias ubuntu-onos-2.1.0 --public```
+wget https://friwi.me/testbed_img/ovs-ubuntu-18.04-minimal.tar.gz
+wget https://friwi.me/testbed_img/ryu-ubuntu-18.04-minimal.tar.gz
+wget https://friwi.me/testbed_img/simple-host-ubuntu-18.04-minimal.tar.gz
+lxc image import ovs-ubuntu-18.04-minimal.tar.gz --alias ovs --public
+lxc image import ryu-ubuntu-18.04-minimal.tar.gz --alias ryu --public
+lxc image import simple-host-ubuntu-18.04-minimal.tar.gz --alias simple-host --public```

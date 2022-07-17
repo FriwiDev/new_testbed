@@ -6,7 +6,7 @@
 
 ## Sketch
 
-One node looks like this:
+One node looks like this: **OUTDATED**
 
 ```
 MAIN NETNS                         | SERVICE NETNS (one per service)
