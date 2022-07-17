@@ -1,7 +1,8 @@
-from ipaddress import ip_address, ip_network
+from ipaddress import ip_address
 
 from config.configuration import Configuration, Command
 from network.network_implementation import NetworkImplementation
+from network.network_utils import NetworkUtils
 from topo.node import Node, NodeType
 from topo.subnet import Subnet
 
@@ -33,41 +34,18 @@ class VxLanNetworkImplementation(NetworkImplementation):
                     # We are the only participant -> route internally
                     # Create two bridges on which the services can bind
                     if link.intf1.bind_name is None:
-                        link.intf1.bind_name = f"br{br_num}"
+                        link.intf1.bind_name = f"vbr{br_num}"
                         br_num += 1
                     if link.intf2.bind_name is None:
-                        link.intf2.bind_name = f"br{br_num}"
+                        link.intf2.bind_name = f"vbr{br_num}"
                         br_num += 1
-                    config.add_command(Command(f"brctl addbr {link.intf1.bind_name}"),
-                                       Command(f"brctl delbr {link.intf1.bind_name}"))
-                    config.add_command(Command(f"brctl addbr {link.intf2.bind_name}"),
-                                       Command(f"brctl delbr {link.intf2.bind_name}"))
-                    # Create veth link between our bridges
-                    config.add_command(Command(f"ip link add veth-{link.intf1.bind_name} type veth peer veth-{link.intf2.bind_name}"),
-                                       Command(f"ip link del veth-{link.intf1.bind_name}"))
-                    # Attach veth links to their bridges
-                    config.add_command(Command(f"brctl addif {link.intf1.bind_name} veth-{link.intf1.bind_name}"),
-                                       Command(f"brctl delif {link.intf1.bind_name} veth-{link.intf1.bind_name}"))
-                    config.add_command(Command(f"brctl addif {link.intf2.bind_name} veth-{link.intf2.bind_name}"),
-                                       Command(f"brctl delif {link.intf2.bind_name} veth-{link.intf2.bind_name}"))
+                    # Create veth link
+                    config.add_command(
+                        Command(f"ip link add {link.intf1.bind_name} type veth peer {link.intf2.bind_name}"),
+                        Command(f"ip link del {link.intf1.bind_name}"))
                     # Set all devices up
-                    VxLanNetworkImplementation._set_up(config, link.intf1.bind_name)
-                    VxLanNetworkImplementation._set_up(config, link.intf2.bind_name)
-                    VxLanNetworkImplementation._set_up(config, "veth-"+link.intf1.bind_name)
-                    VxLanNetworkImplementation._set_up(config, "veth-" + link.intf2.bind_name)
-                    # Assign local ips
-                    intf1_ip = self.local_subnet.generate_next_ip()
-                    intf2_ip = self.local_subnet.generate_next_ip()
-                    veth1_ip = self.local_subnet.generate_next_ip()
-                    veth2_ip = self.local_subnet.generate_next_ip()
-                    VxLanNetworkImplementation._add_ip(config, link.intf1.bind_name, intf1_ip,
-                                                       self.local_subnet.network)
-                    VxLanNetworkImplementation._add_ip(config, link.intf2.bind_name, intf2_ip,
-                                                       self.local_subnet.network)
-                    VxLanNetworkImplementation._add_ip(config, "veth-"+link.intf1.bind_name, veth1_ip,
-                                                       self.local_subnet.network)
-                    VxLanNetworkImplementation._add_ip(config, "veth-"+link.intf2.bind_name, veth2_ip,
-                                                       self.local_subnet.network)
+                    NetworkUtils.set_up(config, link.intf1.bind_name)
+                    NetworkUtils.set_up(config, link.intf2.bind_name)
                 else:
                     # We only manage one end -> route via vxlan
                     intf = link.intf1 if link.service1.executor == node else link.intf2
@@ -88,8 +66,8 @@ class VxLanNetworkImplementation(NetworkImplementation):
                     config.add_command(Command(f"brctl addif {intf.bind_name} vx-{intf.bind_name}"),
                                        Command(f"brctl delif {intf.bind_name} vx-{intf.bind_name}"))
                     # Set all devices up
-                    VxLanNetworkImplementation._set_up(config, intf.bind_name)
-                    VxLanNetworkImplementation._set_up(config, "vx-"+intf.bind_name)
+                    NetworkUtils.set_up(config, intf.bind_name)
+                    NetworkUtils.set_up(config, "vx-" + intf.bind_name)
                     # TODO Routing in our bridge
 
 
@@ -106,21 +84,3 @@ class VxLanNetworkImplementation(NetworkImplementation):
         ret = VxLanNetworkImplementation(ip_address(in_dict['multicast_ip']),
                                          int(in_dict['vxlan_id']))
         return ret
-
-    @classmethod
-    def _set_up(cls, config: 'Configuration', device_name: str):
-        config.add_command(Command(f"ip link set dev {device_name} up"),
-                           Command(f"ip link set dev {device_name} down"))
-        pass
-
-    @classmethod
-    def _add_ip(cls, config: 'Configuration', device_name: str, ip: ip_address, network: ip_network):
-        config.add_command(Command(f"ip addr add dev {device_name} {str(ip)}/{str(network.prefixlen)}"),
-                           Command(f"ip addr del dev {device_name} {str(ip)}/{str(network.prefixlen)}"))
-        pass
-
-    @classmethod
-    def _add_route(cls, config: 'Configuration', ip: ip_address, via_ip: ip_address, via_network: ip_network):
-        config.add_command(Command(f"ip route add {str(ip)} {str(via_ip)}/{str(via_network.prefixlen)}"),
-                           Command(f"ip route del {str(ip)}"))
-        pass

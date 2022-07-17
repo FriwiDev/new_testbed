@@ -3,8 +3,7 @@ from abc import ABC
 
 from config.configuration import Command
 from platform.linux_server.lxc_service import LXCService
-from topo.interface import Interface
-from topo.service import Service, ServiceType
+from topo.service import ServiceType
 
 
 class Switch(LXCService, ABC):
@@ -69,18 +68,6 @@ class OVSSwitch(Switch):
         self.stp = stp
         self._uuids = []  # controller UUIDs #TODO ?
 
-    def intf_opts(self, intf: Interface):
-        """Return OVS interface options for intf"""
-        link = intf.links[0]  # TODO is this correct to assume?
-        intf1, intf2 = link.intf_name1, link.intf_name2
-        intf = intf2 if link.service1 != self else intf1
-        peer = intf1 if link.service1 != self else intf2
-        # ofport_request is not supported on old OVS
-        opts = ' ofport_request=%s' % self.executor.get_occupied_ports(self.get_interface(intf))
-        # Patch ports don't work well with old OVS
-        opts += ' type=patch options:peer=%s' % peer
-        return '' if not opts else ' -- set Interface %s' % intf + opts
-
     def bridge_opts(self):
         """Return OVS bridge options"""
         opts = (' other_config:datapath-id=%s' % self.dpid +
@@ -101,31 +88,60 @@ class OVSSwitch(Switch):
         super().append_to_configuration(config_builder, config)
         if not isinstance(config_builder, LinuxConfigurationBuilder):
             raise Exception("Can only configure OVS on Linux nodes")
-        # Startup ovs
+        # Stop the vswitch daemon, if already running
+        config.add_command(Command(self.lxc_prefix() + "service openvswitch-switch stop"),
+                           Command())
+        config.add_command(Command(self.lxc_prefix() + "service ovs-vswitchd stop"),
+                           Command())
+        config.add_command(Command(self.lxc_prefix() + "service ovsdb-server stop"),
+                           Command())
+        # Create work dir
+        config.add_command(Command(self.lxc_prefix() + "rm -rf /var/run/openvswitch"),
+                           Command())
         config.add_command(Command(self.lxc_prefix() + "mkdir /var/run/openvswitch"),
                            Command())
+        # Start ovsdb
         config.add_command(Command(self.lxc_prefix() + "ovsdb-server --remote=punix:/var/run/openvswitch/db.sock "
                                                        "--remote=db:Open_vSwitch,Open_vSwitch,manager_options "
                                                        "--private-key=db:Open_vSwitch,SSL,private_key "
                                                        "--certificate=db:Open_vSwitch,SSL,certificate "
                                                        "--bootstrap-ca-cert=db:Open_vSwitch,SSL,ca_cert "
-                                                       "--pidfile --detach"),
+                                                       "--log-file=/var/log/openvswitch/ovsdb-server.log "
+                                                       "--pidfile --verbose --detach"),
                            Command())
+        # Init ovs ctl
         config.add_command(Command(self.lxc_prefix() + "ovs-vsctl init"),
                            Command())
+        # Launch daemon
         config.add_command(Command(self.lxc_prefix() + "ovs-vswitchd --pidfile --detach"),
                            Command())
         # Configure bridge
         int(self.dpid, 16)  # DPID must be a hex string
         # Command to add interfaces
-        intfs = ''.join(' -- add-port %s %s' % (self.name, intf.name) +
-                        self.intf_opts(intf)
-                        for intf in self.intfs
-                        if len(intf.links) > 0)
+        intfs = ''
+        for intf in self.intfs:
+            if len(intf.links) > 0 and not intf.other_end_service.is_controller():
+                intfs += ' -- add-port %s %s' % (self.name, intf.name)
         # Command to create controller entries
-        clist = [(self.name + c.name, '%s:%s:%d' %
-                  (c.protocol, c.ip, c.port))
-                 for c in self.controllers]
+        clist = []
+        for c in self.controllers:
+            found_ip = None
+            for link in config_builder.topo.links:
+                if link.intf1 in self.intfs or link.intf2 in self.intfs:
+                    # We are connected to this link
+                    other = link.intf1 if link.intf2 in self.intfs else link.intf2
+                    for ip in other.ips:
+                        if not ip.is_loopback:
+                            # We found a non-loopback address that is reachable by us
+                            found_ip = ip
+                            break
+                if found_ip is not None:
+                    break
+            if found_ip is None:
+                raise Exception(f"Could not locate controller IP for controller {c.name} from switch {self.name}"
+                                f" - is it reachable?")
+            clist.append((self.name + c.name, '%s:%s:%d' % (c.protocol, found_ip, c.port)))
+
         if self.listen_port:
             clist.append((self.name + '-listen',
                           'ptcp:%s' % self.listen_port))
@@ -148,4 +164,15 @@ class OVSSwitch(Switch):
                                    intfs),
                            Command(self.lxc_prefix() +
                                    'ovs-vsctl del-br %s' % self.name))
+        # Set switch interface up
+        config.add_command(Command(self.lxc_prefix() +
+                                   'ip link set dev ' + self.name + ' up'),
+                           Command(self.lxc_prefix() +
+                                   'ip link set dev ' + self.name + ' down'))
         return
+
+    def is_switch(self) -> bool:
+        return True
+
+    def is_controller(self) -> bool:
+        return False

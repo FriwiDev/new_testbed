@@ -1,3 +1,4 @@
+import ipaddress
 from abc import abstractmethod
 from enum import Enum
 
@@ -60,3 +61,80 @@ class Service(object):
         i = Interface(intf_name)
         self._add_interface(i)
         return i
+
+    @abstractmethod
+    def is_switch(self) -> bool:
+        pass
+
+    @abstractmethod
+    def is_controller(self) -> bool:
+        pass
+
+    def get_reachable_ips_via_for_other(self, intf: Interface) -> dict[ipaddress, int]:
+        return self.get_reachable_ips_via_for_other_recursive(intf, [], 0)
+
+    def get_reachable_ips_via_for_other_recursive(self, intf: Interface, visited: list['Service'], hops: int) -> \
+            dict[ipaddress, int]:
+        ret = {}
+        for ip in intf.ips:
+            if not ip.is_loopback:
+                ret[ip] = hops
+        if self in visited:
+            return ret
+        visited = visited.copy()
+        visited.append(self)
+        if self.is_switch():
+            # Switches expose all other devices if calling instance is not a controller of this switch
+            if intf.other_end_service is not None and intf.other_end_service not in self.controllers:
+                for rintf in self.intfs:
+                    if rintf.other_end_service not in self.controllers:
+                        # Rintf is an interface that is not connected to a remote controller -> add it
+                        for ip, h in rintf.other_end_service.get_reachable_ips_via_for_other_recursive(rintf.other_end,
+                                                                                                       visited,
+                                                                                                       hops + 1) \
+                                .items():
+                            if ip not in ret or ret[ip] > h:
+                                ret[ip] = h
+        return ret
+
+    def get_reachable_ips_via(self, intf: Interface) -> dict[ipaddress, int]:
+        if intf.other_end is None or intf.other_end_service is None:
+            return {}
+        reachable = intf.other_end_service.get_reachable_ips_via_for_other(intf.other_end)
+        # Now iterate over all other interfaces and find if there is a shorter path via another way
+        for other in self.intfs:
+            if other != intf:
+                other_reachable = other.other_end_service.get_reachable_ips_via_for_other(other.other_end)
+                for ip, h in other_reachable.items():
+                    if ip in reachable and reachable[ip] > h:
+                        # There is a better way to reach the desired ip
+                        del reachable[ip]
+        return reachable
+
+    def is_local_ip(self, ip: ipaddress) -> bool:
+        if ip.is_loopback:
+            return True
+        for intf in self.intfs:
+            if ip in intf.ips:
+                return True
+        return False
+
+    def build_routing_table(self) -> dict[ipaddress, ipaddress]:
+        routing_table = {}
+        routing_hops = {}
+        # Add entries to table and replace with shorter options, if any
+        for intf in self.intfs:
+            entries = self.get_reachable_ips_via(intf)
+            for ip, h in entries.items():
+                if ip not in routing_table or routing_hops[ip] > h:
+                    routing_table[ip] = intf.ips[0]
+                    routing_hops[ip] = h
+        # Delete local addresses from table
+        to_del = []
+        for ip, h in routing_table.items():
+            if self.is_local_ip(ip):
+                to_del.append(routing_table[ip])
+        for del_ip in to_del:
+            del routing_table[del_ip]
+        # Return final table
+        return routing_table

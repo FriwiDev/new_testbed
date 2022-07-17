@@ -1,10 +1,9 @@
 from config.export.file_exporter import FileConfigurationExporter
 from platform.linux_server.linux_node import LinuxNode
-from topo.interface import Interface
+from platform.linux_server.lxc_service import SimpleLXCHost
+from topo.controller import RyuController
 from topo.link import Link
 from topo.node import NodeType
-from topo.service import Service, ServiceType
-from topo.subnet import Subnet
 from topo.switch import OVSSwitch
 from topo.topo import Topo
 
@@ -12,18 +11,19 @@ from topo.topo import Topo
 class TestTopo(Topo):
 
     def create(self, *args, **params):
-        subnet = Subnet("192.168.178.0/24")
         node = LinuxNode(name="testnode", node_type=NodeType.LINUX_DEBIAN)
         self.add_node(node)
-        service1 = Service(name="service1", service_type=ServiceType.NONE, executor=node)
-        service2 = Service(name="service2", service_type=ServiceType.NONE, executor=node)
-        switch = OVSSwitch(name="switch1", executor=node)
-        #service.add_interface(Interface("testintf").add_ip_from_subnet(subnet))
-        self.add_service(service1)
-        self.add_service(service2)
+        ryu = RyuController(name="controller1", executor=node)
+        switch = OVSSwitch(name="switch1", executor=node, controllers=[ryu])
+        host1 = SimpleLXCHost(name="host1", executor=node)
+        host2 = SimpleLXCHost(name="host2", executor=node)
+        self.add_service(ryu)
         self.add_service(switch)
-        self.add_link(Link(self, service1=service1, service2=switch))
-        self.add_link(Link(self, service1=switch, service2=service2))
+        self.add_service(host1)
+        self.add_service(host2)
+        self.add_link(Link(self, service1=ryu, service2=switch))
+        self.add_link(Link(self, service1=host1, service2=switch))
+        self.add_link(Link(self, service1=host2, service2=switch))
         pass
 
 

@@ -41,6 +41,10 @@ class Link(object):
             self.intf2.mac_address = mac_addr2
         else:
             self.intf2.mac_address = topo.mac_util.generate_new_mac()
+        self.intf1.other_end_service = self.service2
+        self.intf2.other_end_service = self.service1
+        self.intf1.other_end = self.intf2
+        self.intf2.other_end = self.intf1
 
     def to_dict(self) -> dict:
         return {
