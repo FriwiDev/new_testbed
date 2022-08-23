@@ -5,15 +5,23 @@ from network.vxlan_network import VxLanNetworkImplementation
 from topo.link import Link
 from topo.node import Node
 from topo.service import Service
-from topo.util import MacUtil
+from topo.util import MacUtil, ClassUtil
 
 
 class Topo(object):
-    def __init__(self, nodes: dict[str, Node] = {},
-                 links: list[Link] = [],
-                 services: dict[str, Service] = {},
-                 network_implementation: 'NetworkImplementation' = VxLanNetworkImplementation("239.1.1.1"),
+    def __init__(self, nodes=None,
+                 links=None,
+                 services=None,
+                 network_implementation: 'NetworkImplementation' = None,
                  *args, **params):
+        if nodes is None:
+            nodes = {}
+        if links is None:
+            links = []
+        if services is None:
+            services = {}
+        if network_implementation is None:
+            network_implementation = VxLanNetworkImplementation("239.1.1.1")  # TODO Add better default
         self.mac_util = MacUtil()
         self.nodes = nodes
         self.links = links
@@ -30,8 +38,8 @@ class Topo(object):
         for s in self.services:
             services.append(self.services[s].to_dict())
         links = []
-        for l in self.links:
-            links.append(l.to_dict())
+        for link in self.links:
+            links.append(link.to_dict())
         return {
             'nodes': nodes,
             'services': services,
@@ -44,13 +52,13 @@ class Topo(object):
         """Internal method to initialize from dictionary."""
         ret = Topo()
         for x in in_dict['nodes']:
-            ret.nodes[x['name']] = eval(x['class']).from_dict(x)  # TODO Use an internal dict
+            ret.nodes[x['name']] = ClassUtil.get_class_from_dict(x).from_dict(x)
         for x in in_dict['services']:
-            ret.services[x['name']] = eval(x['class']).from_dict(ret, x)  # TODO Use an internal dict
+            ret.services[x['name']] = ClassUtil.get_class_from_dict(x).from_dict(ret, x)
         for x in in_dict['links']:
-            ret.links.append(eval(x['class']).from_dict(ret, x))  # TODO Use an internal dict
+            ret.links.append(ClassUtil.get_class_from_dict(x).from_dict(ret, x))
         x = in_dict['network_implementation']
-        ret.network_implementation = eval(x['class']).from_dict(x)  # TODO Use an internal dict
+        ret.network_implementation = ClassUtil.get_class_from_dict(x).from_dict(x)
         return ret
 
     def export_topo(self) -> str:

@@ -1,6 +1,7 @@
 import os.path
 from abc import ABC, abstractmethod
 from os import PathLike
+from pathlib import PurePath
 
 from config.configuration import Command
 from network.network_utils import NetworkUtils
@@ -76,6 +77,25 @@ class LXCService(Service, ABC):
         if not container_dir.endswith("/"):
             container_dir = container_dir + "/"
         return Command(f"lxc file push $(pwd)/{local_file} {self.name}{container_dir}")  # / is in container_dir
+
+    def to_dict(self) -> dict:
+        # Merge own data into super class data
+        return {**super(LXCService, self).to_dict(), **{
+            'image': self.image,
+            'cpu': self.cpu,
+            'memory': self.memory,
+            'files': [{'path': PurePath(x).name, 'to': y} for x, y in self.files],
+        }}
+
+    @classmethod
+    def from_dict(cls, topo: 'Topo', in_dict: dict) -> 'LXCService':
+        """Internal method to initialize from dictionary."""
+        ret = super().from_dict(topo, in_dict)
+        ret.image = in_dict['image']
+        ret.cpu = in_dict['cpu']
+        ret.memory = in_dict['memory']
+        ret.files = [(PathLike(x['path']), x['to']) for x in in_dict['files']]
+        return ret
 
 
 class SimpleLXCHost(LXCService):

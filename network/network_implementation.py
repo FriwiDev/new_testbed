@@ -1,10 +1,10 @@
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 
 from config.configuration import Configuration
 from topo.node import Node
 
 
-class NetworkImplementation(object):
+class NetworkImplementation(ABC):
     @abstractmethod
     def configure(self, topo: 'Topo'):
         pass
@@ -15,7 +15,8 @@ class NetworkImplementation(object):
 
     def to_dict(self) -> dict:
         return {
-            'class': type(self).__name__
+            'class': type(self).__name__,
+            'module': type(self).__module__
         }
 
     @classmethod

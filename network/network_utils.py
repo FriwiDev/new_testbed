@@ -1,9 +1,10 @@
+from abc import ABC
 from ipaddress import ip_address, ip_network
 
 from config.configuration import Command
 
 
-class NetworkUtils(object):
+class NetworkUtils(ABC):
     @classmethod
     def set_up(cls, config: 'Configuration', device_name: str, prefix: str = None):
         if prefix is None:

@@ -13,7 +13,9 @@ class TestTopo(Topo):
     def create(self, *args, **params):
         node = LinuxNode(name="testnode", node_type=NodeType.LINUX_DEBIAN)
         self.add_node(node)
-        ryu = RyuController(name="controller1", executor=node)
+        node1 = LinuxNode(name="testnode1", node_type=NodeType.LINUX_DEBIAN)
+        self.add_node(node1)
+        ryu = RyuController(name="controller1", executor=node1)
         switch = OVSSwitch(name="switch1", executor=node, controllers=[ryu])
         host1 = SimpleLXCHost(name="host1", executor=node)
         host2 = SimpleLXCHost(name="host2", executor=node)
@@ -29,8 +31,11 @@ class TestTopo(Topo):
 
 def main():
     topo = TestTopo()
-    # print(topo.export_topo())
-    # print(Topo.import_topo(topo.export_topo()).export_topo())
+    # Serialize
+    print(topo.export_topo())
+    # Serialize and deserialize
+    print(Topo.import_topo(topo.export_topo()).export_topo())
+    # Export to file
     for name in topo.nodes:
         node = topo.nodes[name]
         config = node.get_configuration_builder(topo).build()

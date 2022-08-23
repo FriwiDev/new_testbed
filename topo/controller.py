@@ -1,5 +1,4 @@
 from abc import ABC
-from abc import ABC
 from pathlib import Path
 
 from config.configuration import Command
@@ -14,6 +13,21 @@ class Controller(LXCService, ABC):
         super().__init__(name, executor, service_type, image, cpu, memory)
         self.port = port
         self.protocol = protocol
+
+    def to_dict(self) -> dict:
+        # Merge own data into super class data
+        return {**super(Controller, self).to_dict(), **{
+            'port': str(self.port),
+            'protocol': self.protocol
+        }}
+
+    @classmethod
+    def from_dict(cls, topo: 'Topo', in_dict: dict) -> 'Controller':
+        """Internal method to initialize from dictionary."""
+        ret = super().from_dict(topo, in_dict)
+        ret.port = int(in_dict['port'])
+        ret.protocol = in_dict['protocol']
+        return ret
 
 
 class RyuController(Controller):
@@ -47,3 +61,16 @@ class RyuController(Controller):
 
     def is_controller(self) -> bool:
         return True
+
+    def to_dict(self) -> dict:
+        # Merge own data into super class data
+        return {**super(RyuController, self).to_dict(), **{
+            'script_path': self.script_path
+        }}
+
+    @classmethod
+    def from_dict(cls, topo: 'Topo', in_dict: dict) -> 'RyuController':
+        """Internal method to initialize from dictionary."""
+        ret = super().from_dict(topo, in_dict)
+        ret.script_path = in_dict['script_path']
+        return ret

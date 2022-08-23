@@ -13,16 +13,37 @@ class Switch(LXCService, ABC):
     dpid_len = 16  # digits in dpid passed to switch
 
     def __init__(self, name, executor: 'Node', service_type: 'ServiceType', image: str = "ubuntu", cpu: str = None,
-                 memory: str = None, dpid=None, opts='', listen_port=None,
-                 controllers: list['Controller'] = []):
+                 memory: str = None, dpid: str = None, opts: str = '', listen_port: int = None,
+                 controllers: list['Controller'] = None):
         """dpid: dpid hex string (or None to derive from name, e.g. s1 -> 1)
            opts: additional switch options
            listenPort: port to listen on for dpctl connections"""
         super().__init__(name, executor, service_type, image, cpu, memory)
+        if controllers is None:
+            controllers = []
         self.dpid = self.default_dpid(dpid)
         self.opts = opts
         self.listen_port = listen_port
         self.controllers = controllers
+
+    def to_dict(self) -> dict:
+        # Merge own data into super class data
+        return {**super(Switch, self).to_dict(), **{
+            'dpid': self.dpid,
+            'opts': self.opts,
+            'listen_port': str(self.listen_port),
+            'controllers': [cont.name for cont in self.controllers]
+        }}
+
+    @classmethod
+    def from_dict(cls, topo: 'Topo', in_dict: dict) -> 'Switch':
+        """Internal method to initialize from dictionary."""
+        ret = super().from_dict(topo, in_dict)
+        ret.dpid = in_dict['dpid']
+        ret.opts = in_dict['opts']
+        ret.listen_port = None if in_dict['listen_port'] == "None" else int(in_dict['listen_port'])
+        ret.controllers = [topo.get_service(name) for name in in_dict['controllers']]
+        return ret
 
     def default_dpid(self, dpid=None):
         "Return correctly formatted dpid from dpid or switch name (s1 -> 1)"
@@ -47,7 +68,7 @@ class OVSSwitch(Switch):
 
     def __init__(self, name, executor: 'Node', cpu: str = None, memory: str = None,
                  dpid=None, opts='', listen_port=None,
-                 controllers: list['Controller'] = [],
+                 controllers: list['Controller'] = None,
                  fail_mode='secure', datapath='kernel', inband=False, protocols=None, reconnectms=1000,
                  stp=False):
         """name: name for switch
@@ -176,3 +197,26 @@ class OVSSwitch(Switch):
 
     def is_controller(self) -> bool:
         return False
+
+    def to_dict(self) -> dict:
+        # Merge own data into super class data
+        return {**super(OVSSwitch, self).to_dict(), **{
+            'fail_mode': self.fail_mode,
+            'datapath': self.datapath,
+            'inband': str(self.inband),
+            'protocols': self.protocols,
+            'reconnectms': str(self.reconnectms),
+            'stp': str(self.stp)
+        }}
+
+    @classmethod
+    def from_dict(cls, topo: 'Topo', in_dict: dict) -> 'OVSSwitch':
+        """Internal method to initialize from dictionary."""
+        ret = super().from_dict(topo, in_dict)
+        ret.fail_mode = in_dict['fail_mode']
+        ret.datapath = in_dict['datapath']
+        ret.inband = str(in_dict['inband']).lower() == 'true'
+        ret.protocols = in_dict['protocols']
+        ret.reconnectms = int(in_dict['reconnectms'])
+        ret.stp = str(in_dict['stp']).lower() == 'true'
+        return ret

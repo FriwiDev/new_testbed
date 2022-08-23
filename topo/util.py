@@ -1,3 +1,6 @@
+import importlib
+
+
 class MacUtil(object):
 
     def __init__(self):
@@ -27,3 +30,14 @@ class MacUtil(object):
         ret = self._mac_colon_hex(self.next_mac)
         self.next_mac += 1
         return ret
+
+
+class ClassUtil(object):
+
+    @classmethod
+    def get_class(cls, module_name: str, class_name: str) -> type:
+        return getattr(importlib.import_module(module_name), class_name)
+
+    @classmethod
+    def get_class_from_dict(cls, x: dict) -> type:
+        return cls.get_class(x['module'], x['class'])

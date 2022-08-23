@@ -37,7 +37,8 @@ class Interface(object):
             'name': self.name,
             'ips': ip_str,
             'networks': network_str,
-            'mac_addr': self.mac_address
+            'mac_addr': self.mac_address,
+            'bind_name': self.bind_name
         }
 
     @classmethod
@@ -50,4 +51,5 @@ class Interface(object):
             ret.ips.append(ip_address(ip))
         for network in in_dict['networks']:
             ret.networks.append(ip_network(network))
+        ret.bind_name = in_dict['bind_name']
         return ret

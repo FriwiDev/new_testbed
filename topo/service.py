@@ -1,5 +1,5 @@
 import ipaddress
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from enum import Enum
 
 from topo.interface import Interface
@@ -10,7 +10,7 @@ class ServiceType(Enum):
     NONE, OVS, RYU = range(3)
 
 
-class Service(object):
+class Service(ABC):
     def __init__(self, name: str, executor: Node, service_type: ServiceType = None):
         self.name = name
         self.type = service_type
@@ -23,20 +23,20 @@ class Service(object):
             intfs.append(i.to_dict())
         return {
             'class': type(self).__name__,
+            'module': type(self).__module__,
             'name': self.name,
             'executor': self.executor.name,
             'type': self.type.name,
-            'intfs': self.intfs
+            'intfs': [intf.to_dict() for intf in self.intfs]
         }
 
     @classmethod
     def from_dict(cls, topo: 'Topo', in_dict: dict) -> 'Service':
         """Internal method to initialize from dictionary."""
-        ret = Service(in_dict['name'],
-                      ServiceType[in_dict['type']],
-                      topo.get_node(in_dict['executor']))
+        ret = cls(in_dict['name'],
+                  topo.get_node(in_dict['executor']))
         for intf in in_dict['intfs']:
-            ret.intfs.append(Interface(intf))
+            ret.intfs.append(Interface.from_dict(intf))
         return ret
 
     @abstractmethod
