@@ -16,6 +16,16 @@ class NetworkUtils(ABC):
         pass
 
     @classmethod
+    def set_mac(cls, config: 'Configuration', device_name: str, mac_address: str, prefix: str = None):
+        if prefix is None:
+            prefix = ''
+        else:
+            prefix += ' '
+        config.add_command(Command(f"{prefix}ip link set dev {device_name} address {mac_address}"),
+                           Command())
+        pass
+
+    @classmethod
     def add_ip(cls, config: 'Configuration', device_name: str, ip: ip_address, network: ip_network, prefix: str = None):
         if prefix is None:
             prefix = ''

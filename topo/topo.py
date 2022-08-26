@@ -21,7 +21,7 @@ class Topo(object):
         if services is None:
             services = {}
         if network_implementation is None:
-            network_implementation = VxLanNetworkImplementation("239.1.1.1")  # TODO Add better default
+            network_implementation = VxLanNetworkImplementation("10.0.0.0/24", "239.1.1.1")  # TODO Add better default
         self.mac_util = MacUtil()
         self.nodes = nodes
         self.links = links
@@ -80,7 +80,8 @@ class Topo(object):
         self.services[service.name] = service
         for intf in service.intfs:
             if intf.mac_address is None:
-                intf.mac_address = self.mac_util.generate_new_mac()
+                intf.mac_address = self.network_implementation.get_network_address_generator().generate_mac(service,
+                                                                                                            intf)
 
     def get_service(self, name: str) -> Service:
         if name not in self.services:
@@ -91,9 +92,10 @@ class Topo(object):
         if node.name in self.nodes:
             raise Exception(f"Node with name {node.name} already exists")
         self.nodes[node.name] = node
-        for intf in node.intfs:
-            if intf.mac_address is None:
-                intf.mac_address = self.mac_util.generate_new_mac()
+        # We do not determine the mac addresses for real hardware (at least not for now)
+        # for intf in node.intfs:
+        #    if intf.mac_address is None:
+        #        intf.mac_address = self.mac_util.generate_new_mac()
 
     def get_node(self, name: str) -> Node:
         if name not in self.nodes:

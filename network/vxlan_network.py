@@ -1,14 +1,18 @@
-from ipaddress import ip_address
+from ipaddress import ip_address, ip_network
 
 from config.configuration import Configuration, Command
+from network.network_address_generator import BasicNetworkAddressGenerator
 from network.network_implementation import NetworkImplementation
 from network.network_utils import NetworkUtils
 from topo.node import Node, NodeType
+from topo.util import ClassUtil
 
 
 class VxLanNetworkImplementation(NetworkImplementation):
-    def __init__(self, multicast_ip: ip_address, base_vxlan_id: int = 42, host_device_mapper=None,
+    def __init__(self, network: ip_network or str, multicast_ip: ip_address, base_vxlan_id: int = 42,
+                 host_device_mapper=None,
                  default_host_device: str = "eth0"):
+        self.network_address_generator = BasicNetworkAddressGenerator(network, 0x815)
         if host_device_mapper is None:
             host_device_mapper = {}
         self.topo = None
@@ -43,8 +47,6 @@ class VxLanNetworkImplementation(NetworkImplementation):
             raise Exception("VxLan currently only supports configuring LinuxNodes")
         host_device = self.host_device_mapper[node.name] if node.name in self.host_device_mapper \
             else self.default_host_device
-
-        # TODO Add mac addresses to devices (implementation dependent on container/namespace)
 
         br_num = 0
         link_index = -1
@@ -106,8 +108,11 @@ class VxLanNetworkImplementation(NetworkImplementation):
     @classmethod
     def from_dict(cls, in_dict: dict) -> 'VxLanNetworkImplementation':
         """Internal method to initialize from dictionary."""
-        ret = VxLanNetworkImplementation(ip_address(in_dict['multicast_ip']),
+        ret = VxLanNetworkImplementation(ip_network("10.0.0.0/24"),
+                                         ip_address(in_dict['multicast_ip']),
                                          int(in_dict['base_vxlan_id']), in_dict['host_device_mapper'],
                                          in_dict['default_host_device'])
+        x = in_dict['network_address_generator']
+        ret.network_address_generator = ClassUtil.get_class_from_dict(x).from_dict(x)
         ret.link_vxlanid = [int(x) for x in in_dict['link_vxlanid']]
         return ret

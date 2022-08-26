@@ -1,7 +1,5 @@
 from ipaddress import ip_address, ip_network
 
-from topo.subnet import Subnet
-
 
 class Interface(object):
     def __init__(self, name: str, mac_address: str = None):
@@ -13,9 +11,6 @@ class Interface(object):
         self.bind_name = None  # Used by network topologies to cache bridge names
         self.other_end_service = None
         self.other_end = None
-
-    def add_ip_from_subnet(self, subnet: Subnet) -> 'Interface':
-        return self.add_ip(subnet.generate_next_ip(), subnet.network)
 
     def add_ip(self, ip: str or ip_address, network: str or ip_network) -> 'Interface':
         if isinstance(ip, str):

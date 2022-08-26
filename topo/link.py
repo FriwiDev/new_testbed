@@ -1,46 +1,49 @@
 from topo.node import Node
 from topo.service import Service
-from topo.subnet import Subnet
 
 
 class Link(object):
-    # TODO Add subnet to serialized config
-    gen = 0
-    default_subnet = Subnet("10.0.0.0/16")
-
     # TODO Check and potentially add mac generation to serialized config
 
     def __init__(self, topo: 'Topo', service1: Service, service2: Service,
                  intf_name1: str = None, intf_name2: str = None,
-                 mac_addr1: str = None, mac_addr2: str = None,
-                 subnet1: Subnet = None, subnet2: Subnet = None):
+                 mac_addr1: str = None, mac_addr2: str = None):
         self.service1 = service1
         self.service2 = service2
-        self.intf_name1 = intf_name1 if intf_name1 else Link.inf_name(service1.executor, self.__class__.gen)
-        self.intf_name2 = intf_name2 if intf_name2 else Link.inf_name(service2.executor, self.__class__.gen + 1)
-        self.__class__.gen += 2
+        self.intf_name1 = intf_name1 if intf_name1 else Link.inf_name(service1.executor,
+                                                                      service1.executor.get_new_virtual_device_num())
+        self.intf_name2 = intf_name2 if intf_name2 else Link.inf_name(service2.executor,
+                                                                      service2.executor.get_new_virtual_device_num())
         # Locate interfaces or add them
         if service1.get_interface(self.intf_name1):
             self.intf1 = service1.get_interface(self.intf_name1)
         else:
             self.intf1 = service1.add_interface_by_name(self.intf_name1)
-            self.intf1.add_ip_from_subnet(subnet1 if subnet1 is not None else self.__class__.default_subnet)
+            self.intf1.add_ip(
+                topo.network_implementation.get_network_address_generator().generate_ip(service1, self.intf1),
+                topo.network_implementation.get_network_address_generator().generate_network(service1, self.intf1)
+            )
         self.intf1.links.append(self)
         if service2.get_interface(self.intf_name2):
             self.intf2 = service2.get_interface(self.intf_name2)
         else:
             self.intf2 = service2.add_interface_by_name(self.intf_name2)
-            self.intf2.add_ip_from_subnet(subnet2 if subnet2 is not None else self.__class__.default_subnet)
+            self.intf2.add_ip(
+                topo.network_implementation.get_network_address_generator().generate_ip(service2, self.intf2),
+                topo.network_implementation.get_network_address_generator().generate_network(service2, self.intf2)
+            )
         self.intf2.links.append(self)
         # Apply mac addresses to devices, if any were provided
         if mac_addr1:
             self.intf1.mac_address = mac_addr1
         elif not self.intf1.mac_address:
-            self.intf1.mac_address = topo.mac_util.generate_new_mac()
+            self.intf1.mac_address = topo.network_implementation.get_network_address_generator().generate_mac(service1,
+                                                                                                              self.intf1)
         if mac_addr2:
             self.intf2.mac_address = mac_addr2
         elif not self.intf2.mac_address:
-            self.intf2.mac_address = topo.mac_util.generate_new_mac()
+            self.intf2.mac_address = topo.network_implementation.get_network_address_generator().generate_mac(service2,
+                                                                                                              self.intf2)
         self.intf1.other_end_service = self.service2
         self.intf2.other_end_service = self.service1
         self.intf1.other_end = self.intf2

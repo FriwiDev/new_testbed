@@ -13,6 +13,7 @@ class Node(ABC):
         self.name = name
         self.type = node_type
         self.intfs: list[Interface] = [Interface(name="lo").add_ip("127.0.0.1", "127.0.0.0/8")]
+        self.current_virtual_device_num = 0
 
     def add_interface(self, intf: Interface) -> 'Node':
         for i in self.intfs:
@@ -27,6 +28,11 @@ class Node(ABC):
                 return i
         return None
 
+    def get_new_virtual_device_num(self) -> int:
+        ret = self.current_virtual_device_num
+        self.current_virtual_device_num += 1
+        return ret
+
     @abstractmethod
     def get_configuration_builder(self, topo: 'Topo'):
         pass
@@ -40,6 +46,7 @@ class Node(ABC):
             'module': type(self).__module__,
             'name': self.name,
             'type': self.type.name,
+            'current_virtual_device_num': str(self.current_virtual_device_num),
             'intfs': intfs
         }
 
@@ -48,6 +55,7 @@ class Node(ABC):
         """Internal method to initialize from dictionary."""
         ret = cls(in_dict['name'],
                   NodeType[in_dict['type']])
+        ret.current_virtual_device_num = int(in_dict['current_virtual_device_num'])
         ret.intfs.clear()
         for intf in in_dict['intfs']:
             ret.intfs.append(Interface.from_dict(intf))

@@ -55,6 +55,7 @@ class LXCService(Service, ABC):
             # 4: Device name on the guest
             config.add_command(Command(f"lxc network attach {dev.bind_name} {self.name} {dev.name} {dev.name}"),
                                Command(f"lxc network detach {dev.bind_name} {self.name} {dev.name}"))
+            NetworkUtils.set_mac(config, dev.name, dev.mac_address, self.lxc_prefix())
             NetworkUtils.set_up(config, dev.name, self.lxc_prefix())
             for i in range(len(dev.ips)):
                 NetworkUtils.add_ip(config, dev.name, dev.ips[i], dev.networks[i], self.lxc_prefix())
