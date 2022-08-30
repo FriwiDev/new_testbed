@@ -1,21 +1,28 @@
 config:
   images.auto_update_interval: "0"
-networks: [ ]
+networks: []
 storage_pools:
-  - config:
-      size: 4GB
-    description: ""
-    name: default
-    driver: zfs
+- config:
+    size: 4GB
+    source: /var/lib/lxd/disks/default.img
+    zfs.pool_name: default
+  description: ""
+  name: default
+  driver: zfs
 profiles:
-  - config: { }
-    description: ""
-    devices:
-      root:
-        path: /
-        pool: default
-        type: disk
-    name: default
-projects: [ ]
-cluster: null
-
+- config: {}
+  description: Default LXD profile
+  devices:
+    root:
+      path: /
+      pool: default
+      type: disk
+  name: default
+projects:
+- config:
+    features.images: "true"
+    features.networks: "true"
+    features.profiles: "true"
+    features.storage.volumes: "true"
+  description: Default LXD project
+  name: default

@@ -67,7 +67,7 @@ if zpool list | grep "$POOL_NAME" &> /dev/null ; then
   echo "::ZFS pool already present"
 else
   echo "::ZFS pool not present=>initializing lxc/lxd"
-  lxd init --preseed lxd_preseed.yml
+  lxd init --preseed < lxd_preseed.yml
 fi
 
 echo "::Python3"
@@ -92,6 +92,6 @@ echo "::Fetching images"
 python3 get_images.py
 
 echo "::Installing testbed python package"
-python3 setup.py install | sed 's/^/>>>/'
+python3 setup.py install --record installed_files.txt | sed 's/^/>>>/'
 
 echo "Installation completed"
