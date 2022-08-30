@@ -5,13 +5,14 @@ from pathlib import PurePath
 
 from config.configuration import Command
 from network.network_utils import NetworkUtils
-from platform.linux_server.linux_configuration_builder import LinuxConfigurationBuilder
+from platforms.linux_server.linux_configuration_builder import LinuxConfigurationBuilder
 from topo.node import Node
 from topo.service import Service, ServiceType
 
 
 class LXCService(Service, ABC):
-    def __init__(self, name: str, executor: Node, service_type: ServiceType, image: str = "ubuntu", cpu: str = None, memory: str = None):
+    def __init__(self, name: str, executor: Node, service_type: ServiceType, image: str = "ubuntu", cpu: str = None,
+                 memory: str = None):
         super().__init__(name, executor, service_type)
         self.image = image
         self.cpu = cpu

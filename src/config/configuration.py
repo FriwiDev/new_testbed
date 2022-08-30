@@ -1,5 +1,4 @@
 from os import PathLike
-from pathlib import Path
 
 
 class Command(object):

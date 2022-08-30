@@ -1,0 +1,21 @@
+config:
+  images.auto_update_interval: "0"
+networks: [ ]
+storage_pools:
+  - config:
+      size: 4GB
+    description: ""
+    name: default
+    driver: zfs
+profiles:
+  - config: { }
+    description: ""
+    devices:
+      root:
+        path: /
+        pool: default
+        type: disk
+    name: default
+projects: [ ]
+cluster: null
+

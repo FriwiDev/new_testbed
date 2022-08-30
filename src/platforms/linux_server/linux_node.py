@@ -1,4 +1,4 @@
-from platform.linux_server.linux_configuration_builder import LinuxConfigurationBuilder
+from platforms.linux_server.linux_configuration_builder import LinuxConfigurationBuilder
 from topo.node import Node, NodeType
 
 

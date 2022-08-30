@@ -2,7 +2,7 @@ from abc import ABC
 from pathlib import Path
 
 from config.configuration import Command
-from platform.linux_server.lxc_service import LXCService
+from platforms.linux_server.lxc_service import LXCService
 from topo.service import ServiceType
 
 

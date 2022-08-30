@@ -1,6 +1,7 @@
 from config.export.file_exporter import FileConfigurationExporter
-from platform.linux_server.linux_node import LinuxNode
-from platform.linux_server.lxc_service import SimpleLXCHost
+from platforms.linux_server.linux_node import LinuxNode
+from platforms.linux_server.lxc_service import SimpleLXCHost
+from src.network.vxlan_network import VxLanNetworkImplementation
 from topo.controller import RyuController
 from topo.link import Link
 from topo.node import NodeType
@@ -10,12 +11,15 @@ from topo.topo import Topo
 
 class TestTopo(Topo):
 
+    def __init__(self, *args, **params):
+        super().__init__(network_implementation=VxLanNetworkImplementation("10.0.0.0/24", "239.1.1.1",
+                                                                           default_host_device="wlp2s0"),
+                         *args, **params)
+
     def create(self, *args, **params):
         node = LinuxNode(name="testnode", node_type=NodeType.LINUX_DEBIAN)
         self.add_node(node)
-        node1 = LinuxNode(name="testnode1", node_type=NodeType.LINUX_DEBIAN)
-        self.add_node(node1)
-        ryu = RyuController(name="controller1", executor=node1)
+        ryu = RyuController(name="controller1", executor=node)
         switch = OVSSwitch(name="switch1", executor=node, controllers=[ryu])
         host1 = SimpleLXCHost(name="host1", executor=node)
         host2 = SimpleLXCHost(name="host2", executor=node)

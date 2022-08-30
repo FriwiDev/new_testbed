@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from config.configuration import Command
 from network.network_utils import NetworkUtils
-from platform.linux_server.linux_configuration_builder import LinuxConfigurationBuilder
+from platforms.linux_server.linux_configuration_builder import LinuxConfigurationBuilder
 from topo.node import Node
 from topo.service import Service, ServiceType
 

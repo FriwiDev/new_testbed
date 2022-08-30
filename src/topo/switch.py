@@ -2,7 +2,7 @@ import re
 from abc import ABC
 
 from config.configuration import Command
-from platform.linux_server.lxc_service import LXCService
+from platforms.linux_server.lxc_service import LXCService
 from topo.service import ServiceType
 
 
@@ -105,7 +105,7 @@ class OVSSwitch(Switch):
         return opts
 
     def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration'):
-        from platform.linux_server.linux_configuration_builder import LinuxConfigurationBuilder
+        from platforms.linux_server.linux_configuration_builder import LinuxConfigurationBuilder
         super().append_to_configuration(config_builder, config)
         if not isinstance(config_builder, LinuxConfigurationBuilder):
             raise Exception("Can only configure OVS on Linux nodes")
