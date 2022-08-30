@@ -52,3 +52,29 @@ class NetworkUtils(ABC):
                 Command(f"{prefix}ip route add {str(ip)} via {str(via_ip)}/{str(via_network.prefixlen)}"),
                 Command(f"{prefix}ip route del {str(ip)}"))
         pass
+
+    @classmethod
+    def add_qdisc(cls, config: 'Configuration', dev_name: str, delay: int, loss: float,
+                  delay_variation: int = 0, delay_correlation: float = 0, loss_correlation: float = 0,
+                  prefix: str = None):
+        if prefix is None:
+            prefix = ''
+        else:
+            prefix += ' '
+
+        cmd = f"{prefix}tc qdisc add dev {dev_name} root netem"
+        if delay > 0:
+            cmd += f" delay {delay}"
+            if delay_variation > 0:
+                cmd += f" {delay_variation}"
+                if delay_correlation > 0:
+                    cmd += f" {delay_correlation * 100}%"
+        if loss > 0:
+            cmd += f" loss {loss * 100}%"
+            if loss_correlation > 0:
+                cmd += f" {loss_correlation * 100}%"
+
+        config.add_command(
+            Command(cmd),
+            Command(f"{prefix}tc qdisc remove dev {dev_name} root netem")
+        )

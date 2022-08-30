@@ -72,6 +72,10 @@ class VxLanNetworkImplementation(NetworkImplementation):
                     # Set all devices up
                     NetworkUtils.set_up(config, link.intf1.bind_name)
                     NetworkUtils.set_up(config, link.intf2.bind_name)
+                    # Add qdisc (if required)
+                    if link.delay > 0 or link.loss > 0:
+                        NetworkUtils.add_qdisc(config, link.intf1.bind_name, link.delay, link.loss,
+                                               link.delay_variation, link.delay_correlation, link.loss_correlation)
                 else:
                     # We only manage one end -> route via vxlan
                     intf = link.intf1 if link.service1.executor == node else link.intf2
@@ -92,6 +96,10 @@ class VxLanNetworkImplementation(NetworkImplementation):
                     # Set all devices up
                     NetworkUtils.set_up(config, intf.bind_name)
                     NetworkUtils.set_up(config, "vx-" + intf.bind_name)
+                    # Add qdisc (if required, only on node of service1)
+                    if link.service1.executor == node and (link.delay > 0 or link.loss > 0):
+                        NetworkUtils.add_qdisc(config, "vx-" + link.intf1.bind_name, link.delay, link.loss,
+                                               link.delay_variation, link.delay_correlation, link.loss_correlation)
                     # Routing in bridge is not required, as ports should enter "forwarding" state
                     # Can be seen with "brctl showstp <bridge>"
 

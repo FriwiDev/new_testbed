@@ -23,7 +23,8 @@ class TestTopo(Topo):
         self.add_service(switch)
         self.add_service(host1)
         self.add_service(host2)
-        self.add_link(Link(self, service1=ryu, service2=switch))
+        self.add_link(Link(self, service1=ryu, service2=switch, delay=100, loss=0.25,
+                           delay_variation=30, delay_correlation=0.35, loss_correlation=0.35))
         self.add_link(Link(self, service1=host1, service2=switch))
         self.add_link(Link(self, service1=host2, service2=switch))
         pass
