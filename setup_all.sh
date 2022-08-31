@@ -1,4 +1,15 @@
 #!/bin/bash
+set -e
+
+#cd to script dir
+cd "$( dirname "$0" )"
+
+#Make scripts executable
+chmod +x ./*.sh
+chmod +x testbed/*.sh
+
+#Enable ipv4 forwarding
+sysctl -w net.ipv4.ip_forward=1
 
 echo "Checking for dependencies"
 echo "::Checking for LXC/LXD"

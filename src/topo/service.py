@@ -70,6 +70,9 @@ class Service(ABC):
     def is_controller(self) -> bool:
         pass
 
+    def command_prefix(self) -> str:
+        return ""
+
     def get_reachable_ips_via_for_other(self, intf: Interface) -> dict[ipaddress, int]:
         return self.get_reachable_ips_via_for_other_recursive(intf, [], 0)
 

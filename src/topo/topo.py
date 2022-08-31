@@ -27,8 +27,9 @@ class Topo(object):
         self.links = links
         self.services = services
         self.network_implementation = network_implementation
+        self.network_implementation.inject_topology(self)
         self.create(args, params)
-        self.network_implementation.configure(self)
+        self.network_implementation.configure()
 
     def to_dict(self) -> dict:
         nodes = []
@@ -59,6 +60,7 @@ class Topo(object):
             ret.links.append(ClassUtil.get_class_from_dict(x).from_dict(ret, x))
         x = in_dict['network_implementation']
         ret.network_implementation = ClassUtil.get_class_from_dict(x).from_dict(x)
+        ret.network_implementation.inject_topology(ret)
         return ret
 
     def export_topo(self) -> str:
@@ -110,3 +112,21 @@ class Topo(object):
     def get_links(self, service1: Service, service2: Service) -> list[Link]:
         return [link for link in self.links
                 if (link.service1, link.service2) in ((service1, service2), (service2, service1))]
+
+
+class TopoUtil(object):
+    @classmethod
+    def from_file(cls, file_path: str) -> Topo:
+        # No error handling, but user should be able to understand
+        file = open(file_path, "r")
+        ret = file.read()
+        file.close()
+        return Topo.import_topo(ret)
+
+    @classmethod
+    def to_file(cls, file_path: str, topo: Topo):
+        ret = topo.export_topo()
+        # No error handling, but user should be able to understand
+        file = open(file_path, "w")
+        file.write(ret)
+        file.close()

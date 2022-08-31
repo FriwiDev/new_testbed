@@ -2,6 +2,7 @@ import re
 from abc import ABC
 
 from config.configuration import Command
+from network.network_utils import NetworkUtils
 from platforms.linux_server.lxc_service import LXCService
 from topo.service import ServiceType
 
@@ -186,10 +187,9 @@ class OVSSwitch(Switch):
                            Command(self.lxc_prefix() +
                                    'ovs-vsctl del-br %s' % self.name))
         # Set switch interface up
-        config.add_command(Command(self.lxc_prefix() +
-                                   'ip link set dev ' + self.name + ' up'),
-                           Command(self.lxc_prefix() +
-                                   'ip link set dev ' + self.name + ' down'))
+        NetworkUtils.set_up(config, self.name, self.lxc_prefix())
+        # Set ovs-system interface up
+        NetworkUtils.set_up(config, 'ovs-system', self.lxc_prefix())
         return
 
     def is_switch(self) -> bool:

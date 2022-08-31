@@ -36,13 +36,12 @@ class RyuController(Controller):
                  script_path: str = None):
         super().__init__(name, executor, ServiceType.RYU, "ryu", cpu, memory, port, protocol)
         self.script_path = script_path
+        self.add_file(Path("defaults"), Path("/tmp"))  # TODO this does not work with external scripts
 
     def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration'):
         super().append_to_configuration(config_builder, config)
         if self.script_path is None:
-            self.script_path = "/tmp/simple_switch.py"
-            config.add_file(Path("defaults"))
-            config.add_command(self.file_copy("defaults/simple_switch.py", "/tmp"), Command())
+            self.script_path = "/tmp/defaults/simple_switch.py"
         log = f'/tmp/controller_{self.name}.log'
         if self.script_path is None:
             config.add_command(

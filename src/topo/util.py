@@ -1,4 +1,5 @@
 import importlib
+import subprocess
 
 
 class MacUtil(object):
@@ -35,3 +36,31 @@ class ClassUtil(object):
     @classmethod
     def get_class_from_dict(cls, x: dict) -> type:
         return cls.get_class(x['module'], x['class'])
+
+
+class CommandUtil(object):
+    @classmethod
+    def run_command(cls, cmd: list[str], list_output: bool = False, do_output: bool = True) -> (int, list[str]):
+        ret = []
+        process = subprocess.Popen(cmd,
+                                   stdout=subprocess.PIPE,
+                                   universal_newlines=True)
+
+        while True:
+            output = process.stdout.readline()
+            if not output.strip() == "":
+                if do_output:
+                    print(output.strip())
+                if list_output:
+                    ret.append(output.strip())
+            # Do something else
+            return_code = process.poll()
+            if return_code is not None:
+                # Process has finished, read rest of the output
+                for output in process.stdout.readlines():
+                    if not output.strip() == "":
+                        if do_output:
+                            print(output.strip())
+                        if list_output:
+                            ret.append(output.strip())
+                return return_code, ret

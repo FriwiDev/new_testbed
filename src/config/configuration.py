@@ -36,7 +36,7 @@ class Configuration(object):
     def __init__(self):
         self.start_cmds: list[Command] = []
         self.stop_cmds: list[Command] = []
-        self.files: list[PathLike] = []
+        self.files: dict[str, list[(PathLike, PathLike)]] = {}
         self.start_instructions: list[Instruction] = []
         self.stop_instructions: list[Instruction] = []
 
@@ -44,8 +44,11 @@ class Configuration(object):
         self.start_cmds.append(start_cmd)
         self.stop_cmds.append(stop_cmd)
 
-    def add_file(self, file: PathLike):
-        self.files.append(file)
+    def add_file(self, service: 'Service', file: PathLike, dst: PathLike):
+        if service.name not in self.files.keys():
+            self.files[service.name] = [(file, dst)]
+            return
+        self.files[service.name].append((file, dst))
 
     def add_instruction(self, start_instruction: Instruction, stop_instruction: Instruction):
         self.start_instructions.append(start_instruction)

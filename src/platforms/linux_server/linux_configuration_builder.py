@@ -17,3 +17,8 @@ class LinuxConfigurationBuilder(ConfigurationBuilder):
             if service.executor == self.node:
                 service.append_to_configuration(self, config)
         return config
+
+    def build_service(self, service: 'Service') -> Configuration:
+        config = Configuration()
+        service.append_to_configuration(self, config)
+        return config

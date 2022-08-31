@@ -29,8 +29,7 @@ class VxLanNetworkImplementation(NetworkImplementation):
         else:
             self.host_device_mapper[node.name] = device
 
-    def configure(self, topo: 'Topo'):
-        self.topo = topo
+    def configure(self):
         # Determine vxlan ids
         vxlan_id = self.base_vxlan_id
         for link in self.topo.links:

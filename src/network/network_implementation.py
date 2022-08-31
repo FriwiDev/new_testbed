@@ -8,10 +8,14 @@ from topo.node import Node
 class NetworkImplementation(ABC):
     def __init__(self, network_address_generator: NetworkAddressGenerator):
         self.network_address_generator = network_address_generator
+        self.topo: 'Topo' or None = None
 
     @abstractmethod
-    def configure(self, topo: 'Topo'):
+    def configure(self):
         pass
+
+    def inject_topology(self, topo: 'Topo'):
+        self.topo = topo
 
     @abstractmethod
     def generate(self, node: Node, config: Configuration):

@@ -1,7 +1,6 @@
-import os.path
 from abc import ABC, abstractmethod
 from os import PathLike
-from pathlib import PurePath
+from pathlib import PurePath, Path
 
 from config.configuration import Command
 from network.network_utils import NetworkUtils
@@ -17,10 +16,10 @@ class LXCService(Service, ABC):
         self.image = image
         self.cpu = cpu
         self.memory = memory
-        self.files: list[(PathLike, str)] = []
+        self.files: list[(PathLike, PathLike)] = []
 
-    def add_file(self, local_file: PathLike, container_dir: str):
-        if not container_dir.startswith("/"):
+    def add_file(self, local_file: PathLike, container_dir: PathLike):
+        if not str(container_dir).startswith("/"):
             raise Exception(f"Container path for copy to {self.name} is not absolute: {container_dir}")
         self.files.append((local_file, container_dir))
 
@@ -37,16 +36,24 @@ class LXCService(Service, ABC):
         if self.memory:
             config.add_command(Command(f"lxc config set {self.name} limits.memory {self.cpu}"),
                                Command())
+
         # Copy files
         for file, path in self.files:
             # Make files available in configuration
-            config.add_file(file)
-            # Copy file to container
-            config.add_command(self.file_copy(os.path.basename(file), path),
-                               Command())
+            config.add_file(self, file, path)
+
+        # Insert file copy placeholder
+        config.add_command(Command(f"#filecopybeforelaunch {self.name}"),
+                           Command())
+
         # Start container
         config.add_command(Command(f"lxc start {self.name}"),
                            Command(f"lxc stop {self.name}"))
+
+        # Insert file copy placeholder
+        config.add_command(Command(f"#filecopyafterlaunch {self.name}"),
+                           Command())
+
         # Connect container to bridge interfaces on host (pre created by the network topology)
         for dev in self.intfs:
             # Arguments in order:
@@ -70,15 +77,8 @@ class LXCService(Service, ABC):
     def lxc_prefix(self) -> str:
         return f"lxc exec {self.name} -- "
 
-    def file_copy(self, local_file: str, container_dir: str) -> Command:
-        if local_file.startswith("/"):
-            raise Exception(f"Can not copy an absolute file path like {local_file} into container")
-        if not container_dir.startswith("/"):
-            raise Exception(f"Container path for copy to {self.name} is not absolute: {container_dir}")
-        # Append / to prevent an avoidable error
-        if not container_dir.endswith("/"):
-            container_dir = container_dir + "/"
-        return Command(f"lxc file push $(pwd)/{local_file} {self.name}{container_dir}")  # / is in container_dir
+    def command_prefix(self) -> str:
+        return self.lxc_prefix()
 
     def to_dict(self) -> dict:
         # Merge own data into super class data
@@ -86,7 +86,7 @@ class LXCService(Service, ABC):
             'image': self.image,
             'cpu': self.cpu,
             'memory': self.memory,
-            'files': [{'path': PurePath(x).name, 'to': y} for x, y in self.files],
+            'files': [{'path': PurePath(x).name, 'to': str(y)} for x, y in self.files],
         }}
 
     @classmethod
@@ -96,7 +96,7 @@ class LXCService(Service, ABC):
         ret.image = in_dict['image']
         ret.cpu = in_dict['cpu']
         ret.memory = in_dict['memory']
-        ret.files = [(PathLike(x['path']), x['to']) for x in in_dict['files']]
+        ret.files = [(Path(x['path']), Path(x['to'])) for x in in_dict['files']]
         return ret
 
 

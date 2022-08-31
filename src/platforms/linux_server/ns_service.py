@@ -8,6 +8,7 @@ from topo.service import Service, ServiceType
 
 
 # TODO Needs file copy functionality as well
+# TODO Currently unsupported by both exporters
 class NamespaceService(Service, ABC):
     def __init__(self, name: str, executor: Node, service_type: ServiceType):
         super().__init__(name, executor, service_type)
@@ -34,3 +35,6 @@ class NamespaceService(Service, ABC):
 
     def ns_prefix(self) -> str:
         return f"ip netns exec {self.name} "
+
+    def command_prefix(self) -> str:
+        return self.ns_prefix()

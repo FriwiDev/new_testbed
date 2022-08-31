@@ -14,3 +14,7 @@ class ConfigurationBuilder(object):
     def build(self) -> Configuration:
         """Implemented by every configuration builder to create a configuration for one node from a topology"""
         pass
+
+    @abstractmethod
+    def build_service(self, service: 'Service') -> Configuration:
+        pass

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#cd to script dir
+cd "$( dirname "$0" )"
+
 read -p "Uninstall lxd? (yes/no, default: no): " ANSWER
 if [ "$ANSWER" = "yes" ]||[ "$ANSWER" = "y" ]; then
   # Delete containers and images
