@@ -46,6 +46,16 @@ class Node(ABC):
                 return i
         return None
 
+    def remove_interface(self, intf: str) -> Interface:
+        found = None
+        for i in self.intfs:
+            if i.name == intf:
+                found = i
+                break
+        if found:
+            self.intfs.remove(found)
+        return found
+
     def get_new_virtual_device_num(self) -> int:
         ret = self.current_virtual_device_num
         self.current_virtual_device_num += 1

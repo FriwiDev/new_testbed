@@ -50,7 +50,17 @@ class Service(ABC):
                 return i
         return None
 
-    def _add_interface(self, intf: Interface) -> 'Service':
+    def remove_interface(self, intf: str) -> Interface:
+        found = None
+        for i in self.intfs:
+            if i.name == intf:
+                found = i
+                break
+        if found:
+            self.intfs.remove(found)
+        return found
+
+    def add_interface(self, intf: Interface) -> 'Service':
         for i in self.intfs:
             if i.name == intf:
                 raise Exception(f"Interface with name {intf.name} already exists in service {self.name}")
@@ -59,7 +69,7 @@ class Service(ABC):
 
     def add_interface_by_name(self, intf_name: str) -> Interface:
         i = Interface(intf_name)
-        self._add_interface(i)
+        self.add_interface(i)
         return i
 
     @abstractmethod

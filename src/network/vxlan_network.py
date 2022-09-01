@@ -12,6 +12,7 @@ class VxLanNetworkImplementation(NetworkImplementation):
     def __init__(self, network: ip_network or str, multicast_ip: ip_address, base_vxlan_id: int = 42,
                  host_device_mapper=None,
                  default_host_device: str = "eth0"):
+        self.network = network
         self.network_address_generator = BasicNetworkAddressGenerator(network, 0x815)
         if host_device_mapper is None:
             host_device_mapper = {}
@@ -105,6 +106,7 @@ class VxLanNetworkImplementation(NetworkImplementation):
     def to_dict(self) -> dict:
         # Merge own data into super class data
         return {**super(VxLanNetworkImplementation, self).to_dict(), **{
+            'network': str(self.network),
             'multicast_ip': str(self.multicast_ip),
             'base_vxlan_id': self.base_vxlan_id,
             'host_device_mapper': self.host_device_mapper,
@@ -115,7 +117,7 @@ class VxLanNetworkImplementation(NetworkImplementation):
     @classmethod
     def from_dict(cls, in_dict: dict) -> 'VxLanNetworkImplementation':
         """Internal method to initialize from dictionary."""
-        ret = VxLanNetworkImplementation(ip_network("10.0.0.0/24"),
+        ret = VxLanNetworkImplementation(ip_network(in_dict['network']),
                                          ip_address(in_dict['multicast_ip']),
                                          int(in_dict['base_vxlan_id']), in_dict['host_device_mapper'],
                                          in_dict['default_host_device'])
