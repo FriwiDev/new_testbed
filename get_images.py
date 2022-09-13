@@ -2,9 +2,9 @@ from src.topo.util import CommandUtil
 
 
 def setup():
-    download_img('https://friwi.me/testbed_img/ovs-ubuntu-18.04-minimal.tar.gz', 'ovs')
-    download_img('https://friwi.me/testbed_img/ryu-ubuntu-18.04-minimal.tar.gz', 'ryu')
-    download_img('https://friwi.me/testbed_img/simple-host-ubuntu-18.04-minimal.tar.gz', 'simple-host')
+    download_img('https://friwi.me/testbed_img/ovs-ubuntu-20.04-minimal.tar.gz', 'ovs')
+    download_img('https://friwi.me/testbed_img/ryu-ubuntu-20.04-minimal.tar.gz', 'ryu')
+    download_img('https://friwi.me/testbed_img/simple-host-ubuntu-20.04-minimal.tar.gz', 'simple-host')
     pass
 
 
