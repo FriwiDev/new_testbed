@@ -27,16 +27,6 @@ if [ "$ANSWER" = "yes" ]||[ "$ANSWER" = "y" ]; then
   fi
 fi
 
-read -p "Uninstall zfs? (yes/no, default: no): " ANSWER
-if [ "$ANSWER" = "yes" ]||[ "$ANSWER" = "y" ]; then
-  if command -v pacman &> /dev/null
-  then
-      pacman -Rcns zfs-utils
-  else
-      apt-get purge zfs-utils-linux
-  fi
-fi
-
 read -p "Uninstall python3? (yes/no, default: no): " ANSWER
 if [ "$ANSWER" = "yes" ]||[ "$ANSWER" = "y" ]; then
   if command -v pacman &> /dev/null
@@ -47,7 +37,9 @@ if [ "$ANSWER" = "yes" ]||[ "$ANSWER" = "y" ]; then
   fi
 fi
 
-echo "::Uninstalling testbed python package"
-xargs rm -rf < installed_files.txt
+if test -f "installed_files.txt"; then
+  echo "::Uninstalling testbed python package"
+  xargs rm -rf < installed_files.txt
+fi
 
 echo "Uninstall completed"

@@ -29,6 +29,8 @@ then
     touch /etc/subgid
     usermod --add-subuids 100000-1001000000 "$USER"
     usermod --add-subgids 100000-1001000000 "$USER"
+    # Initialize lxd
+    lxd init --preseed < lxd_preseed.yml
 else
     echo "::LXC/LXD=>found"
 fi
@@ -44,42 +46,6 @@ if ! lxc info &> /dev/null; then
   exit 1
 fi
 echo "::Permissions ok"
-
-echo "::Checking for ZFS"
-if ! command -v zfs &> /dev/null
-then
-    echo "::ZFS=>not found=>prompting installation"
-    if command -v pacman &> /dev/null
-    then
-        pacman -Sy zfs-utils
-    else
-        apt-get install zfs-utils-linux
-    fi
-else
-    echo "::ZFS=>found"
-fi
-
-echo "::Checking for ZFS kernel module"
-if lsmod | grep "zfs" &> /dev/null ; then
-  echo "::ZFS kernel module is already loaded!"
-else
-  echo "::ZFS kernel module is not loaded=>loading"
-  modprobe zfs
-fi
-
-if ! systemctl is-enabled --quiet zfs.target; then
-    echo "::ZFS not running=>enabling & starting service"
-    systemctl enable zfs.target --now
-fi
-
-echo "::Checking for ZFS pool"
-POOL_NAME="default"
-if zpool list | grep "$POOL_NAME" &> /dev/null ; then
-  echo "::ZFS pool already present"
-else
-  echo "::ZFS pool not present=>initializing lxc/lxd"
-  lxd init --preseed < lxd_preseed.yml
-fi
 
 echo "::Python3"
 if ! command -v python3 &> /dev/null

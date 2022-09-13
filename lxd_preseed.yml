@@ -3,12 +3,10 @@ config:
 networks: []
 storage_pools:
 - config:
-    size: 4GB
-    source: /var/lib/lxd/disks/default.img
-    zfs.pool_name: default
+    source: /var/lib/lxd/storage-pools/default
   description: ""
   name: default
-  driver: zfs
+  driver: dir
 profiles:
 - config: {}
   description: Default LXD profile
