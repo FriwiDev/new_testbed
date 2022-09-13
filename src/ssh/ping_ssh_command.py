@@ -1,12 +1,12 @@
 import ipaddress
 
+from ssh.output_consumer import OutputConsumer
 from ssh.ssh_command import SSHCommand
-from ssh.ssh_output_consumer import SSHOutputConsumer
 from ssh.string_util import StringUtil
 from topo.service import Service
 
 
-class PingSSHCommand(SSHCommand, SSHOutputConsumer):
+class PingSSHCommand(SSHCommand, OutputConsumer):
     def __init__(self, service: Service, target: ipaddress.ip_address, count: int or None = 4):
         count_str = ""
         if count is not None:

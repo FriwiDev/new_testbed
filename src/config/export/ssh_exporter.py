@@ -4,8 +4,8 @@ from pathlib import Path
 
 from config.configuration import Configuration
 from config.export.configuration_exporter import ConfigurationExporter
+from ssh.output_consumer import PrintOutputConsumer
 from ssh.ssh_command import SSHCommand, FileSendCommand
-from ssh.ssh_output_consumer import PrintOutputConsumer
 from topo.node import Node
 
 

@@ -1,7 +1,7 @@
 import sys
 
+from ssh.output_consumer import PrintOutputConsumer
 from ssh.ssh_command import SSHCommand
-from ssh.ssh_output_consumer import PrintOutputConsumer
 from topo.topo import TopoUtil
 
 

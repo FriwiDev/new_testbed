@@ -30,6 +30,11 @@ class NamespaceService(Service, ABC):
             NetworkUtils.set_up(config, dev.bind_name + "v0")
             NetworkUtils.set_up(config, dev.bind_name)
             NetworkUtils.set_up(config, dev.name, self.ns_prefix())
+
+        # Set up extensions
+        for ext in self.extensions.values():
+            ext.append_to_configuration(self.ns_prefix(), config_builder, config)
+
         # Actual logic in the namespace will be provided by the implementation
         pass
 

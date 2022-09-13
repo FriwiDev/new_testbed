@@ -71,6 +71,10 @@ class LXCService(Service, ABC):
         for ip, via in self.build_routing_table().items():
             NetworkUtils.add_route(config, ip, via, None, self.lxc_prefix())
 
+        # Set up extensions
+        for ext in self.extensions.values():
+            ext.append_to_configuration(self.lxc_prefix(), config_builder, config)
+
         # Actual logic in the container will be provided by the implementation
         pass
 

@@ -2,8 +2,10 @@ import ipaddress
 from abc import abstractmethod, ABC
 from enum import Enum
 
+from extensions.service_extension import ServiceExtension
 from topo.interface import Interface
 from topo.node import Node
+from topo.util import ClassUtil
 
 
 class ServiceType(Enum):
@@ -16,6 +18,7 @@ class Service(ABC):
         self.type = service_type
         self.executor = executor
         self.intfs: list[Interface] = []
+        self.extensions: dict[str, ServiceExtension] = {}
 
     def to_dict(self) -> dict:
         intfs = []
@@ -27,7 +30,8 @@ class Service(ABC):
             'name': self.name,
             'executor': self.executor.name,
             'type': self.type.name,
-            'intfs': [intf.to_dict() for intf in self.intfs]
+            'intfs': [intf.to_dict() for intf in self.intfs],
+            'service_extensions': [ext.to_dict() for ext in self.extensions.values()]
         }
 
     @classmethod
@@ -37,6 +41,8 @@ class Service(ABC):
                   topo.get_node(in_dict['executor']))
         for intf in in_dict['intfs']:
             ret.intfs.append(Interface.from_dict(intf))
+        for ext in in_dict['service_extensions']:
+            ret.extensions[ext['name']] = (ClassUtil.get_class_from_dict(ext).from_dict(topo, ext, ret))
         return ret
 
     @abstractmethod
@@ -151,3 +157,8 @@ class Service(ABC):
             del routing_table[del_ip]
         # Return final table
         return routing_table
+
+    def add_extension(self, ext: 'ServiceExtension'):
+        if ext.name in self.extensions:
+            raise Exception("Service extension with name " + ext.name + " already exists in service " + self.name)
+        self.extensions[ext.name] = ext
