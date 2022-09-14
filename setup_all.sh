@@ -12,6 +12,21 @@ chmod +x testbed/*.sh
 sysctl -w net.ipv4.ip_forward=1
 
 echo "Checking for dependencies"
+
+echo "::Checking for bridge-utils"
+if ! command -v brctl &> /dev/null
+then
+    echo "::bridge-utils=>not found=>prompting installation"
+    if command -v pacman &> /dev/null
+    then
+        pacman -Sy bridge-utils
+    else
+        apt-get install bridge-utils
+    fi
+else
+    echo "::bridge-utils=>found"
+fi
+
 echo "::Checking for LXC/LXD"
 if ! command -v lxc &> /dev/null
 then
@@ -47,7 +62,7 @@ if ! lxc info &> /dev/null; then
 fi
 echo "::Permissions ok"
 
-echo "::Python3"
+echo "::Checking for Python3"
 if ! command -v python3 &> /dev/null
 then
     echo "::Python3=>not found=>prompting installation"

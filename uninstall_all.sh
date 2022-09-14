@@ -3,6 +3,16 @@
 #cd to script dir
 cd "$( dirname "$0" )"
 
+read -p "Uninstall bridge-utils? (yes/no, default: no): " ANSWER
+if [ "$ANSWER" = "yes" ]||[ "$ANSWER" = "y" ]; then
+  if command -v pacman &> /dev/null
+  then
+      pacman -Rcns bridge-utils
+  else
+      apt-get purge bridge-utils
+  fi
+fi
+
 read -p "Uninstall lxd? (yes/no, default: no): " ANSWER
 if [ "$ANSWER" = "yes" ]||[ "$ANSWER" = "y" ]; then
   # Delete containers and images
