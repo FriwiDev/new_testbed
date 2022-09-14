@@ -71,21 +71,37 @@ class DirectNetworkImplementation(NetworkImplementation):
                     # We are the only participant -> route internally
                     # Create two bridges on which the services can bind
                     if link.intf1.bind_name is None:
-                        link.intf1.bind_name = f"vbr{br_num}"
+                        link.intf1.bind_name = f"br{br_num}"
                         br_num += 1
                     if link.intf2.bind_name is None:
-                        link.intf2.bind_name = f"vbr{br_num}"
+                        link.intf2.bind_name = f"br{br_num}"
                         br_num += 1
                     # Create veth link
                     config.add_command(
-                        Command(f"ip link add {link.intf1.bind_name} type veth peer {link.intf2.bind_name}"),
-                        Command(f"ip link del {link.intf1.bind_name}"))
+                        Command(f"ip link add v{link.intf1.bind_name} type veth peer v{link.intf2.bind_name}"),
+                        Command(f"ip link del v{link.intf1.bind_name}"))
+                    # Create two bridges
+                    config.add_command(
+                        Command(f"brctl addbr {link.intf1.bind_name}"),
+                        Command(f"ip link del {link.intf1.bind_name}")
+                    )
+                    config.add_command(
+                        Command(f"brctl addbr {link.intf2.bind_name}"),
+                        Command(f"ip link del {link.intf2.bind_name}")
+                    )
+                    # Add veth pairs to bridges
+                    config.add_command(Command(f"brctl addif {link.intf1.bind_name} v{link.intf1.bind_name}"),
+                                       Command(f"brctl delif {link.intf1.bind_name} v{link.intf1.bind_name}"))
+                    config.add_command(Command(f"brctl addif {link.intf2.bind_name} v{link.intf2.bind_name}"),
+                                       Command(f"brctl delif {link.intf2.bind_name} v{link.intf2.bind_name}"))
                     # Set all devices up
                     NetworkUtils.set_up(config, link.intf1.bind_name)
                     NetworkUtils.set_up(config, link.intf2.bind_name)
+                    NetworkUtils.set_up(config, "v" + link.intf1.bind_name)
+                    NetworkUtils.set_up(config, "v" + link.intf2.bind_name)
                     # Add qdisc (if required)
                     if link.delay > 0 or link.loss > 0:
-                        NetworkUtils.add_qdisc(config, link.intf1.bind_name, link.delay, link.loss,
+                        NetworkUtils.add_qdisc(config, "v" + link.intf1.bind_name, link.delay, link.loss,
                                                link.delay_variation, link.delay_correlation, link.loss_correlation)
                 else:
                     # We only manage one end

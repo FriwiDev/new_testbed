@@ -20,6 +20,10 @@ class Service(ABC):
         self.intfs: list[Interface] = []
         self.extensions: dict[str, ServiceExtension] = {}
 
+    def configure(self, topo: 'Topo'):
+        """To be implemented by services. Will execute when the topology is fully loaded."""
+        pass
+
     def to_dict(self) -> dict:
         intfs = []
         for i in self.intfs:

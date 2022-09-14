@@ -30,6 +30,8 @@ class Topo(object):
         self.network_implementation.inject_topology(self)
         self.create(args, params)
         self.network_implementation.configure()
+        for service in self.services.values():
+            service.configure(self)
 
     def to_dict(self) -> dict:
         nodes = []

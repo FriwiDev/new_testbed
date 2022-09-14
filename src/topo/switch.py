@@ -1,9 +1,11 @@
+import ipaddress
 import re
 from abc import ABC
 
 from config.configuration import Command
 from network.network_utils import NetworkUtils
 from platforms.linux_server.lxc_service import LXCService
+from topo.interface import Interface
 from topo.service import ServiceType
 
 
@@ -71,7 +73,9 @@ class OVSSwitch(Switch):
                  dpid=None, opts='', listen_port=None,
                  controllers: list['Controller'] = None,
                  fail_mode='secure', datapath='kernel', inband=False, protocols=None, reconnectms=1000,
-                 stp=False):
+                 stp=False, local_ip: ipaddress.ip_address or str or None = None,
+                 local_network: ipaddress.ip_address or str or None = None,
+                 local_mac: str or None = None):
         """name: name for switch
            failMode: controller loss behavior (secure|standalone)
            datapath: userspace or kernel mode (kernel|user)
@@ -89,6 +93,26 @@ class OVSSwitch(Switch):
         self.reconnectms = reconnectms
         self.stp = stp
         self._uuids = []  # controller UUIDs #TODO ?
+        self.local_ip = local_ip
+        self.local_network = local_network
+        self.local_mac = local_mac
+
+    def configure(self, topo: 'Topo'):
+        if not self.local_mac:
+            self.local_mac = topo.network_implementation \
+                .get_network_address_generator().generate_mac(self, Interface(self.name))
+        if self.local_ip:
+            if isinstance(self.local_ip, str):
+                self.local_ip = ipaddress.ip_address(self.local_ip)
+        else:
+            self.local_ip = topo.network_implementation \
+                .get_network_address_generator().generate_ip(self, Interface(self.name, self.local_mac))
+        if self.local_network:
+            if isinstance(self.local_network, str):
+                self.local_network = ipaddress.ip_network(self.local_network)
+        else:
+            self.local_network = topo.network_implementation \
+                .get_network_address_generator().generate_network(self, Interface(self.name, self.local_mac))
 
     def bridge_opts(self):
         """Return OVS bridge options"""
@@ -103,6 +127,7 @@ class OVSSwitch(Switch):
         if self.stp and self.fail_mode == 'standalone':
             opts += ' stp_enable=true'
         opts += ' other-config:dp-desc=%s' % self.name
+        opts += ' other-config:hwaddr=%s' % self.local_mac
         return opts
 
     def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration'):
@@ -190,6 +215,16 @@ class OVSSwitch(Switch):
         NetworkUtils.set_up(config, self.name, self.lxc_prefix())
         # Set ovs-system interface up
         NetworkUtils.set_up(config, 'ovs-system', self.lxc_prefix())
+        # Add ip to switch device
+        NetworkUtils.add_ip(config, self.name, self.local_ip, self.local_network, self.lxc_prefix())
+        # Remove routes from all other devices to use switch device for all packets
+        for intf in self.intfs:
+            for i in range(0, len(intf.networks)):
+                net = intf.networks[i]
+                if not net.is_loopback:
+                    # For some reason route exists when it is added on stop - maybe auto generated
+                    config.add_command(Command(f"{self.lxc_prefix()} ip route del {str(net)} dev {intf.name}"),
+                                       Command())
         return
 
     def is_switch(self) -> bool:
@@ -206,7 +241,10 @@ class OVSSwitch(Switch):
             'inband': str(self.inband),
             'protocols': self.protocols,
             'reconnectms': str(self.reconnectms),
-            'stp': str(self.stp)
+            'stp': str(self.stp),
+            'local_ip': str(self.local_ip),
+            'local_network': str(self.local_network),
+            'local_mac': str(self.local_mac)
         }}
 
     @classmethod
@@ -219,4 +257,7 @@ class OVSSwitch(Switch):
         ret.protocols = in_dict['protocols']
         ret.reconnectms = int(in_dict['reconnectms'])
         ret.stp = str(in_dict['stp']).lower() == 'true'
+        ret.local_ip = ipaddress.ip_address(in_dict['local_ip'])
+        ret.local_network = ipaddress.ip_network(in_dict['local_network'])
+        ret.local_mac = in_dict['local_mac']
         return ret
