@@ -68,9 +68,9 @@ then
     echo "::Python3=>not found=>prompting installation"
     if command -v pacman &> /dev/null
     then
-        pacman -Sy python3
+        pacman -Sy python3 tk
     else
-        apt-get install python3
+        apt-get install python3 python3-tk
     fi
 else
     echo "::Python3=>found"

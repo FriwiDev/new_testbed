@@ -41,9 +41,9 @@ read -p "Uninstall python3? (yes/no, default: no): " ANSWER
 if [ "$ANSWER" = "yes" ]||[ "$ANSWER" = "y" ]; then
   if command -v pacman &> /dev/null
   then
-      pacman -Rcns python3
+      pacman -Rcns python3 tk
   else
-      apt-get purge python3
+      apt-get purge python3 python3-tk
   fi
 fi
 
