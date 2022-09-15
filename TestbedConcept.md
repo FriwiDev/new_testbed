@@ -38,6 +38,8 @@ soon.
 # Current todo
 - Extensive testing
 - Documentation (when everything is polished)
+- Control network (macvlan + ssh)
+- Make generation script robuster
 
 # Optional features
 - MacVlan mode with resolving via hostname

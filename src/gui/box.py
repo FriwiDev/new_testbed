@@ -47,9 +47,17 @@ class Box(object):
     def on_paint(self, offs_x: int, offs_y: int):
         abs_x = self.x + offs_x
         abs_y = self.y + offs_y
-        self.view.canvas.create_rectangle(abs_x, abs_y, abs_x + self.width, abs_y + self.height, fill='green')
+        # Draw box itself
+        self.view.canvas.create_rectangle(abs_x, abs_y, abs_x + self.width, abs_y + self.height, fill='white')
+        # Draw subboxes
         for box in self.subboxes:
             box.on_paint(abs_x, abs_y)
+        # If we are dragging, highlight potential targets
+        if self._dragging_anchor:
+            for box in self.available_boxes:
+                self.view.canvas.create_rectangle(box[0], box[1], box[0]+box[2], box[1]+box[3], outline='#00ff00', width=3)
+
+        # Draw all outgoing lines
         for line in self.lines:
             point_a = None
             point_b = None
@@ -212,6 +220,8 @@ class Box(object):
         # Reset all drag focus for self
         self._resizing = None
         self._dragging_anchor = None
+
+        self.view.repaint()
 
     def _is_close_to_box(self, x: int, y: int):
         rad = 8
@@ -426,3 +436,6 @@ class Box(object):
             return Box.NORTH
         elif direction == Box.EAST:
             return Box.WEST
+
+    def get_rotation(self) -> int:
+        return self.current_box[4]
