@@ -37,13 +37,6 @@ soon.
 
 # Current todo
 - Extensive testing
-- Own class to launch a wireguard instance as easy as possible (low effort)
-- Find out why suddenly traffic does not pass through ovs anymore even though there
-    is no controller specified and mode is standalone (not `secure`). When monitoring
-    traffic with `ovs-ofctl dump-ports <ovsbridge>`, arp traffic seems to be passing
-    one way, returning to the switch from the other side and then not matching the flow.
-    This seems a bit weird and will most likely need some debugging time :/.
-    Maybe Amr has more experience with ovs and can help?
 - Documentation (when everything is polished)
 
 # Optional features
@@ -51,3 +44,12 @@ soon.
 - Gui to visualize network structure and live monitor traffic, statistics like ping
     and network configuration. Could also be used to automatically execute scipts
     so the only real coding part left is creating the topology scripts.
+
+# Done
+- Own class to launch a wireguard instance as easy as possible (low effort)
+- Find out why suddenly traffic does not pass through ovs anymore even though there
+    is no controller specified and mode is standalone (not `secure`). When monitoring
+    traffic with `ovs-ofctl dump-ports <ovsbridge>`, arp traffic seems to be passing
+    one way, returning to the switch from the other side and then not matching the flow.
+    This seems a bit weird and will most likely need some debugging time :/.
+    Maybe Amr has more experience with ovs and can help?
