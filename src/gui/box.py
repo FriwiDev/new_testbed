@@ -13,10 +13,11 @@ class Box(object):
         self.resizeable = True
         self.draggable = True
         self.parent = None
-        self.available_boxes: list[tuple[int, int, int, int, int]] = []  # x1, y1, width, height, angle
+        self.available_bounding_boxes: list[tuple[int, int, int, int, int]] = []  # x1, y1, width, height, angle
         self.current_box: tuple[int, int, int, int, int] = None
         # Target box, dash, allowed own points, allowed remote points
-        self.lines: list[tuple['Box', tuple[int, int] or None], list[int], list[int]] = []
+        self.lines: list[tuple['Box', tuple[int, int] or None, list[int], list[int]]] = []
+        self.remote_line_endings: list['Box'] = []
 
         self.prev_x = 0
         self.prev_y = 0
@@ -24,6 +25,33 @@ class Box(object):
         self.prev_height = 0
         self._resizing = None  # boolean: Left, right, up, down
         self._dragging_anchor = None  # x, y
+        self.allowed_directions = [Box.NORTH, Box.WEST, Box.SOUTH, Box.EAST]
+
+    def add_line(self, end: 'Box', dash: tuple[int, int] or None):
+        if self not in end.remote_line_endings:
+            end.remote_line_endings.append(self)
+        self.lines.append((end, dash, self.allowed_directions.copy(), end.allowed_directions.copy()))
+
+    def remove_lines(self, end: 'Box'):
+        if self in end.remote_line_endings:
+            end.remote_line_endings.remove(self)
+        rm = []
+        for line in self.lines:
+            if line[0] == end:
+                rm.append(line)
+        for line in rm:
+            self.lines.remove(line)
+
+    def update_all_lines(self):
+        self.reapply_line_directions()
+        for end in self.remote_line_endings:
+            end.reapply_line_directions()
+
+    def reapply_line_directions(self):
+        new_lines = []
+        for box, dash, own_dirs, target_dirs in self.lines:
+            new_lines.append((box, dash, self.allowed_directions.copy(), box.allowed_directions.copy()))
+        self.lines = new_lines
 
     def _set_view(self, view: 'View'):
         self.view = view
@@ -54,8 +82,12 @@ class Box(object):
             box.on_paint(abs_x, abs_y)
         # If we are dragging, highlight potential targets
         if self._dragging_anchor:
-            for box in self.available_boxes:
-                self.view.canvas.create_rectangle(box[0], box[1], box[0]+box[2], box[1]+box[3], outline='#00ff00', width=3)
+            for box in self.available_bounding_boxes:
+                outline = '#00ff00'
+                if self.current_box == box:
+                    outline = '#707070'
+                self.view.canvas.create_rectangle(box[0] + offs_x, box[1] + offs_y, box[0] + box[2] + offs_x,
+                                                  box[1] + box[3] + offs_y, outline=outline, width=3)
 
         # Draw all outgoing lines
         for line in self.lines:
@@ -208,6 +240,7 @@ class Box(object):
                 self.x, self.y = ret_point
                 self.current_box = ret_box
                 self.on_resize(self.width, self.height)
+                self.on_change_orientation(ret_box[4])
 
     def on_drag_end(self, x: int, y: int, root_x: int, root_y: int, total_dx: int, total_dy: int):
         rel_x = x - self.x
@@ -258,7 +291,7 @@ class Box(object):
 
     def _get_available_boxes(self, x: int, y: int) -> list[tuple[int, int, int, int, int]]:
         ret = []
-        for bb in self.available_boxes:
+        for bb in self.available_bounding_boxes:
             x1, y1, width, height, angle = bb
             if x1 <= x < x1 + width and y1 <= y < y1 + height:
                 ret.append(bb)
@@ -269,8 +302,8 @@ class Box(object):
         dist = -1
         ret_point = None
         ret_box = None
-        for box in self.available_boxes:
-            local_box = self._get_closest_spot_in_available_box(x, y, box)
+        for box in self.available_bounding_boxes:
+            local_box = self.get_closest_spot_in_available_box(x, y, box)
             if local_box:
                 local_x, local_y, local_width, local_height = local_box
                 local_dist = (local_x - x) * (local_x - x) + (local_y - y) * (local_y - y)
@@ -280,7 +313,7 @@ class Box(object):
                     ret_box = box
         return ret_point, ret_box
 
-    def _get_closest_spot_in_available_box(self, x: int, y: int, box: tuple[int, int, int, int, int]) \
+    def get_closest_spot_in_available_box(self, x: int, y: int, box: tuple[int, int, int, int, int]) \
             -> tuple[int, int, int, int]:  # local x, y, width, height
         x1, y1, width, height, angle = box
         if (angle + self.current_box[4]) % 2 == 0:
@@ -326,7 +359,7 @@ class Box(object):
         target = self._walk_point(point_b, dir_b, shortest)
         directions_possible = [dir_a]
         for i in range(0, 4):
-            if not i == dir_a and not i == self._opposite_dir(dir_a):
+            if not i == dir_a and not i == Box.opposite_dir(dir_a):
                 directions_possible.append(i)
 
         points.append(point_a[0])
@@ -354,7 +387,7 @@ class Box(object):
             directions_possible = []
             # Only allow left/right
             for i in range(0, 4):
-                if not i == current_dir and not i == self._opposite_dir(current_dir):
+                if not i == current_dir and not i == Box.opposite_dir(current_dir):
                     directions_possible.append(i)
 
         points.append(point_b[0])
@@ -427,7 +460,8 @@ class Box(object):
             # Else we only take half the steps required to then go another way
             return int((target[0] - point[0]) / 2)
 
-    def _opposite_dir(self, direction: int) -> int:
+    @classmethod
+    def opposite_dir(cls, direction: int) -> int:
         if direction == Box.NORTH:
             return Box.SOUTH
         elif direction == Box.WEST:
@@ -439,3 +473,15 @@ class Box(object):
 
     def get_rotation(self) -> int:
         return self.current_box[4]
+
+    def get_drag_box_index(self) -> int or None:
+        i = 0
+        for box in self.available_bounding_boxes:
+            if box[0] <= self.x < box[0] + box[2] \
+                    and box[1] <= self.y < box[1] + box[3]:
+                return i
+            i += 1
+        return None
+
+    def on_change_orientation(self, direction: int):
+        pass

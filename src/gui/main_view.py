@@ -1,4 +1,5 @@
 from gui.box import Box
+from gui.system_box import SystemBox
 from gui.view import View
 
 
@@ -45,12 +46,18 @@ def main():
     box.resizeable = False
     box1 = Box(50, 50, 200, 200)
     box2 = Box(300, 50, 200, 200)
-    box1.available_boxes = [(50, 50, 300, 300, 0), (100, 400, 300, 300, 0)]
+    system_box = SystemBox(500, 500, 500, 500)
+    system_box.available_bounding_boxes = [(0, 0, 1920, 1080, 0)]
+    system_box.current_box = (0, 0, 1920, 1080, 0)
+    interface_box = Box(0, 0, 100, 50)
+    system_box.add_interface_box(interface_box, True)
+    box1.available_bounding_boxes = [(50, 50, 300, 300, 0), (100, 400, 300, 300, 0)]
     box1.current_box = (50, 50, 300, 300, 0)
-    box2.available_boxes = [(0, 0, 1920, 1080, 0)]
+    box2.available_bounding_boxes = [(0, 0, 1920, 1080, 0)]
     box2.current_box = (0, 0, 1920, 1080, 0)
     box.add_box(box1)
     box.add_box(box2)
+    box.add_box(system_box)
     box1.lines.append(
         (box2, (4, 2), [Box.NORTH, Box.WEST, Box.SOUTH, Box.EAST], [Box.NORTH, Box.WEST, Box.SOUTH, Box.EAST]))
     MainView(box)
