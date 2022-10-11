@@ -1,11 +1,11 @@
 import sys
 
 from extensions.wireguard_extension_builder import WireguardExtensionBuilder
-from network.direct_network import DirectNetworkImplementation
+from network.default_network_implementation import DefaultNetworkImplementation
 from platforms.linux_server.linux_node import LinuxNode
 from platforms.linux_server.lxc_service import SimpleLXCHost
 from topo.interface import Interface
-from topo.link import Link
+from topo.link import Link, LinkType
 from topo.node import NodeType
 from topo.switch import OVSSwitch
 from topo.topo import Topo
@@ -14,7 +14,7 @@ from topo.topo import Topo
 class TestTopo(Topo):
 
     def __init__(self, *args, **params):
-        super().__init__(network_implementation=DirectNetworkImplementation("10.0.0.0/24"),
+        super().__init__(network_implementation=DefaultNetworkImplementation("10.0.0.0/24", "239.1.1.1"),
                          *args, **params)
 
     def create(self, *args, **params):
@@ -22,16 +22,22 @@ class TestTopo(Topo):
         node.add_interface(Interface("wlp2s0").add_ip("10.0.1.28", "10.0.1.0/24")) \
             .add_interface(Interface("enp3s0").add_ip("10.0.1.4", "10.0.1.0/24"))
         self.add_node(node)
-        switch1 = OVSSwitch(name="switch1", executor=node, fail_mode='standalone')
+        node1 = LinuxNode(name="testnode1", node_type=NodeType.LINUX_DEBIAN)
+        node1.add_interface(Interface("wlp2s0").add_ip("10.0.1.29", "10.0.1.0/24")) \
+            .add_interface(Interface("enp3s0").add_ip("10.0.1.5", "10.0.1.0/24"))
+        self.add_node(node1)
+        switch1 = OVSSwitch(name="switch1", executor=node1, fail_mode='standalone')
         host1 = SimpleLXCHost(name="host1", executor=node)
         host2 = SimpleLXCHost(name="host2", executor=node)
         self.add_service(switch1)
         self.add_service(host1)
         self.add_service(host2)
-        link1 = Link(self, service1=host1, service2=switch1)
-        link2 = Link(self, service1=switch1, service2=host2)
+        link1 = Link(self, service1=host1, service2=switch1, link_type=LinkType.DIRECT)
+        link2 = Link(self, service1=switch1, service2=host2, link_type=LinkType.VXLAN)
         self.add_link(link1)
         self.add_link(link2)
+        self.network_implementation.set_link_interface_mapping(link1, "enp3s0", "enp3s0")
+        self.network_implementation.set_link_interface_mapping(link2, "wlp2s0", "wlp2s0")
         WireguardExtensionBuilder(host1, host2, link1.intf1, link2.intf2,
                                   "192.168.178.1", "192.168.178.2", "192.168.178.0/24") \
             .build()

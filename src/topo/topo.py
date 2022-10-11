@@ -1,7 +1,7 @@
 import json
 from abc import abstractmethod
 
-from network.vxlan_network import VxLanNetworkImplementation
+from network.default_network_implementation import DefaultNetworkImplementation
 from topo.link import Link
 from topo.node import Node
 from topo.service import Service
@@ -21,7 +21,7 @@ class Topo(object):
         if services is None:
             services = {}
         if network_implementation is None:
-            network_implementation = VxLanNetworkImplementation("10.0.0.0/24", "239.1.1.1")  # TODO Add better default
+            network_implementation = DefaultNetworkImplementation("10.0.0.0/24", "239.1.1.1")  # TODO Add better default
         self.mac_util = MacUtil()
         self.nodes = nodes
         self.links = links

@@ -1,11 +1,18 @@
+from enum import Enum
+
 from topo.node import Node
 from topo.service import Service
+
+
+class LinkType(Enum):
+    DIRECT, VXLAN = range(2)
 
 
 class Link(object):
     # TODO Check and potentially add mac generation to serialized config
 
     def __init__(self, topo: 'Topo', service1: Service, service2: Service,
+                 link_type: LinkType,
                  intf_name1: str = None, intf_name2: str = None,
                  mac_addr1: str = None, mac_addr2: str = None,
                  delay: int = 0, loss: float = 0,
@@ -16,6 +23,7 @@ class Link(object):
         """
         self.service1 = service1
         self.service2 = service2
+        self.link_type = link_type
         self.intf_name1 = intf_name1 if intf_name1 else Link.inf_name(service1.executor,
                                                                       service1.executor.get_new_virtual_device_num())
         self.intf_name2 = intf_name2 if intf_name2 else Link.inf_name(service2.executor,
@@ -59,6 +67,7 @@ class Link(object):
         self.delay_variation = delay_variation
         self.delay_correlation = delay_correlation
         self.loss_correlation = loss_correlation
+        self.link_id = -1
 
     def to_dict(self) -> dict:
         return {
@@ -72,7 +81,9 @@ class Link(object):
             'delay_variation': str(self.delay_variation),
             'delay_correlation': str(self.delay_correlation),
             'loss': str(self.loss),
-            'loss_correlation': str(self.loss_correlation)
+            'loss_correlation': str(self.loss_correlation),
+            'link_id': str(self.link_id),
+            'link_type': str(self.link_type.name)
         }
 
     @classmethod
@@ -82,6 +93,7 @@ class Link(object):
             topo,
             topo.get_service(in_dict['service1']),
             topo.get_service(in_dict['service2']),
+            LinkType[in_dict['link_type']],
             in_dict['intf_name1'],
             in_dict['intf_name2'])
         ret.delay = int(in_dict['delay'])
@@ -89,6 +101,7 @@ class Link(object):
         ret.delay_correlation = float(in_dict['delay_correlation'])
         ret.loss = float(in_dict['loss'])
         ret.loss_correlation = float(in_dict['loss_correlation'])
+        ret.link_id = int(in_dict['link_id'])
         return ret
 
     @classmethod
