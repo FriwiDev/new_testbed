@@ -54,6 +54,11 @@ class Service(ABC):
         """Method to be implemented by every service definition"""
         pass
 
+    @abstractmethod
+    def append_to_configuration_enable(self, config_builder: 'ConfigurationBuilder', config: 'Configuration'):
+        """Method to be implemented by every service definition"""
+        pass
+
     def get_interface(self, intf_name: str) -> Interface:
         for i in self.intfs:
             if i.name == intf_name:
@@ -161,6 +166,12 @@ class Service(ABC):
             del routing_table[del_ip]
         # Return final table
         return routing_table
+
+    def has_ip(self, ip: ipaddress) -> bool:
+        for intf in self.intfs:
+            if ip in intf.ips:
+                return True
+        return False
 
     def add_extension(self, ext: 'ServiceExtension'):
         if ext.name in self.extensions:

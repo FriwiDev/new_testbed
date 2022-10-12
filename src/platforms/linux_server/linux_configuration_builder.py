@@ -5,6 +5,7 @@ from topo.topo import Topo
 
 
 class LinuxConfigurationBuilder(ConfigurationBuilder):
+
     def __init__(self, topo: Topo, node: Node):
         super().__init__(topo, node)
 
@@ -21,4 +22,15 @@ class LinuxConfigurationBuilder(ConfigurationBuilder):
     def build_service(self, service: 'Service') -> Configuration:
         config = Configuration()
         service.append_to_configuration(self, config)
+        return config
+
+    def build_service_enable(self, service: 'Service') -> Configuration:
+        config = Configuration()
+        service.append_to_configuration_enable(self, config)
+        return config
+
+    def build_base(self) -> Configuration:
+        config = Configuration()
+        # Generate network infrastructure
+        self.topo.network_implementation.generate(self.node, config)
         return config

@@ -1,3 +1,4 @@
+import signal
 import subprocess
 
 from ssh.output_consumer import OutputConsumer
@@ -42,9 +43,10 @@ class LocalCommand(object):
                 return
 
     def abort(self):
+        print("Abort!")
         if self.process:
-            self.process.terminate()
-            self.process = None
+            print("In abort...")
+            self.process.send_signal(signal.SIGINT)
 
     def encapsule(self, cmd: str):
         return "\"" + cmd.replace("\\", "\\\\").replace("\"", "\\\"") + "\""

@@ -79,6 +79,12 @@ class LXCService(Service, ABC):
         # Actual logic in the container will be provided by the implementation
         pass
 
+    def append_to_configuration_enable(self, config_builder: 'ConfigurationBuilder', config: 'Configuration'):
+        # Start container
+        config.add_command(Command(f"lxc start {self.name}"),
+                           Command(f"lxc stop {self.name}"))
+        pass
+
     def lxc_prefix(self) -> str:
         return f"lxc exec {self.name} -- "
 

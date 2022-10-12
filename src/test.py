@@ -18,15 +18,15 @@ class TestTopo(Topo):
                          *args, **params)
 
     def create(self, *args, **params):
-        node = LinuxNode(name="testnode", node_type=NodeType.LINUX_DEBIAN)
+        node = LinuxNode(name="testnode", node_type=NodeType.LINUX_DEBIAN, ssh_remote="root@localhost")
         node.add_interface(Interface("wlp2s0").add_ip("10.0.1.28", "10.0.1.0/24")) \
             .add_interface(Interface("enp3s0").add_ip("10.0.1.4", "10.0.1.0/24"))
         self.add_node(node)
-        node1 = LinuxNode(name="testnode1", node_type=NodeType.LINUX_DEBIAN)
-        node1.add_interface(Interface("wlp2s0").add_ip("10.0.1.29", "10.0.1.0/24")) \
-            .add_interface(Interface("enp3s0").add_ip("10.0.1.5", "10.0.1.0/24"))
-        self.add_node(node1)
-        switch1 = OVSSwitch(name="switch1", executor=node1, fail_mode='standalone')
+        # node1 = LinuxNode(name="testnode1", node_type=NodeType.LINUX_DEBIAN)
+        # node1.add_interface(Interface("wlp2s0").add_ip("10.0.1.29", "10.0.1.0/24")) \
+        #    .add_interface(Interface("enp3s0").add_ip("10.0.1.5", "10.0.1.0/24"))
+        # self.add_node(node1)
+        switch1 = OVSSwitch(name="switch1", executor=node, fail_mode='standalone')
         host1 = SimpleLXCHost(name="host1", executor=node)
         host2 = SimpleLXCHost(name="host2", executor=node)
         self.add_service(switch1)
@@ -36,8 +36,8 @@ class TestTopo(Topo):
         link2 = Link(self, service1=switch1, service2=host2, link_type=LinkType.VXLAN)
         self.add_link(link1)
         self.add_link(link2)
-        self.network_implementation.set_link_interface_mapping(link1, "enp3s0", "enp3s0")
-        self.network_implementation.set_link_interface_mapping(link2, "wlp2s0", "wlp2s0")
+        # self.network_implementation.set_link_interface_mapping(link1, "enp3s0", "enp3s0")
+        # self.network_implementation.set_link_interface_mapping(link2, "wlp2s0", "wlp2s0")
         WireguardExtensionBuilder(host1, host2, link1.intf1, link2.intf2,
                                   "192.168.178.1", "192.168.178.2", "192.168.178.0/24") \
             .build()
@@ -57,6 +57,19 @@ def main(argv: list[str]):
     #    config = node.get_configuration_builder(topo).build()
     #    exporter = FileConfigurationExporter(config, node, "export")
     #    exporter.export()
+
+    # command = IpAddrSSHCommand(LinuxNode("testnode", NodeType.LINUX_ARCH, "localhost", 22, "~"))
+    # command.run()
+    # print(command.results)
+    # command = PingSSHCommand(LinuxNode("testnode", NodeType.LINUX_ARCH, "root@localhost", 22, "/home"),
+    #                         ipaddress.ip_address("127.0.0.1"), consumer=lambda x, y: print(str(x)+" -> "+str(y)))
+    # command.run()
+    # print(command.ping_results)
+    # command = LxcContainerListCommand(LinuxNode("testnode", NodeType.LINUX_ARCH, "root@localhost", 22, "/home"))
+    # command.run()
+    # print(command.results)
+    # engine = Engine("../testbed/work/current_topology.json")
+    # engine.update_all_status()
 
 
 if __name__ == '__main__':

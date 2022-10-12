@@ -1,17 +1,18 @@
-import ipaddress
-
 from ssh.output_consumer import OutputConsumer
 from ssh.ssh_command import SSHCommand
 from ssh.string_util import StringUtil
+from topo.node import Node
 from topo.service import Service
 
 
 class PingSSHCommand(SSHCommand, OutputConsumer):
-    def __init__(self, service: Service, target: ipaddress.ip_address, count: int or None = 4):
+    def __init__(self, source: Service or Node, target: str, count: int or None = 4, consumer=None):
         count_str = ""
         if count is not None:
             count_str = f"-c {str(count)}"
-        super().__init__(service.executor, service.command_prefix() + f"ping {count_str} {str(target)}")
+        super().__init__(source.executor if isinstance(source, Service) else source,
+                         (source.command_prefix() if isinstance(source, Service) else "") +
+                         f"ping {count_str} {str(target)}")
         self.add_consumer(self)
         self.ping_results: dict[int, (str or (int, float))] = {}
         self.packets_transmitted: int or None = None
@@ -21,6 +22,7 @@ class PingSSHCommand(SSHCommand, OutputConsumer):
         self.avg: float or None = None
         self.max: float or None = None
         self.mdev: float or None = None
+        self.consumer = consumer
 
     def on_out(self, output: str):
         args = output.split()
@@ -32,10 +34,14 @@ class PingSSHCommand(SSHCommand, OutputConsumer):
                 ttl = int(StringUtil.get_argument_starting_with(args, "ttl="))
                 time = float(StringUtil.get_argument_starting_with(args, "time="))
                 self.ping_results[icmp_seq] = (ttl, time)
+                if self.consumer:
+                    self.consumer(icmp_seq, (ttl, time))
             else:
                 # Not successful ping result
                 reason = output.split(f"icmp_seq={icmp_seq}")[1].strip()
                 self.ping_results[icmp_seq] = reason
+                if self.consumer:
+                    self.consumer(icmp_seq, reason)
         elif "packets transmitted" in output:
             self.packets_transmitted = int(args[0])
             self.packets_received = int(args[3])

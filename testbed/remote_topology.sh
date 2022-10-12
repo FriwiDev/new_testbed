@@ -1,17 +1,14 @@
 #!/bin/bash
 set -e
 
-# Usage: ./remote_topology.sh <action> [nodes]
-# action: start_all, stop_all, start, stop
-
 if [ ! $# -gt 0 ]
 then
-  echo "./remote_topology.sh start_all [nodes]"
-  echo "./remote_topology.sh stop_all [nodes]"
-  echo "./remote_topology.sh start [services]"
-  echo "./remote_topology.sh stop [services]"
-  echo "Nodes or services are either a list of arguments or missing to target all nodes or services."
-  echo "Start and stop can only be used after start_all has been used at least once."
+  echo "./remote_topology.sh <start_all|stop_all|destroy_all>"
+  echo "./remote_topology.sh <start|stop|destroy> <nodes|services>"
+  echo "./remote_topology.sh ping <service1> <service2>"
+  echo "./remote_topology.sh iperf <service1> <service2> [port] [interval] [time] [<client options> [| <server options>]]"
+  echo "./remote_topology.sh ifstat <service|node> <intf>"
+  echo "Nodes and services can be prefixed with \"node:\" or \"service:\" to resolve ambiguity."
   exit 1
 fi
 

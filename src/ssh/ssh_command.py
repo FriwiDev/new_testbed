@@ -11,7 +11,7 @@ class SSHCommand(LocalCommand):
     def run(self):
         cmd = "("
         if self.node.ssh_work_dir and self.node.ssh_work_dir != "":
-            cmd += f"echo \" cd \\\"{self.node.ssh_work_dir}\\\" && "
+            cmd += f"echo \" cd \\\"{self.node.ssh_work_dir}\\\"\" && "
         cmd += "echo \"" + self.command.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
         cmd += ") | " + self.node.get_ssh_base_command() + " \"/bin/bash\""
         # print(cmd)

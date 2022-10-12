@@ -13,8 +13,9 @@ class SSHConfigurationExporter(ConfigurationExporter):
     def __init__(self, configuration: Configuration, node: Node):
         super().__init__(configuration, node)
 
-    def start_all(self, topo: 'Topo'):
-        self._start_with_config(self.config, topo)
+    def start_node(self, topo: 'Topo', builder: 'ConfigurationBuilder'):
+        config = builder.build_base()
+        self._start_with_config(config, topo)
 
     def _start_with_config(self, config: Configuration, topo: 'Topo'):
         if len(config.start_instructions) > 0 or len(config.stop_instructions) > 0:
@@ -41,8 +42,9 @@ class SSHConfigurationExporter(ConfigurationExporter):
                     if cmd.exit_code is None or cmd.exit_code > 0:
                         raise Exception(f"Failed to run command: Exit code {cmd.exit_code}")
 
-    def stop_all(self, topo: 'Topo'):
-        self._stop_with_config(self.config, topo)
+    def stop_node(self, topo: 'Topo', builder: 'ConfigurationBuilder'):
+        config = builder.build_base()
+        self._stop_with_config(config, topo)
 
     def _stop_with_config(self, config: Configuration, topo: 'Topo'):
         if len(config.start_instructions) > 0 or len(config.stop_instructions) > 0:
@@ -55,12 +57,20 @@ class SSHConfigurationExporter(ConfigurationExporter):
                 cmd.add_consumer(PrintOutputConsumer())
                 cmd.run()
 
-    def start(self, topo: 'Topo', builder: 'ConfigurationBuilder', service: 'Service'):
+    def create(self, topo: 'Topo', builder: 'ConfigurationBuilder', service: 'Service'):
         config = builder.build_service(service)
         self._start_with_config(config, topo)
 
-    def stop(self, topo: 'Topo', builder: 'ConfigurationBuilder', service: 'Service'):
+    def remove(self, topo: 'Topo', builder: 'ConfigurationBuilder', service: 'Service'):
         config = builder.build_service(service)
+        self._stop_with_config(config, topo)
+
+    def start(self, topo: 'Topo', builder: 'ConfigurationBuilder', service: 'Service'):
+        config = builder.build_service_enable(service)
+        self._start_with_config(config, topo)
+
+    def stop(self, topo: 'Topo', builder: 'ConfigurationBuilder', service: 'Service'):
+        config = builder.build_service_enable(service)
         self._stop_with_config(config, topo)
 
     def copy(self, service: 'Service', file: PathLike, base: str):

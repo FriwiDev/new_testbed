@@ -9,7 +9,7 @@ class NodeType(Enum):
 
 
 class Node(ABC):
-    def __init__(self, name: str, node_type: NodeType, ssh_remote: str = None, ssh_port: int = 22,
+    def __init__(self, name: str, node_type: NodeType, ssh_remote: str, ssh_port: int = 22,
                  ssh_work_dir: str = None):
         self.name = name
         self.type = node_type

@@ -78,3 +78,37 @@ class NetworkUtils(ABC):
             Command(cmd),
             Command(f"{prefix}tc qdisc delete dev {dev_name} root netem")
         )
+
+    @classmethod
+    def format_bytes(cls, bytes: float) -> str:
+        suffix = ""
+        if bytes > 1024:
+            bytes /= 1024
+            suffix = "K"
+        if bytes > 1024:
+            bytes /= 1024
+            suffix = "M"
+        if bytes > 1024:
+            bytes /= 1024
+            suffix = "G"
+        if bytes > 1024:
+            bytes /= 1024
+            suffix = "T"
+        return format(bytes, '.1f') + " " + suffix
+
+    @classmethod
+    def format_thousands(cls, bytes: float) -> str:
+        suffix = ""
+        if bytes > 1000:
+            bytes /= 1000
+            suffix = "K"
+        if bytes > 1000:
+            bytes /= 1000
+            suffix = "M"
+        if bytes > 1000:
+            bytes /= 1000
+            suffix = "G"
+        if bytes > 1000:
+            bytes /= 1000
+            suffix = "T"
+        return format(bytes, '.1f') + " " + suffix

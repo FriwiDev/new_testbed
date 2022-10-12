@@ -18,3 +18,11 @@ class ConfigurationBuilder(object):
     @abstractmethod
     def build_service(self, service: 'Service') -> Configuration:
         pass
+
+    @abstractmethod
+    def build_service_enable(self, service: 'Service') -> Configuration:
+        pass
+
+    @abstractmethod
+    def build_base(self) -> Configuration:
+        pass
