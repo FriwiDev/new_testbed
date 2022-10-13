@@ -4,6 +4,7 @@ from abc import ABC
 
 from config.configuration import Command
 from network.network_utils import NetworkUtils
+from platforms.linux_server.linux_configuration_builder import LinuxConfigurationBuilder
 from platforms.linux_server.lxc_service import LXCService
 from topo.interface import Interface
 from topo.service import ServiceType
@@ -130,9 +131,8 @@ class OVSSwitch(Switch):
         opts += ' other-config:hwaddr=%s' % self.local_mac
         return opts
 
-    def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration'):
-        from platforms.linux_server.linux_configuration_builder import LinuxConfigurationBuilder
-        super().append_to_configuration(config_builder, config)
+    def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration', create: bool):
+        super().append_to_configuration(config_builder, config, create)
         if not isinstance(config_builder, LinuxConfigurationBuilder):
             raise Exception("Can only configure OVS on Linux nodes")
         # Stop the vswitch daemon, if already running
@@ -223,7 +223,7 @@ class OVSSwitch(Switch):
                 net = intf.networks[i]
                 if not net.is_loopback:
                     # For some reason route exists when it is added on stop - maybe auto generated
-                    config.add_command(Command(f"{self.lxc_prefix()} ip route del {str(net)} dev {intf.name}"),
+                    config.add_command(Command(f"{self.lxc_prefix()} ip route del {str(net)} dev {intf.name} || true"),
                                        Command())
         return
 

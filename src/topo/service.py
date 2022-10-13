@@ -54,12 +54,7 @@ class Service(ABC):
         return ret
 
     @abstractmethod
-    def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration'):
-        """Method to be implemented by every service definition"""
-        pass
-
-    @abstractmethod
-    def append_to_configuration_enable(self, config_builder: 'ConfigurationBuilder', config: 'Configuration'):
+    def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration', create: bool):
         """Method to be implemented by every service definition"""
         pass
 

@@ -14,7 +14,7 @@ class NamespaceService(Service, ABC):
         super().__init__(name, executor, service_type)
 
     @abstractmethod
-    def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration'):
+    def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration', create: bool):
         if not isinstance(config_builder, LinuxConfigurationBuilder):
             raise Exception("Can only execute NamespaceService on a linux node")
         # Add namespace itself

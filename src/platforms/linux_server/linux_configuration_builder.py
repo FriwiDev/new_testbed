@@ -16,17 +16,17 @@ class LinuxConfigurationBuilder(ConfigurationBuilder):
         # Generate our own containers
         for service in self.topo.services.values():
             if service.executor == self.node:
-                service.append_to_configuration(self, config)
+                service.append_to_configuration(self, config, True)
         return config
 
     def build_service(self, service: 'Service') -> Configuration:
         config = Configuration()
-        service.append_to_configuration(self, config)
+        service.append_to_configuration(self, config, True)
         return config
 
     def build_service_enable(self, service: 'Service') -> Configuration:
         config = Configuration()
-        service.append_to_configuration_enable(self, config)
+        service.append_to_configuration(self, config, False)
         return config
 
     def build_base(self) -> Configuration:

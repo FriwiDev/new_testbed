@@ -24,31 +24,33 @@ class LXCService(Service, ABC):
         self.files.append((local_file, container_dir))
 
     @abstractmethod
-    def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration'):
+    def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration', create: bool):
         if not isinstance(config_builder, LinuxConfigurationBuilder):
             raise Exception("Can only execute LXCService on a linux node")
         # Add container itself
-        config.add_command(Command(f"lxc init {self.image} {self.name}"),
-                           Command(f"lxc rm {self.name}"))
-        if self.cpu:
-            config.add_command(Command(f"lxc config set {self.name} limits.cpu {self.cpu}"),
-                               Command())
-        if self.memory:
-            config.add_command(Command(f"lxc config set {self.name} limits.memory {self.cpu}"),
-                               Command())
+        if create:
+            config.add_command(Command(f"lxc init {self.image} {self.name}"),
+                               Command(f"lxc rm {self.name}"))
+            if self.cpu:
+                config.add_command(Command(f"lxc config set {self.name} limits.cpu {self.cpu}"),
+                                   Command())
+            if self.memory:
+                config.add_command(Command(f"lxc config set {self.name} limits.memory {self.cpu}"),
+                                   Command())
 
-        # Copy files
-        for file, path in self.files:
-            # Make files available in configuration
-            config.add_file(self, file, path)
+            # Copy files
+            for file, path in self.files:
+                # Make files available in configuration
+                config.add_file(self, file, path)
 
         # Insert file copy placeholder
         config.add_command(Command(f"#filecopybeforelaunch {self.name}"),
                            Command())
 
-        # Set up early
-        for ext in self.extensions.values():
-            ext.append_to_configuration_pre_start(self.lxc_prefix(), config_builder, config)
+        if create:
+            # Set up early
+            for ext in self.extensions.values():
+                ext.append_to_configuration_pre_start(self.lxc_prefix(), config_builder, config)
 
         # Start container
         config.add_command(Command(f"lxc start {self.name}"),
@@ -71,8 +73,9 @@ class LXCService(Service, ABC):
             # 3: lxc name for device
             # 4: Device name on the guest
             if dev.name not in intf_blacklist:
-                config.add_command(Command(f"lxc network attach {dev.bind_name} {self.name} {dev.name} {dev.name}"),
-                                   Command(f"lxc network detach {dev.bind_name} {self.name} {dev.name}"))
+                if create:
+                    config.add_command(Command(f"lxc network attach {dev.bind_name} {self.name} {dev.name} {dev.name}"),
+                                       Command(f"lxc network detach {dev.bind_name} {self.name} {dev.name}"))
                 NetworkUtils.set_mac(config, dev.name, dev.mac_address, self.lxc_prefix())
                 NetworkUtils.set_up(config, dev.name, self.lxc_prefix())
                 for i in range(len(dev.ips)):
@@ -87,16 +90,6 @@ class LXCService(Service, ABC):
             ext.append_to_configuration(self.lxc_prefix(), config_builder, config)
 
         # Actual logic in the container will be provided by the implementation
-        pass
-
-    def append_to_configuration_enable(self, config_builder: 'ConfigurationBuilder', config: 'Configuration'):
-        # Start container
-        config.add_command(Command(f"lxc start {self.name}"),
-                           Command(f"lxc stop {self.name}"))
-
-        # Set up extensions
-        for ext in self.extensions.values():
-            ext.append_to_configuration(self.lxc_prefix(), config_builder, config)
         pass
 
     def lxc_prefix(self) -> str:
@@ -129,8 +122,8 @@ class SimpleLXCHost(LXCService):
     def __init__(self, name: str, executor: 'Node', cpu: str = None, memory: str = None):
         super().__init__(name, executor, ServiceType.NONE, "simple-host", cpu, memory)
 
-    def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration'):
-        super().append_to_configuration(config_builder, config)
+    def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration', create: bool):
+        super().append_to_configuration(config_builder, config, create)
         pass
 
     def is_switch(self) -> bool:

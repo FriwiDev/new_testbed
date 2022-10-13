@@ -38,8 +38,8 @@ class RyuController(Controller):
         self.script_path = script_path
         self.add_file(Path("defaults"), Path("/tmp"))  # TODO this does not work with external scripts
 
-    def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration'):
-        super().append_to_configuration(config_builder, config)
+    def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration', create: bool):
+        super().append_to_configuration(config_builder, config, create)
         if self.script_path is None:
             self.script_path = "/tmp/defaults/simple_switch.py"
         log = f'/tmp/controller_{self.name}.log'
@@ -53,7 +53,6 @@ class RyuController(Controller):
                 Command(self.lxc_prefix() +
                         f"ryu-manager --verbose {self.script_path} &> {log} &"),
                 Command(self.lxc_prefix() + "killall ryu-manager"))
-        pass
 
     def is_switch(self) -> bool:
         return False
