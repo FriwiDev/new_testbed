@@ -10,6 +10,7 @@ from ssh.ip_addr_ssh_command import IpAddrSSHCommand, InterfaceState
 from ssh.iperf_command import IperfSSHCommand, IperfClientSSHCommand
 from ssh.lxc_container_command import LxcContainerListCommand, LXCContainerStatus
 from ssh.ping_ssh_command import PingSSHCommand
+from ssh.tc_qdisc_command import TcQdiscSSHCommand
 from topo.node import Node, NodeType
 from topo.service import Service
 from topo.topo import Topo, TopoUtil
@@ -188,6 +189,7 @@ class Engine(object):
     def update_interface_status(self, component: EngineNode or EngineService):
         if component.status == EngineComponentStatus.RUNNING:
             command = self.cmd_ip_addr(component.component)
+            tcqdisc = self.cmd_tc_qdisc(component.component)
             for intf in component.intfs.values():
                 found = False
                 for name, state, addr, ipaddr in command.results.values():
@@ -200,6 +202,10 @@ class Engine(object):
                         intf.interface_state = EngineInterfaceState[state.name]
                         intf.live_mac = addr
                         intf.live_ips = ipaddr
+                        if name in tcqdisc.results.keys():
+                            intf.tcqdisc = tcqdisc.results[name]
+                        else:
+                            intf.tcqdisc = (0, 0, 0, 0, 0)
                         break
                 if not found:
                     intf.status = EngineComponentStatus.REMOVED
@@ -212,6 +218,8 @@ class Engine(object):
                 intf.interface_state = EngineInterfaceState.UNKNOWN
                 intf.live_mac = None
                 intf.live_ips = []
+                intf.tcqdisc = (0, 0, 0, 0, 0)
+                intf.ifstat = None
         pass
 
     def check_node_reachable(self, node: Node) -> EngineComponentStatus:
@@ -234,6 +242,11 @@ class Engine(object):
 
     def cmd_ifstat(self, source: Service or Node, timeout: int = 5, consumer=None) -> IfstatSSHCommand:
         command = IfstatSSHCommand(source, timeout, consumer)
+        command.run()
+        return command
+
+    def cmd_tc_qdisc(self, source: Service or Node) -> TcQdiscSSHCommand:
+        command = TcQdiscSSHCommand(source)
         command.run()
         return command
 

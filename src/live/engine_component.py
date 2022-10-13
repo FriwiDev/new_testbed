@@ -54,6 +54,7 @@ class EngineInterface(EngineComponent):
         self.live_mac: str or None = None
         self.interface_state: EngineInterfaceState = EngineInterfaceState.UNKNOWN
         self.ifstat: (int, int) or None = None
+        self.tcqdisc: (int, int, float, float, float) = (0, 0, 0, 0, 0)
 
     def create(self):
         raise Exception("Creating is unsupported on interface components")

@@ -76,7 +76,7 @@ class NetworkUtils(ABC):
 
         config.add_command(
             Command(cmd),
-            Command(f"{prefix}tc qdisc delete dev {dev_name} root netem")
+            Command(f"{prefix}tc qdisc delete dev {dev_name} root netem || true")
         )
 
     @classmethod

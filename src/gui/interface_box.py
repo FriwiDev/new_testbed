@@ -79,6 +79,21 @@ class InterfaceBox(Box):
                                   f"{ip}/{net.prefixlen}", font="Arial 8",
                                   fill=text_color)
             line += 1
+        if self.intf.tcqdisc[0] > 0:
+            qdisc = f" Delay<{self.format_micro_seconds(self.intf.tcqdisc[0])}, " \
+                    f"{self.format_micro_seconds(self.intf.tcqdisc[1])}, " \
+                    f"{self.format_percent(self.intf.tcqdisc[2])}>"
+            self.view.create_text(abs_x + self.INTERFACE_DEBUG_WIDTH / 2, abs_y + line * 14,
+                                  qdisc, font="Arial 8",
+                                  fill=text_color)
+            line += 1
+        if self.intf.tcqdisc[3] > 0:
+            qdisc = f" Loss<{self.format_percent(self.intf.tcqdisc[3])}, " \
+                    f"{self.format_percent(self.intf.tcqdisc[4])}>"
+            self.view.create_text(abs_x + self.INTERFACE_DEBUG_WIDTH / 2, abs_y + line * 14,
+                                  qdisc, font="Arial 8",
+                                  fill=text_color)
+            line += 1
         line += 1
         if self.intf.interface_state != InterfaceState.DOWN:
             if self.intf.ifstat:
@@ -88,3 +103,17 @@ class InterfaceBox(Box):
                                       f"TX: {NetworkUtils.format_thousands(tx_data)}B", font="Arial 8",
                                       fill=text_color)
                 line += 1
+
+    def format_micro_seconds(self, us: int) -> str:
+        if us > 1000:
+            us /= 1000
+            if us > 1000:
+                usf = float(us) / 1000
+                return format(usf, ".1f").removesuffix(".0") + "s"
+            else:
+                return str(us) + "ms"
+        else:
+            return str(us) + "us"
+
+    def format_percent(self, per: float) -> str:
+        return format(per * 100, ".1f").removesuffix(".0") + "%"
