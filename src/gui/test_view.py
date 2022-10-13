@@ -9,7 +9,8 @@ class TestView(View):
         self.button1 = self.add_button(0, 0, "Testbutton", self.image, lambda: self.button1.destroy())
 
     def on_resize(self, width: int, height: int):
-        self.repaint()
+        # self.repaint()
+        pass
 
     def on_paint(self):
         offsx = self.width / 2 - 200

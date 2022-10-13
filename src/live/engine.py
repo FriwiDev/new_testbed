@@ -1,4 +1,5 @@
 import ipaddress
+import time
 
 from config.export.ssh_exporter import SSHConfigurationExporter
 from live.engine_component import EngineNode, EngineComponentStatus, EngineService, EngineInterfaceState
@@ -22,32 +23,71 @@ class Engine(object):
         self.nodes: dict[str, EngineNode] = {}
         for node in topo.nodes.values():
             self.nodes[node.name] = EngineNode(self, node, topo)
+        self.stop_updating = False
+
+    def continuous_update(self):
+        while not self.stop_updating:
+            self.update_all_status()
+            time.sleep(10)
+
+    def continuous_ifstat(self, subject: EngineService or EngineNode):
+        while not self.stop_updating:
+            start = time.time()
+            if subject.status == EngineComponentStatus.RUNNING:
+                self.cmd_ifstat(subject.component, 5, lambda itf, rx, tx: self._set_ifstat_data(subject, itf, rx, tx))
+            stop = time.time()
+            time.sleep((start - stop + 10) % 1)
+
+    def get_status(self, subject: Service or Node) -> EngineComponentStatus:
+        if isinstance(subject, Node):
+            if subject.name in self.nodes.keys():
+                return self.nodes[subject.name].status
+            return EngineComponentStatus.UNREACHABLE
+        elif isinstance(subject, Service):
+            if subject.executor.name in self.nodes.keys():
+                node = self.nodes[subject.executor.name]
+                if subject.name in node.services.keys():
+                    return node.services[subject.name].status
+            return EngineComponentStatus.UNREACHABLE
+        else:
+            raise Exception("Subject is neither service nor node")
+
+    def _set_ifstat_data(self, subject: Service or Node, itf: str, rx: int, tx: int):
+        if itf in subject.intfs.keys():
+            subject.intfs[itf].ifstat = (rx, tx)
 
     def start_all(self):
         for node in self.nodes.values():
             if node.status != EngineComponentStatus.UNREACHABLE:
-                self.start(node)
-                for service in node.services:
-                    self.start(service)
+                self.start(node.component)
+                for service in node.services.values():
+                    self.start(service.component)
 
     def stop_all(self):
         for node in self.nodes.values():
             if node.status != EngineComponentStatus.UNREACHABLE:
-                for service in node.services:
-                    self.stop(service)
-                self.stop(node)
+                for service in node.services.values():
+                    self.stop(service.component)
+                self.stop(node.component)
 
     def destroy_all(self):
         for node in self.nodes.values():
             if node.status != EngineComponentStatus.UNREACHABLE:
-                for service in node.services:
-                    self.destroy(service)
-                self.destroy(node)
+                for service in node.services.values():
+                    self.destroy(service.component)
+                self.destroy(node.component)
 
     def start(self, component: Node or Service):
         if isinstance(component, Node):
             node = self.nodes[component.name]
             if node.status != EngineComponentStatus.UNREACHABLE:
+                is_already_created = False
+                for service in node.services.values():
+                    if service.status == EngineComponentStatus.RUNNING or service.status == EngineComponentStatus.STOPPED:
+                        is_already_created = True
+                        break
+                if is_already_created:
+                    return
                 config = node.component.get_configuration_builder(self.topo).build()
                 exporter = SSHConfigurationExporter(config, node.component)
                 exporter.start_node(self.topo, node.component.get_configuration_builder(self.topo))
@@ -177,8 +217,8 @@ class Engine(object):
         else:
             return EngineComponentStatus.RUNNING
 
-    def cmd_ifstat(self, source: Service or Node) -> IfstatSSHCommand:
-        command = IfstatSSHCommand(source)
+    def cmd_ifstat(self, source: Service or Node, timeout: int = 5, consumer=None) -> IfstatSSHCommand:
+        command = IfstatSSHCommand(source, timeout, consumer)
         command.run()
         return command
 

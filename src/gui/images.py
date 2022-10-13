@@ -9,5 +9,5 @@ class Images(ABC):
 
     @classmethod
     def load(cls):
-        cls.router = ViewUtils.load_image("../../res/images/router.png")
-        cls.layer_3_switch = ViewUtils.load_image("../../res/images/layer-3-switch.png")
+        cls.router = ViewUtils.load_image("../res/images/router.png")
+        cls.layer_3_switch = ViewUtils.load_image("../res/images/layer-3-switch.png")

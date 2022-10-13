@@ -111,17 +111,7 @@ def main(argv: list[str]):
             exit(1)
         while True:
             start = time.time()
-            cmd = engine.cmd_ifstat(executor)
-            if i.name in cmd.results:
-                rx_pk, tx_pk, rx_data, tx_data, rx_err, tx_err, rx_over, tx_coll = cmd.results[i.name]
-                print(f"{i.name}: rx_pk={NetworkUtils.format_thousands(rx_pk)} "
-                      f"tx_pk={NetworkUtils.format_thousands(tx_pk)} "
-                      f"rx_data={NetworkUtils.format_thousands(rx_data)} "
-                      f"tx_data={NetworkUtils.format_thousands(tx_data)} "
-                      f"rx_err={NetworkUtils.format_thousands(rx_err)} "
-                      f"tx_err={NetworkUtils.format_thousands(tx_err)} "
-                      f"rx_over={NetworkUtils.format_thousands(rx_over)} "
-                      f"tx_coll={NetworkUtils.format_thousands(tx_coll)}")
+            engine.cmd_ifstat(executor, 5, lambda itf, rx, tx: print_intf(i.name, itf, rx, tx))
             stop = time.time()
             time.sleep((start - stop + 10) % 1)
     else:
@@ -188,6 +178,11 @@ def resolve_services(argv: list[str], engine: Engine) -> list[Service]:
             print(f"Neither a valid node nor service: {s}")
             exit(1)
     return services
+
+
+def print_intf(name, intf, rx, tx):
+    if name == intf:
+        print(f"Read: {NetworkUtils.format_bytes(rx)}Bytes - Write: {NetworkUtils.format_bytes(tx)}Bytes")
 
 
 if __name__ == '__main__':

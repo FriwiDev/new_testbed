@@ -1,5 +1,7 @@
 from ipaddress import ip_address, ip_network
 
+from gui.gui_data_attachment import GuiDataAttachment
+
 
 class Interface(object):
     def __init__(self, name: str, mac_address: str = None):
@@ -11,6 +13,7 @@ class Interface(object):
         self.bind_name = None  # Used by network topologies to cache bridge names
         self.other_end_service = None
         self.other_end = None
+        self.gui_data: GuiDataAttachment = GuiDataAttachment()
 
     def add_ip(self, ip: str or ip_address, network: str or ip_network) -> 'Interface':
         if isinstance(ip, str):
@@ -33,7 +36,8 @@ class Interface(object):
             'ips': ip_str,
             'networks': network_str,
             'mac_addr': self.mac_address,
-            'bind_name': self.bind_name
+            'bind_name': self.bind_name,
+            'gui_data': self.gui_data.to_dict()
         }
 
     @classmethod
@@ -47,4 +51,5 @@ class Interface(object):
         for network in in_dict['networks']:
             ret.networks.append(ip_network(network))
         ret.bind_name = in_dict['bind_name']
+        ret.gui_data = GuiDataAttachment.from_dict(in_dict['gui_data'])
         return ret

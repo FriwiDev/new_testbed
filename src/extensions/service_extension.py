@@ -5,6 +5,7 @@ class ServiceExtension(ABC):
     def __init__(self, name: str, service: 'Service'):
         self.name = name
         self.service = service
+        self.claimed_interfaces: list[str] = []
 
     def to_dict(self) -> dict:
         return {
@@ -21,5 +22,11 @@ class ServiceExtension(ABC):
 
     @abstractmethod
     def append_to_configuration(self, prefix: str, config_builder: 'ConfigurationBuilder', config: 'Configuration'):
+        """Method to be implemented by every service extension definition"""
+        pass
+
+    @abstractmethod
+    def append_to_configuration_pre_start(self, prefix: str, config_builder: 'ConfigurationBuilder',
+                                          config: 'Configuration'):
         """Method to be implemented by every service extension definition"""
         pass

@@ -27,6 +27,8 @@ class Box(object):
         self._dragging_anchor = None  # x, y
         self.allowed_directions = [Box.NORTH, Box.WEST, Box.SOUTH, Box.EAST]
 
+        self.fill = 'white'
+
     def add_line(self, end: 'Box', dash: tuple[int, int] or None):
         if self not in end.remote_line_endings:
             end.remote_line_endings.append(self)
@@ -50,7 +52,12 @@ class Box(object):
     def reapply_line_directions(self):
         new_lines = []
         for box, dash, own_dirs, target_dirs in self.lines:
-            new_lines.append((box, dash, self.allowed_directions.copy(), box.allowed_directions.copy()))
+            if box.parent == self.parent:
+                # Invert for box-internal connections
+                new_lines.append((box, dash, [(x + 2) % 4 for x in self.allowed_directions.copy()],
+                                  [(x + 2) % 4 for x in box.allowed_directions.copy()]))
+            else:
+                new_lines.append((box, dash, self.allowed_directions.copy(), box.allowed_directions.copy()))
         self.lines = new_lines
 
     def _set_view(self, view: 'View'):
@@ -69,14 +76,16 @@ class Box(object):
     def on_resize(self, width: int, height: int):
         self.width = width
         self.height = height
-        self.view.repaint()
+        for box in self.subboxes:
+            box.available_bounding_boxes = [(0, 0, width, height, 0)]
+        # self.view.repaint()
         pass
 
     def on_paint(self, offs_x: int, offs_y: int):
         abs_x = self.x + offs_x
         abs_y = self.y + offs_y
         # Draw box itself
-        self.view.canvas.create_rectangle(abs_x, abs_y, abs_x + self.width, abs_y + self.height, fill='white')
+        self.view.canvas.create_rectangle(abs_x, abs_y, abs_x + self.width, abs_y + self.height, fill=self.fill)
         # Draw subboxes
         for box in self.subboxes:
             box.on_paint(abs_x, abs_y)
@@ -111,7 +120,10 @@ class Box(object):
         pass
 
     def on_click(self, button: int, x: int, y: int, root_x: int, root_y: int):
-        pass
+        for box in self.subboxes:
+            if box._is_in_box(x, y):
+                box.on_click(button, x - box.x, y - box.y, root_x, root_y)
+                return
 
     def on_mouse_move(self, x: int, y: int, root_x: int, root_y: int):
         rel_x = x - self.x
@@ -254,7 +266,7 @@ class Box(object):
         self._resizing = None
         self._dragging_anchor = None
 
-        self.view.repaint()
+        # self.view.repaint()
 
     def _is_close_to_box(self, x: int, y: int):
         rad = 8

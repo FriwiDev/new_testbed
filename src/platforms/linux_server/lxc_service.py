@@ -46,6 +46,10 @@ class LXCService(Service, ABC):
         config.add_command(Command(f"#filecopybeforelaunch {self.name}"),
                            Command())
 
+        # Set up early
+        for ext in self.extensions.values():
+            ext.append_to_configuration_pre_start(self.lxc_prefix(), config_builder, config)
+
         # Start container
         config.add_command(Command(f"lxc start {self.name}"),
                            Command(f"lxc stop {self.name}"))
@@ -54,6 +58,11 @@ class LXCService(Service, ABC):
         config.add_command(Command(f"#filecopyafterlaunch {self.name}"),
                            Command())
 
+        intf_blacklist = []
+        for ext in self.extensions.values():
+            for i in ext.claimed_interfaces:
+                intf_blacklist.append(i)
+
         # Connect container to bridge interfaces on host (pre created by the network topology)
         for dev in self.intfs:
             # Arguments in order:
@@ -61,12 +70,13 @@ class LXCService(Service, ABC):
             # 2: Container name
             # 3: lxc name for device
             # 4: Device name on the guest
-            config.add_command(Command(f"lxc network attach {dev.bind_name} {self.name} {dev.name} {dev.name}"),
-                               Command(f"lxc network detach {dev.bind_name} {self.name} {dev.name}"))
-            NetworkUtils.set_mac(config, dev.name, dev.mac_address, self.lxc_prefix())
-            NetworkUtils.set_up(config, dev.name, self.lxc_prefix())
-            for i in range(len(dev.ips)):
-                NetworkUtils.add_ip(config, dev.name, dev.ips[i], dev.networks[i], self.lxc_prefix())
+            if dev.name not in intf_blacklist:
+                config.add_command(Command(f"lxc network attach {dev.bind_name} {self.name} {dev.name} {dev.name}"),
+                                   Command(f"lxc network detach {dev.bind_name} {self.name} {dev.name}"))
+                NetworkUtils.set_mac(config, dev.name, dev.mac_address, self.lxc_prefix())
+                NetworkUtils.set_up(config, dev.name, self.lxc_prefix())
+                for i in range(len(dev.ips)):
+                    NetworkUtils.add_ip(config, dev.name, dev.ips[i], dev.networks[i], self.lxc_prefix())
         # Set up routes (if we are not a switch - switches are smarter)
         if not self.is_switch():
             for ip, via in self.build_routing_table().items():
@@ -83,6 +93,10 @@ class LXCService(Service, ABC):
         # Start container
         config.add_command(Command(f"lxc start {self.name}"),
                            Command(f"lxc stop {self.name}"))
+
+        # Set up extensions
+        for ext in self.extensions.values():
+            ext.append_to_configuration(self.lxc_prefix(), config_builder, config)
         pass
 
     def lxc_prefix(self) -> str:

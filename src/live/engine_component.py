@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from ipaddress import ip_network, ip_address
 
+from extensions.macvlan_extension import MacVlanServiceExtension
+from extensions.wireguard_extension import WireguardServiceExtension
 from topo.interface import Interface
 from topo.node import Node
 from topo.service import Service
@@ -46,10 +48,12 @@ class EngineComponent(ABC):
 class EngineInterface(EngineComponent):
     def __init__(self, engine: 'Engine', component: Interface, parent: 'EngineNode' or 'EngineService'):
         super().__init__(engine, component)
+        self.extension = None
         self.parent = parent
         self.live_ips: list[(ip_address, ip_network)] = []
         self.live_mac: str or None = None
         self.interface_state: EngineInterfaceState = EngineInterfaceState.UNKNOWN
+        self.ifstat: (int, int) or None = None
 
     def create(self):
         raise Exception("Creating is unsupported on interface components")
@@ -74,6 +78,11 @@ class EngineService(EngineComponent):
         self.intfs: dict[str, EngineInterface] = {}
         for intf in component.intfs:
             self.intfs[intf.name] = EngineInterface(engine, intf, self)
+        for ext in component.extensions.values():
+            if isinstance(ext, WireguardServiceExtension):
+                self.intfs[ext.dev_name].extension = ext
+            elif isinstance(ext, MacVlanServiceExtension):
+                self.intfs["eth0"].extension = ext
 
     def create(self):
         raise Exception("Creating is unsupported on service components")

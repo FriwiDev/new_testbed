@@ -14,7 +14,6 @@ class SSHCommand(LocalCommand):
             cmd += f"echo \" cd \\\"{self.node.ssh_work_dir}\\\"\" && "
         cmd += "echo \"" + self.command.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
         cmd += ") | " + self.node.get_ssh_base_command() + " \"/bin/bash\""
-        # print(cmd)
         self._exec(cmd)
 
 

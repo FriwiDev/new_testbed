@@ -57,7 +57,7 @@ lxc start ryu
 sleep 3 #Allow container to perform dhcp and establish a connection
 lxc exec ryu -- apt update
 lxc exec ryu -- apt upgrade -y
-lxc exec ryu -- apt install -y iputils-ping net-tools iperf3 python3-ryu wireguard tcpdump
+lxc exec ryu -- apt install -y iputils-ping net-tools iperf3 python3-ryu wireguard tcpdump ifstat
 lxc exec ryu -- apt clean
 lxc exec ryu -- apt autoremove -y
 lxc stop ryu
@@ -80,7 +80,7 @@ sleep 3 #Allow container to perform dhcp and establish a connection
 lxc exec ovs -- apt update
 lxc exec ovs -- apt upgrade -y
 sysctl -w kernel.dmesg_restrict=0 # OVS installer uses dmesg in container
-lxc exec ovs -- apt install -y iputils-ping net-tools iperf3 wireguard tcpdump
+lxc exec ovs -- apt install -y iputils-ping net-tools iperf3 wireguard tcpdump ifstat
 lxc exec ovs -- apt install -y openvswitch-switch || true # Installation will fail due to hostname service :/
 lxc exec ovs -- rm /etc/systemd/system/openvswitch-switch.service.requires/ovs-record-hostname.service # remove requirement
 lxc exec ovs -- systemctl disable openvswitch-switch.service
@@ -106,7 +106,7 @@ lxc start simple-host
 sleep 3 #Allow container to perform dhcp and establish a connection
 lxc exec simple-host -- apt update
 lxc exec simple-host -- apt upgrade -y
-lxc exec simple-host -- apt install -y iputils-ping net-tools iperf3 wireguard tcpdump
+lxc exec simple-host -- apt install -y iputils-ping net-tools iperf3 wireguard tcpdump ifstat
 lxc exec simple-host -- apt clean
 lxc exec simple-host -- apt autoremove -y
 lxc stop simple-host

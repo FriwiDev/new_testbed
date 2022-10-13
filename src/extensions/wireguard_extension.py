@@ -21,6 +21,8 @@ class WireguardServiceExtension(ServiceExtension):
         self.remote_service_name: str = None
         self.remote_wireguard_extension: 'WireguardServiceExtension' = None
         self.remote_wireguard_extension_name: str = None
+        if self.dev_name:
+            self.claimed_interfaces.append(self.dev_name)
 
     def to_dict(self) -> dict:
         # Merge own data into super class data
@@ -49,6 +51,7 @@ class WireguardServiceExtension(ServiceExtension):
         ret.port = int(in_dict['port'])
         ret.remote_service_name = in_dict['remote_service']
         ret.remote_wireguard_extension_name = in_dict['remote_wireguard_extension']
+        ret.claimed_interfaces.append(ret.dev_name)
         return ret
 
     def gen_keys(self):
@@ -77,3 +80,7 @@ class WireguardServiceExtension(ServiceExtension):
                                    f"endpoint {str(remote_ip)}:{self.remote_wireguard_extension.port}"),
                            Command())
         NetworkUtils.set_up(config, self.dev_name, prefix)
+
+    def append_to_configuration_pre_start(self, prefix: str, config_builder: 'ConfigurationBuilder',
+                                          config: 'Configuration'):
+        pass

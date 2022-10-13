@@ -1,6 +1,7 @@
 import ipaddress
 
 from extensions.wireguard_extension import WireguardServiceExtension
+from topo.interface import Interface
 
 
 class WireguardExtensionBuilder(object):
@@ -37,6 +38,7 @@ class WireguardExtensionBuilder(object):
         ext1.port = self.port1
         ext1.remote_service = self.service2
         ext1.remote_service_name = self.service2.name
+        self.service1.intfs.append(Interface(self.dev_name1).add_ip(self.ip1, self.network))
 
         ext2 = WireguardServiceExtension(self.dev_name2, self.service2)
         ext2.dev_name = self.dev_name2
@@ -46,6 +48,7 @@ class WireguardExtensionBuilder(object):
         ext2.port = self.port2
         ext2.remote_service = self.service1
         ext2.remote_service_name = self.service1.name
+        self.service2.intfs.append(Interface(self.dev_name2).add_ip(self.ip2, self.network))
 
         ext1.remote_wireguard_extension = ext2
         ext1.remote_wireguard_extension_name = ext2.name

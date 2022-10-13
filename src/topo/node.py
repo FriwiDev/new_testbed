@@ -1,6 +1,7 @@
 from abc import abstractmethod, ABC
 from enum import Enum
 
+from gui.gui_data_attachment import GuiDataAttachment
 from topo.interface import Interface
 
 
@@ -18,6 +19,7 @@ class Node(ABC):
         self.current_virtual_device_num = 0
         self.ssh_remote = ssh_remote
         self.ssh_port = ssh_port
+        self.gui_data: GuiDataAttachment = GuiDataAttachment()
 
     def get_ssh_base_command(self) -> str:
         if not self.ssh_remote:
@@ -78,7 +80,8 @@ class Node(ABC):
             'ssh_port': str(self.ssh_port),
             'ssh_work_dir': self.ssh_work_dir,
             'current_virtual_device_num': str(self.current_virtual_device_num),
-            'intfs': intfs
+            'intfs': intfs,
+            'gui_data': self.gui_data.to_dict()
         }
 
     @classmethod
@@ -90,4 +93,5 @@ class Node(ABC):
         ret.intfs.clear()
         for intf in in_dict['intfs']:
             ret.intfs.append(Interface.from_dict(intf))
+        ret.gui_data = GuiDataAttachment.from_dict(in_dict['gui_data'])
         return ret

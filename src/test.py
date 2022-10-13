@@ -1,5 +1,6 @@
 import sys
 
+from extensions.macvlan_extension_builder import MacVlanExtensionBuilder
 from extensions.wireguard_extension_builder import WireguardExtensionBuilder
 from network.default_network_implementation import DefaultNetworkImplementation
 from platforms.linux_server.linux_node import LinuxNode
@@ -41,6 +42,9 @@ class TestTopo(Topo):
         WireguardExtensionBuilder(host1, host2, link1.intf1, link2.intf2,
                                   "192.168.178.1", "192.168.178.2", "192.168.178.0/24") \
             .build()
+        MacVlanExtensionBuilder(node.get_interface("enp3s0"), host1,
+                                "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC1ykQLXsgAujgAn9Sy9RbwGjsBvOzDuXmxOcSSjZ75D1nomjA9Hcc4NnA0+GK1kW69GbsZ+zPlbnW+moL6B6uelA5efb7lCpqS9SMaxQbtrE9jrNP68zYrqz3EcPU9niB7Bge0DGCspvg8x+YoLyy1+eVVVN2809SrNIfIjELwtiJb7rSAm0JiABtU8w5Q6lrbY4zpIZxfs2F7C/gc9UpuCSje5ujELBxTDHXK2eX7C0w4KJtJvOp0SVHluZwWu3jcpVyuQM9TQiwyAkD+ai37mET2cvYGmXaGSWlS02ALgA63LxNQQQ8s15PKhdzCuPtg/lv1UV6FCUrISxH08bfytI4Z4FTTb3Xrcqn/HmmUDYWarcscnifHfa9K+LPpfchJLZdzP0TC9+cbne9BfznJTokP6UK++ddbZraNf08zeJXhgDRwztYD4akfLHm+gSsB0tljrJLqz0DtxJTwpeDK8P+D3nadJcHS7JEKx1dnm1syesbOVc1zSXDTxe4Gj6M=") \
+            .build()
         pass
 
 
@@ -48,28 +52,6 @@ def main(argv: list[str]):
     topo = TestTopo()
     # Serialize to stdout
     print(topo.export_topo())
-    # TODO remove
-    # Serialize and deserialize
-    # print(Topo.import_topo(topo.export_topo()).export_topo())
-    # Export to file
-    # for name in topo.nodes:
-    #    node = topo.nodes[name]
-    #    config = node.get_configuration_builder(topo).build()
-    #    exporter = FileConfigurationExporter(config, node, "export")
-    #    exporter.export()
-
-    # command = IpAddrSSHCommand(LinuxNode("testnode", NodeType.LINUX_ARCH, "localhost", 22, "~"))
-    # command.run()
-    # print(command.results)
-    # command = PingSSHCommand(LinuxNode("testnode", NodeType.LINUX_ARCH, "root@localhost", 22, "/home"),
-    #                         ipaddress.ip_address("127.0.0.1"), consumer=lambda x, y: print(str(x)+" -> "+str(y)))
-    # command.run()
-    # print(command.ping_results)
-    # command = LxcContainerListCommand(LinuxNode("testnode", NodeType.LINUX_ARCH, "root@localhost", 22, "/home"))
-    # command.run()
-    # print(command.results)
-    # engine = Engine("../testbed/work/current_topology.json")
-    # engine.update_all_status()
 
 
 if __name__ == '__main__':

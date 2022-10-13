@@ -3,6 +3,7 @@ from abc import abstractmethod, ABC
 from enum import Enum
 
 from extensions.service_extension import ServiceExtension
+from gui.gui_data_attachment import GuiDataAttachment
 from topo.interface import Interface
 from topo.node import Node
 from topo.util import ClassUtil
@@ -19,6 +20,7 @@ class Service(ABC):
         self.executor = executor
         self.intfs: list[Interface] = []
         self.extensions: dict[str, ServiceExtension] = {}
+        self.gui_data: GuiDataAttachment = GuiDataAttachment()
 
     def configure(self, topo: 'Topo'):
         """To be implemented by services. Will execute when the topology is fully loaded."""
@@ -35,7 +37,8 @@ class Service(ABC):
             'executor': self.executor.name,
             'type': self.type.name,
             'intfs': [intf.to_dict() for intf in self.intfs],
-            'service_extensions': [ext.to_dict() for ext in self.extensions.values()]
+            'service_extensions': [ext.to_dict() for ext in self.extensions.values()],
+            'gui_data': self.gui_data.to_dict()
         }
 
     @classmethod
@@ -47,6 +50,7 @@ class Service(ABC):
             ret.intfs.append(Interface.from_dict(intf))
         for ext in in_dict['service_extensions']:
             ret.extensions[ext['name']] = (ClassUtil.get_class_from_dict(ext).from_dict(topo, ext, ret))
+        ret.gui_data = GuiDataAttachment.from_dict(in_dict['gui_data'])
         return ret
 
     @abstractmethod
@@ -132,11 +136,12 @@ class Service(ABC):
         # Now iterate over all other interfaces and find if there is a shorter path via another way
         for other in self.intfs:
             if other != intf:
-                other_reachable = other.other_end_service.get_reachable_ips_via_for_other(other.other_end)
-                for ip, h in other_reachable.items():
-                    if ip in reachable and reachable[ip] > h:
-                        # There is a better way to reach the desired ip
-                        del reachable[ip]
+                if other.other_end_service:
+                    other_reachable = other.other_end_service.get_reachable_ips_via_for_other(other.other_end)
+                    for ip, h in other_reachable.items():
+                        if ip in reachable and reachable[ip] > h:
+                            # There is a better way to reach the desired ip
+                            del reachable[ip]
         return reachable
 
     def is_local_ip(self, ip: ipaddress) -> bool:

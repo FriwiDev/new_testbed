@@ -11,11 +11,11 @@ class MainView(View):
 
     def set_box(self, box: Box):
         self.box = box
-        self.repaint()
+        # self.repaint()
 
     def on_resize(self, width: int, height: int):
         self.box.on_resize(width, height)
-        self.repaint()
+        # self.repaint()
 
     def on_paint(self):
         self.box._set_view(self)
@@ -60,8 +60,8 @@ def main():
     box.add_box(system_box)
     box1.lines.append(
         (box2, (4, 2), [Box.NORTH, Box.WEST, Box.SOUTH, Box.EAST], [Box.NORTH, Box.WEST, Box.SOUTH, Box.EAST]))
-    MainView(box)
-    View.run_ui_loop()
+    view = MainView(box)
+    view.run_ui_loop()
 
 
 if __name__ == '__main__':

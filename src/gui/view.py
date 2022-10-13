@@ -60,6 +60,7 @@ class View(ABC):
         self.canvas.delete("all")
         self.on_paint()
         self.canvas.update()
+        self.root.after(15, self.repaint)
 
     def close(self):
         self._unbind()
@@ -171,6 +172,6 @@ class View(ABC):
     def set_cursor(self, cursor: str):
         self.canvas.config(cursor=cursor)
 
-    @classmethod
-    def run_ui_loop(cls):
-        cls.root.mainloop()
+    def run_ui_loop(self):
+        self.root.after(100, self.repaint)
+        self.root.mainloop()

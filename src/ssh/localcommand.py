@@ -43,9 +43,7 @@ class LocalCommand(object):
                 return
 
     def abort(self):
-        print("Abort!")
         if self.process:
-            print("In abort...")
             self.process.send_signal(signal.SIGINT)
 
     def encapsule(self, cmd: str):
