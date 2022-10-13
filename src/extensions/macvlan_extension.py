@@ -27,7 +27,7 @@ class MacVlanServiceExtension(ServiceExtension):
             config.add_command(Command(f"{prefix} bash -c \"echo \\\"{self.ssh_public_key}\\\" "
                                        f"> {filename}\""),
                                Command())
-            config.add_command(Command(f"{prefix} systemctl restart sshd"),
+            config.add_command(Command(f"{prefix} cd /root && /usr/sbin/sshd -D -f /etc/ssh/sshd_config &"),
                                Command())
 
     def append_to_configuration_pre_start(self, prefix: str, config_builder: 'ConfigurationBuilder',

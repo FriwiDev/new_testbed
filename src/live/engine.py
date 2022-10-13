@@ -1,6 +1,7 @@
 import ipaddress
 import time
 
+from config.configuration import Configuration
 from config.export.ssh_exporter import SSHConfigurationExporter
 from live.engine_component import EngineNode, EngineComponentStatus, EngineService, EngineInterfaceState
 from platforms.linux_server.linux_node import LinuxNode
@@ -96,6 +97,8 @@ class Engine(object):
                 raise Exception(f"Can not start node {component.name} because it is currently unreachable")
         elif isinstance(component, Service):
             service = self.nodes[component.executor.name].services[component.name]
+            if self.nodes[component.executor.name].status != EngineComponentStatus.RUNNING:
+                self.start(component.executor)
             if service.status == EngineComponentStatus.REMOVED:
                 config = component.executor.get_configuration_builder(self.topo).build()
                 exporter = SSHConfigurationExporter(config, component.executor)
@@ -116,6 +119,7 @@ class Engine(object):
                 # TODO maybe disable interfaces?
                 for service in node.services:
                     self.stop(service)
+                node.status = EngineComponentStatus.STOPPED
             else:
                 raise Exception(f"Can not stop node {component.name} because it is currently unreachable")
         elif isinstance(component, Service):
@@ -169,7 +173,7 @@ class Engine(object):
                 self.update_service_status(service)
         else:
             for service in node.services.values():
-                service.status = EngineComponentStatus.UNREACHABLE
+                service.status = node.status
                 self.update_service_status(service)
         self.update_interface_status(node)
         pass
@@ -215,6 +219,17 @@ class Engine(object):
         if command.packets_received == 0:
             return EngineComponentStatus.UNREACHABLE
         else:
+            command = self.cmd_ip_addr(node)
+            bind_names = []
+            self.topo.network_implementation.generate(node, Configuration())
+            for link in self.topo.links:
+                if link.service1 and link.service1.executor == node and link.intf1.bind_name:
+                    bind_names.append(link.intf1.bind_name)
+                elif link.service2 and link.service2.executor == node and link.intf2.bind_name:
+                    bind_names.append(link.intf2.bind_name)
+            for bind_name in bind_names:
+                if bind_name not in [x[0] for x in command.results.values()]:
+                    return EngineComponentStatus.REMOVED
             return EngineComponentStatus.RUNNING
 
     def cmd_ifstat(self, source: Service or Node, timeout: int = 5, consumer=None) -> IfstatSSHCommand:
