@@ -4,12 +4,12 @@ import threading
 
 from extensions.macvlan_extension import MacVlanServiceExtension
 from extensions.wireguard_extension import WireguardServiceExtension
-from gui.StatBox import StatBox
 from gui.box import Box
 from gui.button import ButtonBar, Button
 from gui.interface_box import InterfaceBox
 from gui.main_view import MainView
 from gui.service_box import ServiceBox
+from gui.stat_box import StatBox
 from live.engine import Engine
 from topo.topo import TopoUtil
 
