@@ -70,8 +70,8 @@ class View(ABC):
         self.frame.winfo_toplevel().title(title)
 
     def create_text(self, x: float or int, y: float or int, text: str, font: str = "Arial 12", angle: int = 0,
-                    fill: str = "black") -> tuple[int, int, int, int]:
-        t = self.canvas.create_text(x, y, text=text, font=font, angle=angle, fill=fill)
+                    fill: str = "black", anchor: str = "center", justify: str = "center") -> tuple[int, int, int, int]:
+        t = self.canvas.create_text(x, y, text=text, font=font, angle=angle, fill=fill, anchor=anchor, justify=justify)
         return self.canvas.bbox(t)
 
     def _bind(self):

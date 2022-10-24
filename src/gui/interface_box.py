@@ -57,8 +57,6 @@ class InterfaceBox(Box):
     def on_click(self, button: int, x: int, y: int, root_x: int, root_y: int):
         if button == 1:
             self.debug = not self.debug
-        elif button == 3:
-            self.view.show_popup(x, y, ["This is a test"], lambda i: print(str(i)))
 
     def draw_interface_debug(self, abs_x: int, abs_y: int):
         self.view.canvas.create_rectangle(abs_x, abs_y, abs_x + self.INTERFACE_DEBUG_WIDTH,

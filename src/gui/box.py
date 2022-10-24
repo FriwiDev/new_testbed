@@ -120,7 +120,7 @@ class Box(object):
         pass
 
     def on_click(self, button: int, x: int, y: int, root_x: int, root_y: int):
-        for box in self.subboxes:
+        for box in self.subboxes.__reversed__():
             if box._is_in_box(x, y):
                 box.on_click(button, x - box.x, y - box.y, root_x, root_y)
                 return
