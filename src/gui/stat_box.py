@@ -1,11 +1,15 @@
 import math
+import time
+from threading import Lock
 
 from gui.box import Box
+from live.engine import Engine
+from live.engine_component import EngineComponent
 
 
 class StatBox(Box):
     DEFAULT_UNIT = 0
-    SECONDS_UNIT = 1
+    MILLISECONDS_UNIT = 1
     BYTES_UNIT = 2
     BITS_UNIT = 3
 
@@ -18,8 +22,10 @@ class StatBox(Box):
         self.y_unit = StatBox.DEFAULT_UNIT
         self.data: dict[float, (float, str)] = {}  # X -> (Y, color)
         self.minimal_y = 0  # None would mean scaling lower y value dynamically
+        self.data_lock = Lock()
 
     def on_paint(self, offs_x: int, offs_y: int):
+        self.data_lock.acquire()
         abs_x = self.x + offs_x
         abs_y = self.y + offs_y
         # Draw box itself
@@ -42,15 +48,19 @@ class StatBox(Box):
         l = len(self.data.keys())
         content_x_offs = 5
         content_spacing = 10
-        x_amount = int((self.width - axis_offs - axis_border - content_x_offs - content_spacing) / 15)
+        x_amount = int((self.width - axis_offs - axis_border - content_x_offs - content_spacing) / 40)
         if x_amount > l:
             x_amount = l
+        if x_amount <= 0:
+            x_amount = 1
         x_step = self.unit_step(min_x, max_x, x_amount)
         x_begin = int(min_x) - int(min_x) % x_step
         if x_begin < min_x:
             x_begin += x_step
 
-        y_amount = int((self.height - title_height - axis_offs - content_spacing) / 15)
+        y_amount = int((self.height - title_height - axis_offs - content_spacing) / 40)
+        if y_amount <= 0:
+            y_amount = 1
         y_step = self.unit_step(min_y, max_y, y_amount)
         y_begin = int(min_y) - int(min_y) % y_step
         if y_begin < min_y:
@@ -114,6 +124,8 @@ class StatBox(Box):
                                      abs_x + axis_offs, abs_y + title_height,
                                      arrow="last", arrowshape=(6, 10, 4))
 
+        self.data_lock.release()
+
     def calculate_min_width(self):
         return 200
 
@@ -121,12 +133,16 @@ class StatBox(Box):
         return 100
 
     def add_value(self, x: float, y: float, color: str = '#C0C0FF'):
+        self.data_lock.acquire()
         self.data[x] = (y, color)
+        self.data_lock.release()
 
     def prune_history(self, min_x: float):
+        self.data_lock.acquire()
         for i in list(self.data.keys()):
             if i < min_x:
                 del self.data[i]
+        self.data_lock.release()
 
     def min_x(self) -> float:
         min_x = math.inf
@@ -170,3 +186,89 @@ class StatBox(Box):
         diff = max - min
         exp = int(math.log(diff / amount, 10))
         return 10 ** exp
+
+
+class StatBoxDataSupplier(object):
+    PING = 0
+    IFSTAT_RX = 1
+    IFSTAT_TX = 2
+
+    def __init__(self, engine: Engine, box: StatBox, type: int, source: EngineComponent, target: EngineComponent = None,
+                 history: float = -1):
+        self.engine = engine
+        self.box = box
+        self.type = type
+        self.source = source
+        self.target = target
+        self.history = history
+        self.stop_updating = False
+        if type == 0:
+            if self.history == -1:
+                self.history = 20
+            box.title = f"Ping {source.get_name()} -> {target.get_name()}"
+            box.y_axis = f"Time"
+            box.x_axis = f"ICMP seq"
+            box.y_unit = StatBox.MILLISECONDS_UNIT
+            box.x_unit = StatBox.DEFAULT_UNIT
+            box.minimal_y = 0
+        elif type == 1:
+            if self.history == -1:
+                self.history = 20000
+            box.title = f"RX {source.get_name()}"
+            box.y_axis = f"Receiving rate"
+            box.x_axis = f"Time"
+            box.y_unit = StatBox.BITS_UNIT
+            box.x_unit = StatBox.MILLISECONDS_UNIT
+            box.minimal_y = 0
+        elif type == 2:
+            if self.history == -1:
+                self.history = 20000
+            box.title = f"TX {source.get_name()}"
+            box.y_axis = f"Transmission rate"
+            box.x_axis = f"Time"
+            box.y_unit = StatBox.BITS_UNIT
+            box.x_unit = StatBox.MILLISECONDS_UNIT
+            box.minimal_y = 0
+        else:
+            raise Exception("Invalid type")
+
+    def run_chart(self):
+        if self.type == 0:
+            for i in range(0, int(self.history)):
+                self.box.add_value(-i, 0)
+            icmp_offs = 0
+            while not self.engine.stop_updating and not self.stop_updating:
+                icmp_offs += 1
+                values = self.engine.cmd_ping(self.source.component, self.target.component, 1).ping_results.values()
+                if len(values) >= 1:
+                    for res in values:
+                        if isinstance(res, str):
+                            # Ping failed
+                            self.box.add_value(icmp_offs, math.inf, '#FFC0C0')
+                        else:
+                            ttl, ti = res
+                            self.box.add_value(icmp_offs, int(ti * 1000))
+                        break
+                else:
+                    # Ping failed
+                    self.box.add_value(icmp_offs, math.inf, '#FFC0C0')
+                self.box.prune_history(icmp_offs - self.history)
+                time.sleep(0.7)
+        elif self.type == 1 or self.type == 2:
+            for i in range(0, int(self.history / 1000)):
+                self.box.add_value(-i * 1000, 0)
+            start = 0
+            while not self.engine.stop_updating and not self.stop_updating:
+                start += 1000
+                if self.source.ifstat:
+                    rx, tx = self.source.ifstat
+                    color = '#C0C0FF'
+                else:
+                    rx = math.inf
+                    tx = math.inf
+                    color = '#C0C0C0'
+                self.box.add_value(start, rx if type == 1 else tx, color)
+                self.box.prune_history(start - self.history)
+                time.sleep(1)
+        else:
+            raise Exception("Invalid type")
