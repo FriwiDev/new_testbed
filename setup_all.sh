@@ -45,6 +45,7 @@ then
     usermod --add-subuids 100000-1001000000 "$USER"
     usermod --add-subgids 100000-1001000000 "$USER"
     # Initialize lxd
+    systemctl enable lxd --now
     lxd init --preseed < lxd_preseed.yml
 else
     echo "::LXC/LXD=>found"
@@ -68,13 +69,42 @@ then
     echo "::Python3=>not found=>prompting installation"
     if command -v pacman &> /dev/null
     then
-        pacman -Sy python3 tk
+        pacman -Sy python3
     else
-        apt-get install python3 python3-tk
+        apt-get install python3
     fi
 else
     echo "::Python3=>found"
 fi
+
+echo "::Checking for Tkinter"
+if ! command -v bash -c "echo \"import tkinter\" | python3" &> /dev/null
+then
+    echo "::Tkinter=>not found=>prompting installation"
+    if command -v pacman &> /dev/null
+    then
+        pacman -Sy tk
+    else
+        apt-get install python3-tk
+    fi
+else
+    echo "::Tkinter=>found"
+fi
+
+echo "::Checking for Wireguard"
+if ! command -v wg &> /dev/null
+then
+    echo "::Wireguard=>not found=>prompting installation"
+    if command -v pacman &> /dev/null
+    then
+        pacman -Sy wireguard-tools
+    else
+        apt-get install wireguard-tools
+    fi
+else
+    echo "::Wireguard=>found"
+fi
+
 
 echo "All components located or installed"
 
