@@ -10,8 +10,11 @@ from live.engine_component import EngineComponent
 class StatBox(Box):
     DEFAULT_UNIT = 0
     MILLISECONDS_UNIT = 1
-    BYTES_UNIT = 2
-    BITS_UNIT = 3
+    BITS_PER_SEC_UNIT = 2
+
+    DEFAULT_UNIT_SUFFIXES = ["", "K", "M", "G", "T"]
+    MILLISECONDS_UNIT_SUFFIXES = ["ms", "s"]
+    BITS_PER_SEC_UNIT_SUFFIXES = ["Bit/s", "KBit/s", "MBit/s", "GBit/s", "TBit/s"]
 
     def __init__(self, x: int, y: int, width: int, height: int):
         super(StatBox, self).__init__(x, y, width, height)
@@ -48,7 +51,7 @@ class StatBox(Box):
         l = len(self.data.keys())
         content_x_offs = 5
         content_spacing = 10
-        x_amount = int((self.width - axis_offs - axis_border - content_x_offs - content_spacing) / 40)
+        x_amount = int((self.width - axis_offs - axis_border - content_x_offs - content_spacing) / 80)
         if x_amount > l:
             x_amount = l
         if x_amount <= 0:
@@ -58,7 +61,7 @@ class StatBox(Box):
         if x_begin < min_x:
             x_begin += x_step
 
-        y_amount = int((self.height - title_height - axis_offs - content_spacing) / 40)
+        y_amount = int((self.height - title_height - axis_offs - content_spacing) / 80)
         if y_amount <= 0:
             y_amount = 1
         y_step = self.unit_step(min_y, max_y, y_amount)
@@ -80,6 +83,9 @@ class StatBox(Box):
                                          abs_y + self.height - axis_offs,
                                          x_perc,
                                          abs_y + self.height - axis_offs + 5)
+            if i % 5 == 0:
+                self.view.create_text(x_perc, abs_y + self.height - axis_offs + 10,
+                                      self.format_unit(x_step, self.x_unit, x_begin + i * x_step), "Arial 6")
             i += 1
         i = 0
         while True:
@@ -93,6 +99,10 @@ class StatBox(Box):
                                              y_perc,
                                              abs_x + axis_offs,
                                              y_perc)
+                if i == 1 or i % 5 == 0:
+                    self.view.create_text(abs_x + axis_offs - 10, y_perc,
+                                          self.format_unit(y_step, self.y_unit, y_begin + i * y_step),
+                                          "Arial 6", angle=270)
             i += 1
         # Draw content
         for x in self.data.keys():
@@ -113,13 +123,15 @@ class StatBox(Box):
                                               outline='')
 
         # Draw X-Axis
-        self.view.create_text(abs_x + self.width / 2, abs_y + self.height - text_offs, self.x_axis, "Arial 8")
+        self.view.create_text(abs_x + self.width / 2, abs_y + self.height - text_offs,
+                              self.x_axis + self.format_unit_suffix(x_step, self.x_unit), "Arial 8")
         self.view.canvas.create_line(abs_x + axis_offs, abs_y + self.height - axis_offs,
                                      abs_x + self.width - axis_border, abs_y + self.height - axis_offs,
                                      arrow="last", arrowshape=(6, 10, 4))
 
         # Draw Y-Axis
-        self.view.create_text(abs_x + text_offs, abs_y + self.height / 2, self.y_axis, "Arial 8", angle=270)
+        self.view.create_text(abs_x + text_offs, abs_y + self.height / 2,
+                              self.y_axis + self.format_unit_suffix(y_step, self.y_unit), "Arial 8", angle=270)
         self.view.canvas.create_line(abs_x + axis_offs, abs_y + self.height - axis_offs,
                                      abs_x + axis_offs, abs_y + title_height,
                                      arrow="last", arrowshape=(6, 10, 4))
@@ -184,8 +196,49 @@ class StatBox(Box):
 
     def unit_step(self, min: float, max: float, amount: float) -> int:
         diff = max - min
-        exp = int(math.log(diff / amount, 10))
+        exp = math.floor(math.log(diff / amount, 10))
         return 10 ** exp
+
+    def format_unit(self, unit_step: int, unit: int, value: float) -> str:
+        suffix = 0
+        max_suffix = len(self.get_suffixes_for_unit(unit)) - 1
+        while unit_step >= 1000:
+            unit_step /= 1000
+            value /= 1000
+            if suffix < max_suffix:
+                suffix += 1
+        if suffix >= len(StatBox.DEFAULT_UNIT_SUFFIXES):
+            suffix = len(StatBox.DEFAULT_UNIT_SUFFIXES) - 1
+        return format(value, ".1f").replace(".0", "")\
+               + (StatBox.DEFAULT_UNIT_SUFFIXES[suffix] if unit == StatBox.DEFAULT_UNIT else "")
+
+    def format_unit_suffix(self, unit_step: int, unit: int) -> str:
+        if unit == StatBox.DEFAULT_UNIT:
+            return ""
+        elif unit == StatBox.MILLISECONDS_UNIT:
+            if unit_step >= 1000:
+                return " (s)"
+            else:
+                return " (ms)"
+        elif unit == StatBox.BITS_PER_SEC_UNIT:
+            suffix = 0
+            while unit_step >= 1000:
+                unit_step /= 1000
+                suffix += 1
+            if suffix >= len(StatBox.BITS_PER_SEC_UNIT_SUFFIXES):
+                suffix = len(StatBox.BITS_PER_SEC_UNIT_SUFFIXES) - 1
+            return " (" + StatBox.BITS_PER_SEC_UNIT_SUFFIXES[suffix] + ")"
+
+    def get_suffixes_for_unit(self, unit: int):
+        if unit == StatBox.DEFAULT_UNIT:
+            return StatBox.DEFAULT_UNIT_SUFFIXES
+        elif unit == StatBox.MILLISECONDS_UNIT:
+            return StatBox.MILLISECONDS_UNIT_SUFFIXES
+        elif unit == StatBox.BITS_PER_SEC_UNIT:
+            return StatBox.BITS_PER_SEC_UNIT_SUFFIXES
+        else:
+            raise Exception("Invalid unit")
+
 
 
 class StatBoxDataSupplier(object):
@@ -217,7 +270,7 @@ class StatBoxDataSupplier(object):
             box.title = f"RX {source.get_name()}"
             box.y_axis = f"Receiving rate"
             box.x_axis = f"Time"
-            box.y_unit = StatBox.BITS_UNIT
+            box.y_unit = StatBox.BITS_PER_SEC_UNIT
             box.x_unit = StatBox.MILLISECONDS_UNIT
             box.minimal_y = 0
         elif type == 2:
@@ -226,7 +279,7 @@ class StatBoxDataSupplier(object):
             box.title = f"TX {source.get_name()}"
             box.y_axis = f"Transmission rate"
             box.x_axis = f"Time"
-            box.y_unit = StatBox.BITS_UNIT
+            box.y_unit = StatBox.BITS_PER_SEC_UNIT
             box.x_unit = StatBox.MILLISECONDS_UNIT
             box.minimal_y = 0
         else:
@@ -262,11 +315,11 @@ class StatBoxDataSupplier(object):
                 start += 1000
                 if self.source.ifstat:
                     rx, tx = self.source.ifstat
-                    color = '#C0C0FF'
+                    color = '#C0C0C0'
                 else:
                     rx = math.inf
                     tx = math.inf
-                    color = '#C0C0C0'
+                    color = '#C0C0FF'
                 self.box.add_value(start, rx if type == 1 else tx, color)
                 self.box.prune_history(start - self.history)
                 time.sleep(1)
