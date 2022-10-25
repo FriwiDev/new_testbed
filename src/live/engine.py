@@ -3,13 +3,15 @@ import time
 
 from config.configuration import Configuration
 from config.export.ssh_exporter import SSHConfigurationExporter
-from live.engine_component import EngineNode, EngineComponentStatus, EngineService, EngineInterfaceState
+from live.engine_component import EngineNode, EngineComponentStatus, EngineService, EngineInterfaceState, \
+    EngineInterface
 from platforms.linux_server.linux_node import LinuxNode
 from ssh.ifstat_command import IfstatSSHCommand
 from ssh.ip_addr_ssh_command import IpAddrSSHCommand, InterfaceState
 from ssh.iperf_command import IperfSSHCommand, IperfClientSSHCommand
 from ssh.lxc_container_command import LxcContainerListCommand, LXCContainerStatus
 from ssh.ping_ssh_command import PingSSHCommand
+from ssh.ssh_command import SSHCommand
 from ssh.tc_qdisc_command import TcQdiscSSHCommand
 from topo.node import Node, NodeType
 from topo.service import Service
@@ -281,6 +283,40 @@ class Engine(object):
             raise Exception("Can only ping cross service or cross node, not between service and node")
         command.run()
         return command
+
+    def cmd_set_iface_state(self, target: EngineInterface, state: EngineInterfaceState):
+        cmd = f"ip link set dev {target.component.name} {state.name.lower()}"
+        if isinstance(target.parent, EngineService):
+            SSHCommand(target.parent.parent.component,
+                       target.parent.component.command_prefix() + cmd) \
+                .run()
+        else:
+            SSHCommand(target.parent.component, cmd).run()
+
+    def cmd_set_iface_qdisc(self, target: EngineInterface, delay: int, loss: float,
+                            delay_variation: int = 0, delay_correlation: float = 0, loss_correlation: float = 0):
+        cmd1 = f"tc qdisc delete dev {target.component.name} root netem &> /dev/null || true"
+        cmd2 = f"tc qdisc add dev {target.component.name} root netem"
+        if delay > 0:
+            cmd2 += f" delay {delay}"
+            if delay_variation > 0:
+                cmd2 += f" {delay_variation}"
+                if delay_correlation > 0:
+                    cmd2 += f" {delay_correlation * 100}%"
+        if loss > 0:
+            cmd2 += f" loss {loss * 100}%"
+            if loss_correlation > 0:
+                cmd2 += f" {loss_correlation * 100}%"
+        if isinstance(target.parent, EngineService):
+            SSHCommand(target.parent.parent.component,
+                       target.parent.component.command_prefix() + cmd1) \
+                .run()
+            SSHCommand(target.parent.parent.component,
+                       target.parent.component.command_prefix() + cmd2) \
+                .run()
+        else:
+            SSHCommand(target.parent.component, cmd1).run()
+            SSHCommand(target.parent.component, cmd2).run()
 
     def calculate_ip(self, source: Service, target: Service) -> ipaddress:
         target_ip = None

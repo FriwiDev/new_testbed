@@ -2,6 +2,7 @@ import sys
 import time
 
 from live.engine import Engine
+from live.engine_component import EngineInterfaceState
 from network.network_utils import NetworkUtils
 from topo.interface import Interface
 from topo.node import Node
@@ -114,6 +115,52 @@ def main(argv: list[str]):
             engine.cmd_ifstat(executor, 5, lambda itf, rx, tx: print_intf(i.name, itf, rx, tx))
             stop = time.time()
             time.sleep((start - stop + 10) % 1)
+    elif argv[1].lower() == "up":
+        if len(argv) != 4:
+            print("./remote_topology.sh up <service|node> <intf>")
+            exit(1)
+        nodes = resolve_nodes(argv[2:3], engine)
+        services = resolve_services(argv[2:3], engine)
+        executor = engine.nodes[nodes[0].name] if len(nodes) > 0 else \
+            engine.nodes[services[0].executor.name].services[services[0].name]
+        if argv[3] in executor.intfs.keys():
+            engine.cmd_set_iface_state(executor.intfs[argv[3]], EngineInterfaceState.UP)
+            return
+        print(f"Unknown interface: {argv[3]}")
+        exit(1)
+    elif argv[1].lower() == "down":
+        if len(argv) != 4:
+            print("./remote_topology.sh down <service|node> <intf>")
+            exit(1)
+        nodes = resolve_nodes(argv[2:3], engine)
+        services = resolve_services(argv[2:3], engine)
+        executor = engine.nodes[nodes[0].name] if len(nodes) > 0 else \
+            engine.nodes[services[0].executor.name].services[services[0].name]
+        if argv[3] in executor.intfs.keys():
+            engine.cmd_set_iface_state(executor.intfs[argv[3]], EngineInterfaceState.DOWN)
+            return
+        print(f"Unknown interface: {argv[3]}")
+        exit(1)
+    elif argv[1].lower() == "setqdisc":
+        if len(argv) < 4:
+            print(
+                "./remote_topology.sh setqdisc <service|node> <intf> [<delay(ms)> [<delay-variation(ms)> [<delay-correlation(0;1)> [<loss(0;1)> [<loss-correlation(0;1)>]]]]]")
+            exit(1)
+        nodes = resolve_nodes(argv[2:3], engine)
+        services = resolve_services(argv[2:3], engine)
+        executor = engine.nodes[nodes[0].name] if len(nodes) > 0 else \
+            engine.nodes[services[0].executor.name].services[services[0].name]
+        if argv[3] in executor.intfs.keys():
+            delay = int(argv[4]) if len(argv) > 4 else 0
+            delay_variation = int(argv[5]) if len(argv) > 5 else 0
+            delay_correlation = float(argv[6]) if len(argv) > 6 else 0
+            loss = float(argv[7]) if len(argv) > 7 else 0
+            loss_correlation = float(argv[8]) if len(argv) > 8 else 0
+            engine.cmd_set_iface_qdisc(executor.intfs[argv[3]], delay, loss,
+                                       delay_variation, delay_correlation, loss_correlation)
+            return
+        print(f"Unknown interface: {argv[3]}")
+        exit(1)
     else:
         print("Unknown action " + argv[1])
         exit(1)
