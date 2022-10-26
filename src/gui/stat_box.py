@@ -32,6 +32,7 @@ class StatBox(Box):
         self.data_supplier = None
         self.cross = None
         self.cross_size = None
+        self.fill = 'white'
 
     def on_paint(self, offs_x: int, offs_y: int):
         self.data_lock.acquire()
@@ -211,7 +212,7 @@ class StatBox(Box):
         return max_x
 
     def min_y(self) -> float:
-        if self.minimal_y:
+        if self.minimal_y is not None:
             return self.minimal_y
         min_y = math.inf
         for y, _ in self.data.values():
@@ -278,13 +279,17 @@ class StatBox(Box):
     def on_click(self, button: int, x: int, y: int, root_x: int, root_y: int):
         cross_width = 40
         cross_offs = 10
-        if self.width - cross_width - cross_offs <= x < self.width - cross_offs \
-                and cross_offs <= y < cross_width + cross_offs:
-            self.parent.subboxes.remove(self)
-            if self.data_supplier:
-                self.data_supplier.stop_updating = True
-            return
+        if not self.view.select_mode:
+            if self.width - cross_width - cross_offs <= x < self.width - cross_offs \
+                    and cross_offs <= y < cross_width + cross_offs:
+                self.parent.subboxes.remove(self)
+                if self.data_supplier:
+                    self.data_supplier.stop_updating = True
+                return
         super(StatBox, self).on_click(button, x, y, root_x, root_y)
+
+    def update_fill(self):
+        self.fill = 'white'
 
 
 class StatBoxDataSupplier(object):
@@ -389,6 +394,19 @@ class StatBoxUtil(object):
         return stat
 
     @classmethod
+    def create_ping_box(cls, view: 'MainView', x: int, y: int, w: int, h: int,
+                        service1: EngineService, service2: EngineService or EngineInterface) -> StatBox:
+        stat = StatBox(x, y, w, h, view)
+        stat.available_bounding_boxes = [(0, 0, view.box.width, view.box.height, 0)]
+        stat.current_box = (0, 0, view.box.width, view.box.height, 0)
+        supp = StatBoxDataSupplier(service1.engine, stat, StatBoxDataSupplier.PING, service1, service2)
+        stat.data_supplier = supp
+        update_thread = threading.Thread(target=supp.run_chart)
+        update_thread.start()
+        view.box.add_box(stat)
+        return stat
+
+    @classmethod
     def create_stat_box(cls, data: list, view: 'MainView', engine: 'Engine') -> StatBox or None:
         # type, x, y, width, height, source, [target]
         type = int(data[0])
@@ -402,10 +420,10 @@ class StatBoxUtil(object):
             supp = StatBoxDataSupplier(engine, stat, type, intf1)
         elif type == StatBoxDataSupplier.PING:
             service1 = cls._get_service_if_exists(engine, data[5])
-            service2 = cls._get_service_if_exists(engine, data[6])
-            if not service1 or not service2:
+            target2 = cls._get_service_or_intf_if_exists(engine, data[6])
+            if not service1 or not target2:
                 return None
-            supp = StatBoxDataSupplier(engine, stat, type, service1, service2)
+            supp = StatBoxDataSupplier(engine, stat, type, service1, target2)
         else:
             raise Exception("Invalid stat type")
         stat.data_supplier = supp
@@ -429,6 +447,8 @@ class StatBoxUtil(object):
             sx = source.parent.component.name + "; " + source.component.name
             target = stat.data_supplier.target
             tx = target.parent.component.name + "; " + target.component.name
+            if isinstance(target, EngineInterface):
+                tx = target.parent.parent.component.name + "; " + tx
             ret.append(sx)
             ret.append(tx)
         else:
@@ -443,6 +463,21 @@ class StatBoxUtil(object):
             if len(split) == 2:
                 if split[1] in node.intfs.keys():
                     return node.intfs[split[1]]
+            else:
+                if split[1] in node.services.keys():
+                    service = node.services[split[1]]
+                    if split[2] in service.intfs.keys():
+                        return service.intfs[split[2]]
+        return None
+
+    @classmethod
+    def _get_service_or_intf_if_exists(cls, engine: 'Engine', name: str) -> EngineInterface or None:
+        split = name.split("; ")
+        if split[0] in engine.nodes.keys():
+            node = engine.nodes[split[0]]
+            if len(split) == 2:
+                if split[1] in node.services.keys():
+                    return node.services[split[1]]
             else:
                 if split[1] in node.services.keys():
                     service = node.services[split[1]]

@@ -13,6 +13,7 @@ from ssh.lxc_container_command import LxcContainerListCommand, LXCContainerStatu
 from ssh.ping_ssh_command import PingSSHCommand
 from ssh.ssh_command import SSHCommand
 from ssh.tc_qdisc_command import TcQdiscSSHCommand
+from topo.interface import Interface
 from topo.node import Node, NodeType
 from topo.service import Service
 from topo.topo import Topo, TopoUtil
@@ -252,10 +253,14 @@ class Engine(object):
         command.run()
         return command
 
-    def cmd_iperf(self, source: Service, target: Service, port: int = 1337, interval_seconds: int = 1,
+    def cmd_iperf(self, source: Service, target: Service, target_device: Service or Interface, port: int = 1337,
+                  interval_seconds: int = 1,
                   time_seconds: int = 10, server_options: str = "", client_options: str = "",
                   consumer=None) -> IperfClientSSHCommand:
-        command = IperfSSHCommand(source, target, port, interval_seconds, time_seconds,
+        target_ip = self.calculate_ip(source, target_device)
+        if not target_ip:
+            raise Exception("Target not reachable")
+        command = IperfSSHCommand(source, target, str(target_ip), port, interval_seconds, time_seconds,
                                   server_options, client_options, consumer)
         command.run()
         return command.client
@@ -270,10 +275,13 @@ class Engine(object):
         command.run()
         return command
 
-    def cmd_ping(self, source: Service or Node, target: Service or Node, count: int or None = 4,
+    def cmd_ping(self, source: Service or Node, target: Service or Node or Interface, count: int or None = 4,
                  consumer=None) -> PingSSHCommand:
-        if isinstance(source, Service) and isinstance(target, Service):
-            command = PingSSHCommand(source, str(self.calculate_ip(source, target)), count, consumer)
+        if isinstance(source, Service) and (isinstance(target, Service) or isinstance(target, Interface)):
+            target_ip = self.calculate_ip(source, target)
+            if not target_ip:
+                raise Exception("Target not reachable")
+            command = PingSSHCommand(source, str(target_ip), count, consumer)
         elif isinstance(source, Node) and isinstance(target, Node):
             remote = target.ssh_remote
             while remote.__contains__("@"):
@@ -323,15 +331,24 @@ class Engine(object):
             SSHCommand(target.parent.component, cmd1).run()
             SSHCommand(target.parent.component, cmd2).run()
 
-    def calculate_ip(self, source: Service, target: Service) -> ipaddress:
-        target_ip = None
-        if source == target:
-            target_ip = ipaddress.ip_address("127.0.0.1")
+    def calculate_ip(self, source: Service, target: Service or Interface) -> ipaddress:
+        if isinstance(target, Service):
+            if source == target:
+                return ipaddress.ip_address("127.0.0.1")
+            else:
+                reachable_ips = source.build_routing_table()
+                for ip in reachable_ips.keys():
+                    if target.has_ip(ip):
+                        return ip
+            return None
+        elif isinstance(target, Interface):
+            if target in source.intfs:
+                return ipaddress.ip_address("127.0.0.1")
+            else:
+                reachable_ips = source.build_routing_table()
+                for ip in reachable_ips.keys():
+                    if ip in target.ips:
+                        return ip
+            return None
         else:
-            reachable_ips = source.build_routing_table()
-            for ip in reachable_ips.keys():
-                if target.has_ip(ip):
-                    target_ip = ip
-        if not target_ip:
-            raise Exception("Target not reachable")
-        return target_ip
+            raise Exception("Target is neither Service nor Interface")

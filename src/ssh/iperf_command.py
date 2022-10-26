@@ -1,4 +1,3 @@
-import ipaddress
 import threading
 import time
 
@@ -8,22 +7,12 @@ from topo.service import Service
 
 
 class IperfSSHCommand(SSHCommand):
-    def __init__(self, source: Service, target: Service, port: int = 1337, interval_seconds: int = 1,
+    def __init__(self, source: Service, target: Service, target_ip: str, port: int = 1337, interval_seconds: int = 1,
                  time_seconds: int = 10, server_options: str = "", client_options: str = "",
                  consumer=None):
         super().__init__(source.executor, "null")
         self.server = IperfServerSSHCommand(target, port, time_seconds + 3, server_options)
-        reachable_ips = source.build_routing_table()
-        target_ip = None
-        if source == target:
-            target_ip = ipaddress.ip_address("127.0.0.1")
-        else:
-            for ip in reachable_ips.keys():
-                if target.has_ip(ip):
-                    target_ip = ip
-        if not target_ip:
-            raise Exception("Target not reachable")
-        self.client = IperfClientSSHCommand(source, str(target_ip), port, interval_seconds, time_seconds,
+        self.client = IperfClientSSHCommand(source, target_ip, port, interval_seconds, time_seconds,
                                             client_options, consumer)
 
     def run(self):

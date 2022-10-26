@@ -62,7 +62,12 @@ class InterfaceBox(Box):
         self.intf.component.gui_data.height = self.height
 
     def on_paint(self, offs_x: int, offs_y: int):
-        if self.intf.status == EngineComponentStatus.RUNNING:
+        if self.view.select_mode:
+            if self in self.view.select_mode:
+                self.fill = '#FFFFFF'
+            else:
+                self.fill = '#7C7C7C'
+        elif self.intf.status == EngineComponentStatus.RUNNING:
             if self.admin_net:
                 self.fill = "#50FF50"
             else:

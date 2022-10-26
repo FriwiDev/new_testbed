@@ -27,21 +27,32 @@ class MainView(View):
         self.zoom_box._set_view(self)
 
         self.run_box = ButtonBar(x=10 * self.gui_scale, y=10 * self.gui_scale, padding=3 * self.gui_scale, margin=3 * self.gui_scale)
-        self.run_box.add_button(Button(240 * self.gui_scale, 40 * self.gui_scale, None, "Testbed", "Arial " + str(int(self.gui_scale * 14)),
-                                       on_press=None))
-        self.run_box.add_button(Button(40 * self.gui_scale, 40 * self.gui_scale, None, "R", "Arial " + str(int(self.gui_scale * 20)),
-                                        on_press=lambda x, y: self.on_start_all()))
-        self.run_box.add_button(Button(40 * self.gui_scale, 40 * self.gui_scale, None, "S", "Arial " + str(int(self.gui_scale * 20)),
-                                        on_press=lambda x, y: self.on_stop_all()))
-        self.run_box.add_button(Button(40 * self.gui_scale, 40 * self.gui_scale, None, "D", "Arial " + str(int(self.gui_scale * 20)),
-                                       on_press=lambda x, y: self.on_destroy_all()))
+        self.run_box.add_button(
+            Button(240 * self.gui_scale, 40 * self.gui_scale, None, "Testbed", "Arial " + str(int(self.gui_scale * 14)),
+                   on_press=None))
+        self.run_box.add_button(
+            Button(40 * self.gui_scale, 40 * self.gui_scale, None, "R", "Arial " + str(int(self.gui_scale * 20)),
+                   on_press=lambda x, y: self.on_start_all()))
+        self.run_box.add_button(
+            Button(40 * self.gui_scale, 40 * self.gui_scale, None, "S", "Arial " + str(int(self.gui_scale * 20)),
+                   on_press=lambda x, y: self.on_stop_all()))
+        self.run_box.add_button(
+            Button(40 * self.gui_scale, 40 * self.gui_scale, None, "D", "Arial " + str(int(self.gui_scale * 20)),
+                   on_press=lambda x, y: self.on_destroy_all()))
         self.run_box._set_view(self)
+
+        self.select_mode = None
+        self.select_callback = None
 
         super().__init__("Testbed", 200, 100)
 
     def set_box(self, box: Box):
         self.box = box
         # self.repaint()
+
+    def set_select_mode(self, selectable: list[Box]):
+        self.select_mode = selectable
+        self.box.update_select_mode()
 
     def set_active_button_bar(self, button_bar: ButtonBar):
         self.active_button_bar = button_bar

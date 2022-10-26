@@ -27,7 +27,7 @@ class Box(object):
         self._dragging_anchor = None  # x, y
         self.allowed_directions = [Box.NORTH, Box.WEST, Box.SOUTH, Box.EAST]
 
-        self.fill = 'white'
+        self.fill = '#FFFFFF'
         self.focus = False
 
     def add_line(self, end: 'Box', dash: tuple[int, int] or None):
@@ -137,6 +137,12 @@ class Box(object):
         if found:
             return
         # Click was in our box and not in subbox
+        if self.view.select_mode:
+            if self in self.view.select_mode:
+                self.view.select_callback(self)
+            else:
+                self.view.select_callback(None)
+            return
         if not self.focus:
             self.focus = True
             self.on_focus_gain()
@@ -526,3 +532,18 @@ class Box(object):
 
     def on_change_orientation(self, direction: int):
         pass
+
+    def update_fill(self):
+        self.fill = '#FFFFFF'
+
+    def update_select_mode(self):
+        if self.view.select_mode:
+            if self in self.view.select_mode:
+                self.fill = '#FFFFFF'
+            else:
+                self.fill = '#7C7C7C'
+        else:
+            self.update_fill()
+
+        for box in self.subboxes:
+            box.update_select_mode()

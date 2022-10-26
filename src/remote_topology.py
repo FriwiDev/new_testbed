@@ -46,11 +46,25 @@ def main(argv: list[str]):
                 engine.destroy(node)
     elif argv[1].lower() == "ping":
         if len(argv) != 4:
-            print("./remote_topology.sh ping <service1> <service2>")
+            print("./remote_topology.sh ping <service1> <service2[:intf]>")
             exit(1)
         if argv[2] in engine.topo.services.keys():
-            if argv[3] in engine.topo.services.keys():
-                engine.cmd_ping(engine.topo.services[argv[2]], engine.topo.services[argv[3]], 4, handle_ping_result)
+            spl = argv[3].split(":")
+            if spl[0] in engine.topo.services.keys():
+                target = engine.topo.services[spl[0]]
+                if len(spl) > 1:
+                    target_device = None
+                    for dev in target.intfs:
+                        if dev.name == spl[1]:
+                            target_device = dev
+                            break
+                    if not target_device:
+                        print("No such interface: " + argv[3])
+                        exit(1)
+                        return
+                else:
+                    target_device = target
+                engine.cmd_ping(engine.topo.services[argv[2]], target_device, 4, handle_ping_result)
             else:
                 print("No such service: " + argv[3])
                 exit(1)
@@ -60,7 +74,7 @@ def main(argv: list[str]):
     elif argv[1].lower() == "iperf":
         if len(argv) < 4:
             print(
-                "./remote_topology.sh iperf <service1> <service2> [port] [interval] [time] "
+                "./remote_topology.sh iperf <service1> <service2[:intf]> [port] [interval] [time] "
                 "[<client options> [| <server options>]]")
             exit(1)
         port = 1337
@@ -86,8 +100,22 @@ def main(argv: list[str]):
                     server_options += argv[i] + " "
 
         if argv[2] in engine.topo.services.keys():
-            if argv[3] in engine.topo.services.keys():
-                engine.cmd_iperf(engine.topo.services[argv[2]], engine.topo.services[argv[3]], port, interval, time_dur,
+            spl = argv[3].split(":")
+            if spl[0] in engine.topo.services.keys():
+                target = engine.topo.services[spl[0]]
+                if len(spl) > 1:
+                    target_device = None
+                    for dev in target.intfs:
+                        if dev.name == spl[1]:
+                            target_device = dev
+                            break
+                    if not target_device:
+                        print("No such interface: " + argv[3])
+                        exit(1)
+                        return
+                else:
+                    target_device = target
+                engine.cmd_iperf(engine.topo.services[argv[2]], target, target_device, port, interval, time_dur,
                                  client_options, server_options, handle_iperf_result)
             else:
                 print("No such service: " + argv[3])

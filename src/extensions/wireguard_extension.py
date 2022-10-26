@@ -52,6 +52,18 @@ class WireguardServiceExtension(ServiceExtension):
         ret.remote_service_name = in_dict['remote_service']
         ret.remote_wireguard_extension_name = in_dict['remote_wireguard_extension']
         ret.claimed_interfaces.append(ret.dev_name)
+
+        if ret.remote_service_name in topo.services.keys():
+            remote_service = topo.services[ret.remote_service_name]
+            if ret.remote_wireguard_extension_name in remote_service.extensions.keys():
+                remote_ext = remote_service.extensions[ret.remote_wireguard_extension_name]
+                remote_intf = remote_service.get_interface(remote_ext.dev_name)
+                intf = service.get_interface(ret.dev_name)
+
+                intf.other_end = remote_intf
+                remote_intf.other_end = intf
+                intf.other_end_service = remote_service
+                remote_intf.other_end_service = service
         return ret
 
     def gen_keys(self):

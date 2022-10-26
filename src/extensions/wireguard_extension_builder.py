@@ -38,7 +38,8 @@ class WireguardExtensionBuilder(object):
         ext1.port = self.port1
         ext1.remote_service = self.service2
         ext1.remote_service_name = self.service2.name
-        self.service1.intfs.append(Interface(self.dev_name1).add_ip(self.ip1, self.network))
+        intf1 = Interface(self.dev_name1).add_ip(self.ip1, self.network)
+        self.service1.intfs.append(intf1)
 
         ext2 = WireguardServiceExtension(self.dev_name2, self.service2)
         ext2.dev_name = self.dev_name2
@@ -48,12 +49,18 @@ class WireguardExtensionBuilder(object):
         ext2.port = self.port2
         ext2.remote_service = self.service1
         ext2.remote_service_name = self.service1.name
-        self.service2.intfs.append(Interface(self.dev_name2).add_ip(self.ip2, self.network))
+        intf2 = Interface(self.dev_name2).add_ip(self.ip2, self.network)
+        self.service2.intfs.append(intf2)
 
         ext1.remote_wireguard_extension = ext2
         ext1.remote_wireguard_extension_name = ext2.name
         ext2.remote_wireguard_extension = ext1
         ext2.remote_wireguard_extension_name = ext1.name
+
+        intf1.other_end = intf2
+        intf2.other_end = intf1
+        intf1.other_end_service = self.service2
+        intf2.other_end_service = self.service1
 
         ext1.gen_keys()
         ext2.gen_keys()
