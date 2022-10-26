@@ -292,6 +292,11 @@ class Engine(object):
                 .run()
         else:
             SSHCommand(target.parent.component, cmd).run()
+        if state == EngineInterfaceState.DOWN:
+            target.status = EngineComponentStatus.STOPPED
+        else:
+            target.status = EngineComponentStatus.RUNNING
+        target.interface_state = state
 
     def cmd_set_iface_qdisc(self, target: EngineInterface, delay: int, loss: float,
                             delay_variation: int = 0, delay_correlation: float = 0, loss_correlation: float = 0):

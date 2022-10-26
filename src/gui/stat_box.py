@@ -1,10 +1,12 @@
 import math
+import threading
 import time
 from threading import Lock
 
 from gui.box import Box
+from gui.images import Images
 from live.engine import Engine
-from live.engine_component import EngineComponent
+from live.engine_component import EngineComponent, EngineInterface, EngineService, EngineComponentStatus
 
 
 class StatBox(Box):
@@ -27,16 +29,21 @@ class StatBox(Box):
         self.data: dict[float, (float, str)] = {}  # X -> (Y, color)
         self.minimal_y = 0  # None would mean scaling lower y value dynamically
         self.data_lock = Lock()
+        self.data_supplier = None
+        self.cross = None
+        self.cross_size = None
 
     def on_paint(self, offs_x: int, offs_y: int):
         self.data_lock.acquire()
         abs_x = self.x * self.view.zoom + offs_x
         abs_y = self.y * self.view.zoom + offs_y
         # Draw box itself
-        self.view.canvas.create_rectangle(abs_x, abs_y, abs_x + self.width * self.view.zoom, abs_y + self.height * self.view.zoom,
+        self.view.canvas.create_rectangle(abs_x, abs_y, abs_x + self.width * self.view.zoom,
+                                          abs_y + self.height * self.view.zoom,
                                           fill=self.fill, width=self.view.zoom)
         # Draw Title
-        self.view.create_text(abs_x + self.width / 2 * self.view.zoom, abs_y + 12 * self.view.zoom, self.title, "Arial "+str(int(10*self.view.zoom)))
+        self.view.create_text(abs_x + self.width / 2 * self.view.zoom, abs_y + 12 * self.view.zoom, self.title,
+                              "Arial " + str(int(10 * self.view.zoom)))
         title_height = 24
         text_offs = 14
         axis_offs = 40
@@ -77,8 +84,9 @@ class StatBox(Box):
         while True:
             perc = (x_begin + i * x_step - min_x) / (max_x - min_x)
             x_perc = abs_x + (axis_offs + content_x_offs \
-                     + perc * (self.width - axis_offs - axis_border - content_x_offs - content_spacing) / (l + 1) * l \
-                     + unit_width / 2) * self.view.zoom
+                              + perc * (self.width - axis_offs - axis_border - content_x_offs - content_spacing) / (
+                                      l + 1) * l \
+                              + unit_width / 2) * self.view.zoom
             if x_begin + i * x_step > max_x:
                 break
             self.view.canvas.create_line(x_perc,
@@ -88,7 +96,8 @@ class StatBox(Box):
                                          width=self.view.zoom)
             if i % 5 == 0:
                 self.view.create_text(x_perc, abs_y + (self.height - axis_offs + 12) * self.view.zoom,
-                                      self.format_unit(x_step, self.x_unit, x_begin + i * x_step), "Arial "+str(int(6*self.view.zoom)))
+                                      self.format_unit(x_step, self.x_unit, x_begin + i * x_step),
+                                      "Arial " + str(int(6 * self.view.zoom)))
             i += 1
         i = 0
         while True:
@@ -97,7 +106,7 @@ class StatBox(Box):
                 break
             if 0.001 < perc < 0.999:
                 y_perc = abs_y + (self.height - axis_offs \
-                         - perc * (self.height - axis_offs - title_height)) * self.view.zoom
+                                  - perc * (self.height - axis_offs - title_height)) * self.view.zoom
                 self.view.canvas.create_line(abs_x + (axis_offs - 5) * self.view.zoom,
                                              y_perc,
                                              abs_x + axis_offs * self.view.zoom,
@@ -106,7 +115,7 @@ class StatBox(Box):
                 if i == 1 or i % 5 == 0:
                     self.view.create_text(abs_x + (axis_offs - 12) * self.view.zoom, y_perc,
                                           self.format_unit(y_step, self.y_unit, y_begin + i * y_step),
-                                          "Arial "+str(int(6*self.view.zoom)), angle=270)
+                                          "Arial " + str(int(6 * self.view.zoom)), angle=270)
             i += 1
         # Draw content
         for x in self.data.keys():
@@ -120,36 +129,56 @@ class StatBox(Box):
             perc_x = (x - min_x) / (max_x - min_x)
             calc_x = abs_x + (axis_offs + content_x_offs + unit_width * l * perc_x) * self.view.zoom
             self.view.canvas.create_rectangle(calc_x + 1 * self.view.zoom,
-                                              abs_y + (self.height - axis_offs - (unit_height * perc_y))*self.view.zoom,
+                                              abs_y + (self.height - axis_offs - (
+                                                      unit_height * perc_y)) * self.view.zoom,
                                               calc_x + (unit_width - 1) * self.view.zoom,
                                               abs_y + (self.height - axis_offs) * self.view.zoom,
                                               fill=color,
                                               outline='')
 
         # Draw X-Axis
-        self.view.create_text(abs_x + self.width / 2 * self.view.zoom, abs_y + (self.height - text_offs) * self.view.zoom,
-                              self.x_axis + self.format_unit_suffix(x_step, self.x_unit), "Arial "+str(int(8*self.view.zoom)))
-        self.view.canvas.create_line(abs_x + axis_offs * self.view.zoom, abs_y + (self.height - axis_offs) * self.view.zoom,
+        self.view.create_text(abs_x + self.width / 2 * self.view.zoom,
+                              abs_y + (self.height - text_offs) * self.view.zoom,
+                              self.x_axis + self.format_unit_suffix(x_step, self.x_unit),
+                              "Arial " + str(int(8 * self.view.zoom)))
+        self.view.canvas.create_line(abs_x + axis_offs * self.view.zoom,
+                                     abs_y + (self.height - axis_offs) * self.view.zoom,
                                      abs_x + (self.width - axis_border) * self.view.zoom,
                                      abs_y + (self.height - axis_offs) * self.view.zoom,
-                                     arrow="last", arrowshape=(6*self.view.zoom, 10*self.view.zoom, 4*self.view.zoom),
+                                     arrow="last",
+                                     arrowshape=(6 * self.view.zoom, 10 * self.view.zoom, 4 * self.view.zoom),
                                      width=self.view.zoom)
 
         # Draw Y-Axis
         self.view.create_text(abs_x + text_offs * self.view.zoom, abs_y + (self.height / 2) * self.view.zoom,
-                              self.y_axis + self.format_unit_suffix(y_step, self.y_unit), "Arial "+str(int(8*self.view.zoom)), angle=270)
-        self.view.canvas.create_line(abs_x + axis_offs * self.view.zoom, abs_y + (self.height - axis_offs) * self.view.zoom,
+                              self.y_axis + self.format_unit_suffix(y_step, self.y_unit),
+                              "Arial " + str(int(8 * self.view.zoom)), angle=270)
+        self.view.canvas.create_line(abs_x + axis_offs * self.view.zoom,
+                                     abs_y + (self.height - axis_offs) * self.view.zoom,
                                      abs_x + axis_offs * self.view.zoom, abs_y + title_height * self.view.zoom,
-                                     arrow="last", arrowshape=(6*self.view.zoom, 10*self.view.zoom, 4*self.view.zoom),
+                                     arrow="last",
+                                     arrowshape=(6 * self.view.zoom, 10 * self.view.zoom, 4 * self.view.zoom),
                                      width=self.view.zoom)
+
+        # Draw cross
+        cross_width = 20
+        cross_offs = 5
+
+        cross_size = int(cross_width * self.view.zoom)
+        if not self.cross or not self.cross_size or self.cross_size != cross_size:
+            self.cross_size = cross_size
+            self.cross = Images.get_with_size(Images.router, self.cross_size, self.cross_size)
+        self.view.canvas.create_image(offs_x + (self.x + self.width - cross_offs - cross_width / 2) * self.view.zoom,
+                                      offs_y + (self.y + cross_offs + cross_width / 2) * self.view.zoom,
+                                      image=self.cross)
 
         self.data_lock.release()
 
     def calculate_min_width(self):
-        return 200
+        return 400
 
     def calculate_min_height(self):
-        return 100
+        return 200
 
     def add_value(self, x: float, y: float, color: str = '#C0C0FF'):
         self.data_lock.acquire()
@@ -216,7 +245,7 @@ class StatBox(Box):
                 suffix += 1
         if suffix >= len(StatBox.DEFAULT_UNIT_SUFFIXES):
             suffix = len(StatBox.DEFAULT_UNIT_SUFFIXES) - 1
-        return format(value, ".1f").replace(".0", "")\
+        return format(value, ".1f").replace(".0", "") \
                + (StatBox.DEFAULT_UNIT_SUFFIXES[suffix] if unit == StatBox.DEFAULT_UNIT else "")
 
     def format_unit_suffix(self, unit_step: int, unit: int) -> str:
@@ -246,6 +275,16 @@ class StatBox(Box):
         else:
             raise Exception("Invalid unit")
 
+    def on_click(self, button: int, x: int, y: int, root_x: int, root_y: int):
+        cross_width = 40
+        cross_offs = 10
+        if self.width - cross_width - cross_offs <= x < self.width - cross_offs \
+                and cross_offs <= y < cross_width + cross_offs:
+            self.parent.subboxes.remove(self)
+            if self.data_supplier:
+                self.data_supplier.stop_updating = True
+            return
+        super(StatBox, self).on_click(button, x, y, root_x, root_y)
 
 
 class StatBoxDataSupplier(object):
@@ -262,6 +301,7 @@ class StatBoxDataSupplier(object):
         self.target = target
         self.history = history
         self.stop_updating = False
+        box.data_supplier = self
         if type == 0:
             if self.history == -1:
                 self.history = 20
@@ -320,15 +360,101 @@ class StatBoxDataSupplier(object):
             start = 0
             while not self.engine.stop_updating and not self.stop_updating:
                 start += 1000
-                if self.source.ifstat:
+                if self.source.ifstat and self.source.status == EngineComponentStatus.RUNNING:
                     rx, tx = self.source.ifstat
-                    color = '#C0C0C0'
+                    color = '#C0C0FF'
                 else:
                     rx = math.inf
                     tx = math.inf
-                    color = '#C0C0FF'
-                self.box.add_value(start, rx if type == 1 else tx, color)
+                    color = '#FFC0C0'
+                self.box.add_value(start, rx if self.type == 1 else tx, color)
                 self.box.prune_history(start - self.history)
                 time.sleep(1)
         else:
             raise Exception("Invalid type")
+
+
+class StatBoxUtil(object):
+    @classmethod
+    def create_traffic_box(cls, view: 'MainView', type: int, x: int, y: int, w: int, h: int,
+                           intf: EngineInterface) -> StatBox:
+        stat = StatBox(x, y, w, h, view)
+        stat.available_bounding_boxes = [(0, 0, view.box.width, view.box.height, 0)]
+        stat.current_box = (0, 0, view.box.width, view.box.height, 0)
+        supp = StatBoxDataSupplier(intf.engine, stat, type, intf)
+        stat.data_supplier = supp
+        update_thread = threading.Thread(target=supp.run_chart)
+        update_thread.start()
+        view.box.add_box(stat)
+        return stat
+
+    @classmethod
+    def create_stat_box(cls, data: list, view: 'MainView', engine: 'Engine') -> StatBox or None:
+        # type, x, y, width, height, source, [target]
+        type = int(data[0])
+        stat = StatBox(int(data[1]), int(data[2]), int(data[3]), int(int(data[4])), view)
+        stat.available_bounding_boxes = [(0, 0, view.box.width, view.box.height, 0)]
+        stat.current_box = (0, 0, view.box.width, view.box.height, 0)
+        if type == StatBoxDataSupplier.IFSTAT_RX or type == StatBoxDataSupplier.IFSTAT_TX:
+            intf1 = cls._get_intf_if_exists(engine, data[5])
+            if not intf1:
+                return None
+            supp = StatBoxDataSupplier(engine, stat, type, intf1)
+        elif type == StatBoxDataSupplier.PING:
+            service1 = cls._get_service_if_exists(engine, data[5])
+            service2 = cls._get_service_if_exists(engine, data[6])
+            if not service1 or not service2:
+                return None
+            supp = StatBoxDataSupplier(engine, stat, type, service1, service2)
+        else:
+            raise Exception("Invalid stat type")
+        stat.data_supplier = supp
+        update_thread = threading.Thread(target=supp.run_chart)
+        update_thread.start()
+        view.box.add_box(stat)
+        return stat
+
+    @classmethod
+    def get_data(cls, stat: StatBox):
+        type = stat.data_supplier.type
+        ret = [type, stat.x, stat.y, stat.width, stat.height]
+        if type == StatBoxDataSupplier.IFSTAT_RX or type == StatBoxDataSupplier.IFSTAT_TX:
+            source = stat.data_supplier.source
+            sx = source.parent.component.name + "; " + source.component.name
+            if isinstance(source.parent, EngineService):
+                sx = source.parent.parent.component.name + "; " + sx
+            ret.append(sx)
+        elif type == StatBoxDataSupplier.PING:
+            source = stat.data_supplier.source
+            sx = source.parent.component.name + "; " + source.component.name
+            target = stat.data_supplier.target
+            tx = target.parent.component.name + "; " + target.component.name
+            ret.append(sx)
+            ret.append(tx)
+        else:
+            raise Exception("Invalid stat type")
+        return ret
+
+    @classmethod
+    def _get_intf_if_exists(cls, engine: 'Engine', name: str) -> EngineInterface or None:
+        split = name.split("; ")
+        if split[0] in engine.nodes.keys():
+            node = engine.nodes[split[0]]
+            if len(split) == 2:
+                if split[1] in node.intfs.keys():
+                    return node.intfs[split[1]]
+            else:
+                if split[1] in node.services.keys():
+                    service = node.services[split[1]]
+                    if split[2] in service.intfs.keys():
+                        return service.intfs[split[2]]
+        return None
+
+    @classmethod
+    def _get_service_if_exists(cls, engine: 'Engine', name: str) -> EngineService or None:
+        split = name.split("; ")
+        if split[0] in engine.nodes.keys():
+            node = engine.nodes[split[0]]
+            if split[1] in node.services.keys():
+                return node.services[split[1]]
+        return None

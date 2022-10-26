@@ -12,9 +12,9 @@ class MainView(View):
         self.box = None
         self.active_button_bar = None
 
-        self.gui_scale = 1.4
+        self.gui_scale = 1
         self.zoom_goal = 200
-        self.zoom = 1.4
+        self.zoom = 1
         self.zoom_box = ButtonBar(x=10 * self.gui_scale, y=0 - 10 * self.gui_scale)
         self.zoom_box.add_button(Button(40 * self.gui_scale, 40 * self.gui_scale, None, "-", "Arial " + str(int(self.gui_scale * 20)),
                                    on_press=lambda x, y: self.zoom_out()))

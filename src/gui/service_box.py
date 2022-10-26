@@ -1,4 +1,5 @@
 from gui.button import ButtonBar, Button
+from gui.stat_box import StatBoxUtil
 from gui.system_box import SystemBox
 from live.engine_component import EngineService, EngineComponentStatus
 
@@ -13,16 +14,31 @@ class ServiceBox(SystemBox):
         self.button_bar = ButtonBar(self.x, self.y, 3, 3)
         self.on_off_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, None, "O", "Arial " + str(int(self.view.gui_scale * 20)),
                                     on_press=lambda x, y: self.on_press_on_off())
-        self.ping_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, None, "P", "Arial " + str(int(self.view.gui_scale * 20)),
-                                   on_press=lambda x, y: self.on_press_ping())
-        self.iperf_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, None, "S", "Arial " + str(int(self.view.gui_scale * 20)),
-                                on_press=lambda x, y: self.on_press_iperf())
-        self.destroy_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, None, "D", "Arial " + str(int(self.view.gui_scale * 20)),
-                                on_press=lambda x, y: self.on_press_destroy())
+        self.ping_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, None, "P",
+                                  "Arial " + str(int(self.view.gui_scale * 20)),
+                                  on_press=lambda x, y: self.on_press_ping())
+        self.iperf_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, None, "S",
+                                   "Arial " + str(int(self.view.gui_scale * 20)),
+                                   on_press=lambda x, y: self.on_press_iperf())
+        self.destroy_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, None, "D",
+                                     "Arial " + str(int(self.view.gui_scale * 20)),
+                                     on_press=lambda x, y: self.on_press_destroy())
         self.button_bar.add_button(self.on_off_button)
         self.button_bar.add_button(self.ping_button)
         self.button_bar.add_button(self.iperf_button)
         self.button_bar.add_button(self.destroy_button)
+        self.stat_boxes = []
+        for data in self.service.component.gui_data.stat_data:
+            b = StatBoxUtil.create_stat_box(data, self.view, service.engine)
+            if b:
+                self.stat_boxes.append(b)
+
+    def rebuild_gui_data(self):
+        for box in list(self.stat_boxes):
+            if box.data_supplier.stop_updating:
+                # Stat box got closed
+                self.stat_boxes.remove(box)
+        self.service.component.gui_data.stat_data = [StatBoxUtil.get_data(x) for x in self.stat_boxes]
 
     def on_resize(self, width: int, height: int):
         super(ServiceBox, self).on_resize(width, height)

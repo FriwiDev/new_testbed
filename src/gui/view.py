@@ -7,7 +7,7 @@ from gui.images import Images
 class View(ABC):
     root = Tk()
     Images.load()
-    root.tk.call('wm', 'iconphoto', root._w, Images.router)
+    root.tk.call('wm', 'iconphoto', root._w, Images.router_icon)
 
     def __init__(self, title: str, width: int, height: int):
         self.popup_menu: Menu = None

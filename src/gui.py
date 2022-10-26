@@ -4,7 +4,6 @@ import threading
 from extensions.macvlan_extension import MacVlanServiceExtension
 from extensions.wireguard_extension import WireguardServiceExtension
 from gui.box import Box
-from gui.button import ButtonBar, Button
 from gui.interface_box import InterfaceBox
 from gui.main_view import MainView
 from gui.service_box import ServiceBox
@@ -28,6 +27,8 @@ class Gui(object):
         gui_box = Box(0, 0, init_width, init_height)
         gui_box.draggable = False
         gui_box.resizeable = False
+
+        self.view.set_box(gui_box)
 
         main_box = Box(0, 0, init_width, init_height)
         main_box.draggable = True
@@ -86,8 +87,6 @@ class Gui(object):
                 # TODO Find out why components shift slightly after reload
                 service_box.on_resize(service_box.width, service_box.height)
 
-        self.view.set_box(gui_box)
-
     def run(self):
         update_thread = threading.Thread(target=self.engine.continuous_update)
         update_thread.start()
@@ -100,12 +99,24 @@ class Gui(object):
 
         self.view.run_ui_loop()
 
+        # Flush interface changes
+        self.flush_changes(self.view.box)
+
         TopoUtil.to_file(self.argv[0], self.engine.topo)
 
         self.engine.stop_updating = True
         update_thread.join()
         for x in ifstat_threads:
             x.join()
+
+    def flush_changes(self, box: Box):
+        if isinstance(box, InterfaceBox):
+            box.rebuild_gui_data()
+        elif isinstance(box, ServiceBox):
+            box.rebuild_gui_data()
+
+        for b in box.subboxes:
+            self.flush_changes(b)
 
 
 def main(argv: list[str]):

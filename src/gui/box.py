@@ -128,7 +128,7 @@ class Box(object):
 
     def on_click(self, button: int, x: int, y: int, root_x: int, root_y: int):
         found = False
-        for box in self.subboxes.__reversed__():
+        for box in list(self.subboxes.__reversed__()):
             if box._is_in_box(x, y):
                 box.on_click(button, x - box.x, y - box.y, root_x, root_y)
                 found = True
