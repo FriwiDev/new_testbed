@@ -147,16 +147,17 @@ class Service(ABC):
                 return True
         return False
 
-    def build_routing_table(self) -> dict[ipaddress, ipaddress]:
+    def build_routing_table(self, with_tunnel: bool = False) -> dict[ipaddress, ipaddress]:
         routing_table = {}
         routing_hops = {}
         # Add entries to table and replace with shorter options, if any
         for intf in self.intfs:
-            entries = self.get_reachable_ips_via(intf)
-            for ip, h in entries.items():
-                if ip not in routing_table or routing_hops[ip] > h:
-                    routing_table[ip] = intf.ips[0]
-                    routing_hops[ip] = h
+            if with_tunnel or not intf.is_tunnel:
+                entries = self.get_reachable_ips_via(intf)
+                for ip, h in entries.items():
+                    if ip not in routing_table or routing_hops[ip] > h:
+                        routing_table[ip] = intf.ips[0]
+                        routing_hops[ip] = h
         # Delete local addresses from table
         to_del = []
         for ip, h in routing_table.items():

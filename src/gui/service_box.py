@@ -54,7 +54,7 @@ class ServiceBox(SystemBox):
     def on_paint(self, offs_x: int, offs_y: int):
         if self.view.select_mode:
             if self in self.view.select_mode:
-                self.fill = '#FFFFFF'
+                self.fill = self.get_selectable_color()
             else:
                 self.fill = '#7C7C7C'
         elif self.service.status == EngineComponentStatus.RUNNING:
@@ -70,9 +70,26 @@ class ServiceBox(SystemBox):
                               font="Arial " + str(int(12 * self.view.zoom)))
 
         if self.focus:
+            if self.view.in_toggle:
+                self.on_off_button.text = "W"
+                self.destroy_button.text = "W"
+                self.on_off_button.enabled = False
+                self.destroy_button.enabled = False
+            else:
+                self.on_off_button.text = "Off" if self.service.status == EngineComponentStatus.RUNNING else "On"
+                self.destroy_button.text = "D"
+                self.on_off_button.enabled = True
+                self.destroy_button.enabled = True
+            if self.service.status == EngineComponentStatus.RUNNING:
+                self.ping_button.enabled = True
+                self.iperf_button.enabled = True
+            else:
+                self.ping_button.enabled = False
+                self.iperf_button.enabled = False
+
             self.button_bar._set_view(self.view)
-            self.button_bar.x = offs_x+self.x*self.view.zoom+self.width/2*self.view.zoom-self.button_bar.width/2
-            self.button_bar.y = offs_y+self.y*self.view.zoom-self.button_bar.height
+            self.button_bar.x = offs_x + self.x * self.view.zoom + self.width / 2 * self.view.zoom - self.button_bar.width / 2
+            self.button_bar.y = offs_y + self.y * self.view.zoom - self.button_bar.height
 
     def on_focus_gain(self):
         self.view.set_active_button_bar(self.button_bar)
@@ -82,7 +99,25 @@ class ServiceBox(SystemBox):
             self.view.set_active_button_bar(None)
 
     def on_press_on_off(self):
+        if self.view.in_toggle:
+            return
+        self.view.in_toggle = True
+        thread = threading.Thread(target=self.do_toggle_online)
+        thread.start()
         pass
+
+    def do_toggle_online(self):
+        if self.service.status == EngineComponentStatus.UNREACHABLE:
+            self.view.set_message(f"Can not start {self.service.get_name()}: currently unreachable", color='#FF0000')
+        elif self.service.status == EngineComponentStatus.RUNNING:
+            self.view.set_message(f"Stopping {self.service.get_name()}...")
+            self.service.engine.stop(self.service.component)
+            self.view.set_message(f"Stopped {self.service.get_name()}")
+        else:
+            self.view.set_message(f"Starting {self.service.get_name()}...")
+            self.service.engine.start(self.service.component)
+            self.view.set_message(f"Started {self.service.get_name()}")
+        self.view.in_toggle = False
 
     def on_press_ping_or_iperf(self, callback):
         reachable = []
@@ -133,7 +168,23 @@ class ServiceBox(SystemBox):
         self.service.engine.cmd_iperf(self.service.component, target, target_dev)
 
     def on_press_destroy(self):
+        if self.view.in_toggle:
+            return
+        self.view.in_toggle = True
+        thread = threading.Thread(target=self.do_destroy)
+        thread.start()
         pass
+
+    def do_destroy(self):
+        if self.service.status == EngineComponentStatus.UNREACHABLE:
+            self.view.set_message(f"Can not destroy {self.service.get_name()}: currently unreachable", color='#FF0000')
+        elif self.service.status == EngineComponentStatus.REMOVED:
+            self.view.set_message(f"Can not destroy {self.service.get_name()}: already removed", color='#FF0000')
+        else:
+            self.view.set_message(f"Destroying {self.service.get_name()}...")
+            self.service.engine.destroy(self.service.component)
+            self.view.set_message(f"Destroyed {self.service.get_name()}")
+        self.view.in_toggle = False
 
     def _list_boxes(self, parent: Box) -> list[Box]:
         ret = list(parent.subboxes)
@@ -141,3 +192,10 @@ class ServiceBox(SystemBox):
             for sub in self._list_boxes(box):
                 ret.append(sub)
         return ret
+
+    def get_selectable_color(self):
+        if self.view.select_mode:
+            if self in self.view.select_mode and \
+                    self.service.status != EngineComponentStatus.RUNNING:
+                return '#FFC0C0'
+        return '#FFFFFF'

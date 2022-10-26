@@ -14,6 +14,7 @@ class Interface(object):
         self.other_end_service = None
         self.other_end = None
         self.gui_data: GuiDataAttachment = GuiDataAttachment()
+        self.is_tunnel = False
 
     def add_ip(self, ip: str or ip_address, network: str or ip_network) -> 'Interface':
         if isinstance(ip, str):

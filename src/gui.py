@@ -7,7 +7,6 @@ from gui.box import Box
 from gui.interface_box import InterfaceBox
 from gui.main_view import MainView
 from gui.service_box import ServiceBox
-from gui.stat_box import StatBox, StatBoxDataSupplier
 from live.engine import Engine
 from topo.topo import TopoUtil
 
@@ -22,7 +21,7 @@ class Gui(object):
         self.engine = Engine(argv[0])
         self.engine.update_all_status()
 
-        self.view = MainView()
+        self.view = MainView(self.engine)
 
         gui_box = Box(0, 0, init_width, init_height)
         gui_box.draggable = False
@@ -37,21 +36,6 @@ class Gui(object):
         main_box.current_box = (0, 0, init_width, init_height, 0)
 
         gui_box.add_box(main_box)
-
-        stat = StatBox(100, 100, 200, 100, self.view)
-        stat.available_bounding_boxes = [(0, 0, init_width, init_height, 0)]
-        stat.current_box = (0, 0, init_width, init_height, 0)
-        # for i in range(0, 20):
-        #     if i == 10:
-        #         stat.add_value(i, math.inf)
-        #     else:
-        #         stat.add_value(i, i + 1)
-        supp = StatBoxDataSupplier(self.engine, stat, StatBoxDataSupplier.IFSTAT_TX,
-                                   self.engine.nodes['testnode'].services['host1'].intfs['testnode-eth0'],
-                                   self.engine.nodes['testnode'].services['host2'].intfs['testnode-eth3'])
-        update_thread = threading.Thread(target=supp.run_chart)
-        update_thread.start()
-        gui_box.add_box(stat)
 
         interface_boxes = {}
 

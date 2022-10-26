@@ -19,6 +19,7 @@ class Button(object):
         self.on_press = on_press
         self.enabled = enabled
         self.text_offs_y = text_offs_y
+        self.disabled_fill = '#C0C0C0'
 
     def _set_view(self, view: 'View'):
         self.view = view
@@ -26,7 +27,8 @@ class Button(object):
     def on_paint(self, offs_x: int, offs_y: int):
         abs_x = self.x + offs_x
         abs_y = self.y + offs_y
-        self.view.canvas.create_rectangle(abs_x, abs_y, abs_x + self.width, abs_y + self.height, fill=self.fill)
+        self.view.canvas.create_rectangle(abs_x, abs_y, abs_x + self.width, abs_y + self.height,
+                                          fill=self.fill if self.enabled else self.disabled_fill)
         if self.image:
             img_x = abs_x + self.width / 2 - self.image.width() / 2
             img_y = abs_y + self.height / 2 - self.image.height() / 2

@@ -336,7 +336,7 @@ class Engine(object):
             if source == target:
                 return ipaddress.ip_address("127.0.0.1")
             else:
-                reachable_ips = source.build_routing_table()
+                reachable_ips = source.build_routing_table(True)
                 for ip in reachable_ips.keys():
                     if target.has_ip(ip):
                         return ip
@@ -345,7 +345,7 @@ class Engine(object):
             if target in source.intfs:
                 return ipaddress.ip_address("127.0.0.1")
             else:
-                reachable_ips = source.build_routing_table()
+                reachable_ips = source.build_routing_table(True)
                 for ip in reachable_ips.keys():
                     if ip in target.ips:
                         return ip

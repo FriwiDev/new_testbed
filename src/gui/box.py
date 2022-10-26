@@ -536,10 +536,13 @@ class Box(object):
     def update_fill(self):
         self.fill = '#FFFFFF'
 
+    def get_selectable_color(self):
+        return '#FFFFFF'
+
     def update_select_mode(self):
         if self.view.select_mode:
             if self in self.view.select_mode:
-                self.fill = '#FFFFFF'
+                self.fill = self.get_selectable_color()
             else:
                 self.fill = '#7C7C7C'
         else:

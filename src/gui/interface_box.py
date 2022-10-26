@@ -20,7 +20,6 @@ class InterfaceBox(Box):
         self.intf = intf
         self.resizeable = False
         self.admin_net = isinstance(intf.extension, MacVlanServiceExtension)
-        self.in_toggle = False
 
         self.button_bar = ButtonBar(self.x, self.y, 3, 3)
         self.on_off_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, None, "W",
@@ -64,7 +63,7 @@ class InterfaceBox(Box):
     def on_paint(self, offs_x: int, offs_y: int):
         if self.view.select_mode:
             if self in self.view.select_mode:
-                self.fill = '#FFFFFF'
+                self.fill = self.get_selectable_color()
             else:
                 self.fill = '#7C7C7C'
         elif self.intf.status == EngineComponentStatus.RUNNING:
@@ -74,12 +73,6 @@ class InterfaceBox(Box):
                 self.fill = 'white'
         else:
             self.fill = '#707070'
-        if self.in_toggle:
-            self.on_off_button.text = "W"
-        elif self.intf.status == EngineComponentStatus.RUNNING:
-            self.on_off_button.text = "Off"
-        else:
-            self.on_off_button.text = "On"
         super().on_paint(offs_x, offs_y)
         abs_x = self.x * self.view.zoom + offs_x
         abs_y = self.y * self.view.zoom + offs_y
@@ -105,6 +98,16 @@ class InterfaceBox(Box):
                                           abs_y + (self.height / 2 - self.INTERFACE_DEBUG_HEIGHT / 2) * self.view.zoom)
 
         if self.focus:
+            if self.view.in_toggle:
+                self.on_off_button.text = "W"
+                self.on_off_button.enabled = False
+            elif self.intf.status == EngineComponentStatus.RUNNING:
+                self.on_off_button.text = "Off"
+                self.on_off_button.enabled = True
+            else:
+                self.on_off_button.text = "On"
+                self.on_off_button.enabled = True
+
             self.button_bar._set_view(self.view)
             self.button_bar.x = offs_x + self.x * self.view.zoom + self.width / 2 * self.view.zoom - self.button_bar.width / 2
             self.button_bar.y = offs_y + self.y * self.view.zoom - self.button_bar.height
@@ -176,9 +179,9 @@ class InterfaceBox(Box):
             self.view.set_active_button_bar(None)
 
     def on_press_on_off(self):
-        if self.in_toggle:
+        if self.view.in_toggle:
             return
-        self.in_toggle = True
+        self.view.in_toggle = True
         thread = threading.Thread(target=self.do_toggle_online)
         thread.start()
         pass
@@ -188,7 +191,8 @@ class InterfaceBox(Box):
             self.intf.engine.cmd_set_iface_state(self.intf, EngineInterfaceState.DOWN)
         else:
             self.intf.engine.cmd_set_iface_state(self.intf, EngineInterfaceState.UP)
-        self.in_toggle = False
+        self.view.set_message(f"Interface {self.intf.get_name()} set {self.intf.interface_state.name}")
+        self.view.in_toggle = False
 
     def on_press_debug(self):
         self.debug = not self.debug
@@ -210,3 +214,11 @@ class InterfaceBox(Box):
         self.stat_boxes.append(StatBoxUtil.create_traffic_box(self.view, StatBoxDataSupplier.IFSTAT_TX,
                                                               int(center_x - w / 2), int(center_y - h / 2), w, h,
                                                               self.intf))
+
+    def get_selectable_color(self):
+        if self.view.select_mode:
+            if self in self.view.select_mode and \
+                    (self.intf.status != EngineComponentStatus.RUNNING or
+                     self.intf.interface_state == EngineInterfaceState.DOWN):
+                return '#FFC0C0'
+        return '#FFFFFF'

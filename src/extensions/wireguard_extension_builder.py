@@ -61,6 +61,8 @@ class WireguardExtensionBuilder(object):
         intf2.other_end = intf1
         intf1.other_end_service = self.service2
         intf2.other_end_service = self.service1
+        intf1.is_tunnel = True
+        intf2.is_tunnel = True
 
         ext1.gen_keys()
         ext2.gen_keys()

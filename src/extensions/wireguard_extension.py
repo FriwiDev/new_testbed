@@ -64,6 +64,8 @@ class WireguardServiceExtension(ServiceExtension):
                 remote_intf.other_end = intf
                 intf.other_end_service = remote_service
                 remote_intf.other_end_service = service
+                intf.is_tunnel = True
+                remote_intf.is_tunnel = True
         return ret
 
     def gen_keys(self):

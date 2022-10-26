@@ -1,14 +1,17 @@
 import math
+import threading
+import time
 
 from gui.box import Box
 from gui.button import ButtonBar, Button
-from gui.system_box import SystemBox
 from gui.view import View
+from live.engine import Engine
 
 
 class MainView(View):
 
-    def __init__(self):
+    def __init__(self, engine: Engine):
+        self.engine = engine
         self.box = None
         self.active_button_bar = None
 
@@ -16,35 +19,56 @@ class MainView(View):
         self.zoom_goal = 200
         self.zoom = 1
         self.zoom_box = ButtonBar(x=10 * self.gui_scale, y=0 - 10 * self.gui_scale)
-        self.zoom_box.add_button(Button(40 * self.gui_scale, 40 * self.gui_scale, None, "-", "Arial " + str(int(self.gui_scale * 20)),
-                                   on_press=lambda x, y: self.zoom_out()))
+        self.zoom_box.add_button(
+            Button(40 * self.gui_scale, 40 * self.gui_scale, None, "-", "Arial " + str(int(self.gui_scale * 20)),
+                   on_press=lambda x, y: self.zoom_out()))
         self.zoom_factor_button = Button(80 * self.gui_scale, 40 * self.gui_scale, None,
                                          self.zoom_text(), "Arial " + str(int(self.gui_scale * 14)),
                                          on_press=None, enabled=False, text_offs_y=int((20 - 14) / 2 * self.gui_scale))
         self.zoom_box.add_button(self.zoom_factor_button)
-        self.zoom_box.add_button(Button(40 * self.gui_scale, 40 * self.gui_scale, None, "+", "Arial " + str(int(self.gui_scale * 20)),
-                                   on_press=lambda x, y: self.zoom_in()))
+        self.zoom_box.add_button(
+            Button(40 * self.gui_scale, 40 * self.gui_scale, None, "+", "Arial " + str(int(self.gui_scale * 20)),
+                   on_press=lambda x, y: self.zoom_in()))
         self.zoom_box._set_view(self)
 
-        self.run_box = ButtonBar(x=10 * self.gui_scale, y=10 * self.gui_scale, padding=3 * self.gui_scale, margin=3 * self.gui_scale)
+        self.run_box = ButtonBar(x=10 * self.gui_scale, y=10 * self.gui_scale, padding=3 * self.gui_scale,
+                                 margin=3 * self.gui_scale)
         self.run_box.add_button(
             Button(240 * self.gui_scale, 40 * self.gui_scale, None, "Testbed", "Arial " + str(int(self.gui_scale * 14)),
                    on_press=None))
-        self.run_box.add_button(
-            Button(40 * self.gui_scale, 40 * self.gui_scale, None, "R", "Arial " + str(int(self.gui_scale * 20)),
-                   on_press=lambda x, y: self.on_start_all()))
-        self.run_box.add_button(
-            Button(40 * self.gui_scale, 40 * self.gui_scale, None, "S", "Arial " + str(int(self.gui_scale * 20)),
-                   on_press=lambda x, y: self.on_stop_all()))
-        self.run_box.add_button(
-            Button(40 * self.gui_scale, 40 * self.gui_scale, None, "D", "Arial " + str(int(self.gui_scale * 20)),
-                   on_press=lambda x, y: self.on_destroy_all()))
+        self.on_button = Button(40 * self.gui_scale, 40 * self.gui_scale, None, "R",
+                                "Arial " + str(int(self.gui_scale * 20)),
+                                on_press=lambda x, y: self.on_action(self.do_start_all))
+        self.run_box.add_button(self.on_button)
+        self.off_button = Button(40 * self.gui_scale, 40 * self.gui_scale, None, "S",
+                                 "Arial " + str(int(self.gui_scale * 20)),
+                                 on_press=lambda x, y: self.on_action(self.do_stop_all))
+        self.run_box.add_button(self.off_button)
+        self.destroy_button = Button(40 * self.gui_scale, 40 * self.gui_scale, None, "D",
+                                     "Arial " + str(int(self.gui_scale * 20)),
+                                     on_press=lambda x, y: self.on_action(self.do_destroy_all))
+        self.run_box.add_button(self.destroy_button)
         self.run_box._set_view(self)
 
         self.select_mode = None
         self.select_callback = None
 
+        self.message = None
+        self.message_color = 'black'
+        self.message_cd = 0
+        self.message_fade = 0
+        self.last_message = 0
+
+        self.in_toggle = False
+
         super().__init__("Testbed", 200, 100)
+
+    def set_message(self, message: str, color: str = '#000000', cd: int = 4000, fade: int = 700):
+        self.message = message
+        self.message_color = color
+        self.message_cd = cd
+        self.message_fade = fade
+        self.last_message = int(time.time() * 1000)
 
     def set_box(self, box: Box):
         self.box = box
@@ -63,6 +87,7 @@ class MainView(View):
         self.zoom_box.y = height - self.zoom_box.height - 10 * self.gui_scale
 
     def on_paint(self):
+        # Main box
         if not self.box:
             return
         self.box._set_view(self)
@@ -70,8 +95,35 @@ class MainView(View):
         self.box.on_paint(0, 0)
         if self.active_button_bar:
             self.active_button_bar.on_paint(0, 0)
+
+        # Zoom box
         self.zoom_box.on_paint(0, 0)
+
+        # Run box
+        if self.in_toggle:
+            self.on_button.text = "W"
+            self.off_button.text = "W"
+            self.destroy_button.text = "W"
+            self.on_button.enabled = False
+            self.off_button.enabled = False
+            self.destroy_button.enabled = False
+        else:
+            self.on_button.text = "R"
+            self.off_button.text = "S"
+            self.destroy_button.text = "D"
+            self.on_button.enabled = True
+            self.off_button.enabled = True
+            self.destroy_button.enabled = True
         self.run_box.on_paint(0, 0)
+
+        t = int(time.time() * 1000)
+        if t - self.last_message < self.message_cd + self.message_fade:
+            # We can draw something! :)
+            perc = float(t - self.last_message - self.message_cd) / self.message_fade
+            if perc < 0:
+                perc = 0
+            self.create_text(self.width / 2, self.height - 30 * self.gui_scale + (60 * self.gui_scale * perc),
+                             self.message, "Arial " + str(int(15 * self.gui_scale)), fill=self.message_color)
 
     def on_click(self, button: int, x: int, y: int, root_x: int, root_y: int):
         if self.run_box._is_in_box(x, y):
@@ -128,39 +180,28 @@ class MainView(View):
     def zoom_text(self) -> str:
         return str(int(self.zoom_goal)) + "%"
 
-    def on_start_all(self):
+    def on_action(self, callback):
+        if self.in_toggle:
+            return
+        self.in_toggle = True
+        thread = threading.Thread(target=callback)
+        thread.start()
         pass
 
-    def on_stop_all(self):
-        pass
+    def do_start_all(self):
+        self.set_message(f"Starting all services...")
+        self.engine.start_all()
+        self.set_message(f"All services started")
+        self.in_toggle = False
 
-    def on_destroy_all(self):
-        pass
+    def do_stop_all(self):
+        self.set_message(f"Stopping all services...")
+        self.engine.stop_all()
+        self.set_message(f"All services stopped")
+        self.in_toggle = False
 
-
-def main():
-    box = Box(0, 0, 100, 100)
-    box.draggable = False
-    box.resizeable = False
-    box1 = Box(50, 50, 200, 200)
-    box2 = Box(300, 50, 200, 200)
-    system_box = SystemBox(500, 500, 500, 500)
-    system_box.available_bounding_boxes = [(0, 0, 1920, 1080, 0)]
-    system_box.current_box = (0, 0, 1920, 1080, 0)
-    interface_box = Box(0, 0, 100, 50)
-    system_box.add_interface_box(interface_box, True)
-    box1.available_bounding_boxes = [(50, 50, 300, 300, 0), (100, 400, 300, 300, 0)]
-    box1.current_box = (50, 50, 300, 300, 0)
-    box2.available_bounding_boxes = [(0, 0, 1920, 1080, 0)]
-    box2.current_box = (0, 0, 1920, 1080, 0)
-    box.add_box(box1)
-    box.add_box(box2)
-    box.add_box(system_box)
-    box1.lines.append(
-        (box2, (4, 2), [Box.NORTH, Box.WEST, Box.SOUTH, Box.EAST], [Box.NORTH, Box.WEST, Box.SOUTH, Box.EAST]))
-    view = MainView(box)
-    view.run_ui_loop()
-
-
-if __name__ == '__main__':
-    main()
+    def do_destroy_all(self):
+        self.set_message(f"Destroying all services...")
+        self.engine.destroy_all()
+        self.set_message(f"All services destroyed")
+        self.in_toggle = False
