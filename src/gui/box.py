@@ -83,10 +83,13 @@ class Box(object):
         pass
 
     def on_paint(self, offs_x: int, offs_y: int):
-        abs_x = self.x + offs_x
-        abs_y = self.y + offs_y
+        abs_x = self.x * self.view.zoom + offs_x
+        abs_y = self.y * self.view.zoom + offs_y
         # Draw box itself
-        self.view.canvas.create_rectangle(abs_x, abs_y, abs_x + self.width, abs_y + self.height, fill=self.fill)
+        self.view.canvas.create_rectangle(abs_x, abs_y, abs_x + self.width * self.view.zoom,
+                                          abs_y + self.height * self.view.zoom,
+                                          fill=self.fill,
+                                          width=self.view.zoom)
         # Draw subboxes
         for box in self.subboxes:
             box.on_paint(abs_x, abs_y)
@@ -96,8 +99,11 @@ class Box(object):
                 outline = '#00ff00'
                 if self.current_box == box:
                     outline = '#707070'
-                self.view.canvas.create_rectangle(box[0] + offs_x, box[1] + offs_y, box[0] + box[2] + offs_x,
-                                                  box[1] + box[3] + offs_y, outline=outline, width=3)
+                self.view.canvas.create_rectangle((box[0] * self.view.zoom) + offs_x,
+                                                  (box[1] * self.view.zoom) + offs_y,
+                                                  (box[0] + box[2]) * self.view.zoom + offs_x,
+                                                  (box[1] + box[3]) * self.view.zoom + offs_y,
+                                                  outline=outline, width=3*self.view.zoom)
 
         # Draw all outgoing lines
         for line in self.lines:
@@ -397,10 +403,10 @@ class Box(object):
             if not i == dir_a and not i == Box.opposite_dir(dir_a):
                 directions_possible.append(i)
 
-        points.append(point_a[0])
-        points.append(point_a[1])
-        points.append(current[0])
-        points.append(current[1])
+        points.append(point_a[0]*self.view.zoom)
+        points.append(point_a[1]*self.view.zoom)
+        points.append(current[0]*self.view.zoom)
+        points.append(current[1]*self.view.zoom)
 
         while current[0] != target[0] or current[1] != target[1]:
             current_dir = None
@@ -416,8 +422,8 @@ class Box(object):
             else:
                 steps = self._get_recommended_steps(current, target, current_dir, dir_b)
             current = self._walk_point(current, current_dir, steps)
-            points.append(current[0])
-            points.append(current[1])
+            points.append(current[0]*self.view.zoom)
+            points.append(current[1]*self.view.zoom)
 
             directions_possible = []
             # Only allow left/right
@@ -425,10 +431,10 @@ class Box(object):
                 if not i == current_dir and not i == Box.opposite_dir(current_dir):
                     directions_possible.append(i)
 
-        points.append(point_b[0])
-        points.append(point_b[1])
+        points.append(point_b[0]*self.view.zoom)
+        points.append(point_b[1]*self.view.zoom)
 
-        self.view.canvas.create_line(points, dash=dash)
+        self.view.canvas.create_line(points, dash=dash, width=self.view.zoom)
 
     def _walk_point(self, point: tuple[int, int], direction: int, pixels: int) -> tuple[int, int]:
         if direction == Box.NORTH:

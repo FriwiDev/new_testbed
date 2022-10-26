@@ -16,7 +16,8 @@ class StatBox(Box):
     MILLISECONDS_UNIT_SUFFIXES = ["ms", "s"]
     BITS_PER_SEC_UNIT_SUFFIXES = ["Bit/s", "KBit/s", "MBit/s", "GBit/s", "TBit/s"]
 
-    def __init__(self, x: int, y: int, width: int, height: int):
+    def __init__(self, x: int, y: int, width: int, height: int, view: 'View'):
+        self.view = view
         super(StatBox, self).__init__(x, y, width, height)
         self.title = "<Unknown>"
         self.x_axis = "<Unknown>"
@@ -29,14 +30,15 @@ class StatBox(Box):
 
     def on_paint(self, offs_x: int, offs_y: int):
         self.data_lock.acquire()
-        abs_x = self.x + offs_x
-        abs_y = self.y + offs_y
+        abs_x = self.x * self.view.zoom + offs_x
+        abs_y = self.y * self.view.zoom + offs_y
         # Draw box itself
-        self.view.canvas.create_rectangle(abs_x, abs_y, abs_x + self.width, abs_y + self.height, fill=self.fill)
+        self.view.canvas.create_rectangle(abs_x, abs_y, abs_x + self.width * self.view.zoom, abs_y + self.height * self.view.zoom,
+                                          fill=self.fill, width=self.view.zoom)
         # Draw Title
-        self.view.create_text(abs_x + self.width / 2, abs_y + 12, self.title, "Arial 10")
+        self.view.create_text(abs_x + self.width / 2 * self.view.zoom, abs_y + 12 * self.view.zoom, self.title, "Arial "+str(int(10*self.view.zoom)))
         title_height = 24
-        text_offs = 10
+        text_offs = 14
         axis_offs = 40
         axis_border = 10
         min_x = self.min_x()
@@ -74,18 +76,19 @@ class StatBox(Box):
         i = 0
         while True:
             perc = (x_begin + i * x_step - min_x) / (max_x - min_x)
-            x_perc = abs_x + axis_offs + content_x_offs \
+            x_perc = abs_x + (axis_offs + content_x_offs \
                      + perc * (self.width - axis_offs - axis_border - content_x_offs - content_spacing) / (l + 1) * l \
-                     + unit_width / 2
+                     + unit_width / 2) * self.view.zoom
             if x_begin + i * x_step > max_x:
                 break
             self.view.canvas.create_line(x_perc,
-                                         abs_y + self.height - axis_offs,
+                                         abs_y + (self.height - axis_offs) * self.view.zoom,
                                          x_perc,
-                                         abs_y + self.height - axis_offs + 5)
+                                         abs_y + (self.height - axis_offs + 5) * self.view.zoom,
+                                         width=self.view.zoom)
             if i % 5 == 0:
-                self.view.create_text(x_perc, abs_y + self.height - axis_offs + 10,
-                                      self.format_unit(x_step, self.x_unit, x_begin + i * x_step), "Arial 6")
+                self.view.create_text(x_perc, abs_y + (self.height - axis_offs + 12) * self.view.zoom,
+                                      self.format_unit(x_step, self.x_unit, x_begin + i * x_step), "Arial "+str(int(6*self.view.zoom)))
             i += 1
         i = 0
         while True:
@@ -93,16 +96,17 @@ class StatBox(Box):
             if y_begin + i * y_step > max_y:
                 break
             if 0.001 < perc < 0.999:
-                y_perc = abs_y + self.height - axis_offs \
-                         - perc * (self.height - axis_offs - title_height)
-                self.view.canvas.create_line(abs_x + axis_offs - 5,
+                y_perc = abs_y + (self.height - axis_offs \
+                         - perc * (self.height - axis_offs - title_height)) * self.view.zoom
+                self.view.canvas.create_line(abs_x + (axis_offs - 5) * self.view.zoom,
                                              y_perc,
-                                             abs_x + axis_offs,
-                                             y_perc)
+                                             abs_x + axis_offs * self.view.zoom,
+                                             y_perc,
+                                             width=self.view.zoom)
                 if i == 1 or i % 5 == 0:
-                    self.view.create_text(abs_x + axis_offs - 10, y_perc,
+                    self.view.create_text(abs_x + (axis_offs - 12) * self.view.zoom, y_perc,
                                           self.format_unit(y_step, self.y_unit, y_begin + i * y_step),
-                                          "Arial 6", angle=270)
+                                          "Arial "+str(int(6*self.view.zoom)), angle=270)
             i += 1
         # Draw content
         for x in self.data.keys():
@@ -114,27 +118,30 @@ class StatBox(Box):
             else:
                 perc_y = (y - min_y) / (max_y - min_y)
             perc_x = (x - min_x) / (max_x - min_x)
-            calc_x = abs_x + axis_offs + content_x_offs + unit_width * l * perc_x
-            self.view.canvas.create_rectangle(calc_x + 1,
-                                              abs_y + self.height - axis_offs - (unit_height * perc_y),
-                                              calc_x + unit_width - 1,
-                                              abs_y + self.height - axis_offs,
+            calc_x = abs_x + (axis_offs + content_x_offs + unit_width * l * perc_x) * self.view.zoom
+            self.view.canvas.create_rectangle(calc_x + 1 * self.view.zoom,
+                                              abs_y + (self.height - axis_offs - (unit_height * perc_y))*self.view.zoom,
+                                              calc_x + (unit_width - 1) * self.view.zoom,
+                                              abs_y + (self.height - axis_offs) * self.view.zoom,
                                               fill=color,
                                               outline='')
 
         # Draw X-Axis
-        self.view.create_text(abs_x + self.width / 2, abs_y + self.height - text_offs,
-                              self.x_axis + self.format_unit_suffix(x_step, self.x_unit), "Arial 8")
-        self.view.canvas.create_line(abs_x + axis_offs, abs_y + self.height - axis_offs,
-                                     abs_x + self.width - axis_border, abs_y + self.height - axis_offs,
-                                     arrow="last", arrowshape=(6, 10, 4))
+        self.view.create_text(abs_x + self.width / 2 * self.view.zoom, abs_y + (self.height - text_offs) * self.view.zoom,
+                              self.x_axis + self.format_unit_suffix(x_step, self.x_unit), "Arial "+str(int(8*self.view.zoom)))
+        self.view.canvas.create_line(abs_x + axis_offs * self.view.zoom, abs_y + (self.height - axis_offs) * self.view.zoom,
+                                     abs_x + (self.width - axis_border) * self.view.zoom,
+                                     abs_y + (self.height - axis_offs) * self.view.zoom,
+                                     arrow="last", arrowshape=(6*self.view.zoom, 10*self.view.zoom, 4*self.view.zoom),
+                                     width=self.view.zoom)
 
         # Draw Y-Axis
-        self.view.create_text(abs_x + text_offs, abs_y + self.height / 2,
-                              self.y_axis + self.format_unit_suffix(y_step, self.y_unit), "Arial 8", angle=270)
-        self.view.canvas.create_line(abs_x + axis_offs, abs_y + self.height - axis_offs,
-                                     abs_x + axis_offs, abs_y + title_height,
-                                     arrow="last", arrowshape=(6, 10, 4))
+        self.view.create_text(abs_x + text_offs * self.view.zoom, abs_y + (self.height / 2) * self.view.zoom,
+                              self.y_axis + self.format_unit_suffix(y_step, self.y_unit), "Arial "+str(int(8*self.view.zoom)), angle=270)
+        self.view.canvas.create_line(abs_x + axis_offs * self.view.zoom, abs_y + (self.height - axis_offs) * self.view.zoom,
+                                     abs_x + axis_offs * self.view.zoom, abs_y + title_height * self.view.zoom,
+                                     arrow="last", arrowshape=(6*self.view.zoom, 10*self.view.zoom, 4*self.view.zoom),
+                                     width=self.view.zoom)
 
         self.data_lock.release()
 

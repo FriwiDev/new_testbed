@@ -1,3 +1,5 @@
+import math
+
 from gui.box import Box
 from gui.button import ButtonBar, Button
 from gui.system_box import SystemBox
@@ -6,31 +8,32 @@ from gui.view import View
 
 class MainView(View):
 
-    def __init__(self, box: Box):
-        self.box = box
+    def __init__(self):
+        self.box = None
         self.active_button_bar = None
 
-        gui_scale = 1
-        self.zoom = 100
-        self.zoom_box = ButtonBar(x=10 * gui_scale, y=0 - 10 * gui_scale)
-        self.zoom_box.add_button(Button(40 * gui_scale, 40 * gui_scale, None, "-", "Arial " + str(int(gui_scale * 20)),
+        self.gui_scale = 1.4
+        self.zoom_goal = 200
+        self.zoom = 1.4
+        self.zoom_box = ButtonBar(x=10 * self.gui_scale, y=0 - 10 * self.gui_scale)
+        self.zoom_box.add_button(Button(40 * self.gui_scale, 40 * self.gui_scale, None, "-", "Arial " + str(int(self.gui_scale * 20)),
                                    on_press=lambda x, y: self.zoom_out()))
-        self.zoom_factor_button = Button(80 * gui_scale, 40 * gui_scale, None,
-                                         self.zoom_text(), "Arial " + str(int(gui_scale * 14)),
-                                         on_press=None, enabled=False, text_offs_y=int((20 - 14) / 2 * gui_scale))
+        self.zoom_factor_button = Button(80 * self.gui_scale, 40 * self.gui_scale, None,
+                                         self.zoom_text(), "Arial " + str(int(self.gui_scale * 14)),
+                                         on_press=None, enabled=False, text_offs_y=int((20 - 14) / 2 * self.gui_scale))
         self.zoom_box.add_button(self.zoom_factor_button)
-        self.zoom_box.add_button(Button(40 * gui_scale, 40 * gui_scale, None, "+", "Arial " + str(int(gui_scale * 20)),
+        self.zoom_box.add_button(Button(40 * self.gui_scale, 40 * self.gui_scale, None, "+", "Arial " + str(int(self.gui_scale * 20)),
                                    on_press=lambda x, y: self.zoom_in()))
         self.zoom_box._set_view(self)
 
-        self.run_box = ButtonBar(x=10 * gui_scale, y=10 * gui_scale, padding=3, margin=3)
-        self.run_box.add_button(Button(240 * gui_scale, 40 * gui_scale, None, "Testbed", "Arial " + str(int(gui_scale * 14)),
+        self.run_box = ButtonBar(x=10 * self.gui_scale, y=10 * self.gui_scale, padding=3 * self.gui_scale, margin=3 * self.gui_scale)
+        self.run_box.add_button(Button(240 * self.gui_scale, 40 * self.gui_scale, None, "Testbed", "Arial " + str(int(self.gui_scale * 14)),
                                        on_press=None))
-        self.run_box.add_button(Button(40 * gui_scale, 40 * gui_scale, None, "R", "Arial " + str(int(gui_scale * 20)),
+        self.run_box.add_button(Button(40 * self.gui_scale, 40 * self.gui_scale, None, "R", "Arial " + str(int(self.gui_scale * 20)),
                                         on_press=lambda x, y: self.on_start_all()))
-        self.run_box.add_button(Button(40 * gui_scale, 40 * gui_scale, None, "S", "Arial " + str(int(gui_scale * 20)),
+        self.run_box.add_button(Button(40 * self.gui_scale, 40 * self.gui_scale, None, "S", "Arial " + str(int(self.gui_scale * 20)),
                                         on_press=lambda x, y: self.on_stop_all()))
-        self.run_box.add_button(Button(40 * gui_scale, 40 * gui_scale, None, "D", "Arial " + str(int(gui_scale * 20)),
+        self.run_box.add_button(Button(40 * self.gui_scale, 40 * self.gui_scale, None, "D", "Arial " + str(int(self.gui_scale * 20)),
                                        on_press=lambda x, y: self.on_destroy_all()))
         self.run_box._set_view(self)
 
@@ -45,11 +48,12 @@ class MainView(View):
 
     def on_resize(self, width: int, height: int):
         self.box.on_resize(width, height)
-        gui_scale = 1
-        self.zoom_box.x = 10 * gui_scale
-        self.zoom_box.y = height - self.zoom_box.height - 10 * gui_scale
+        self.zoom_box.x = 10 * self.gui_scale
+        self.zoom_box.y = height - self.zoom_box.height - 10 * self.gui_scale
 
     def on_paint(self):
+        if not self.box:
+            return
         self.box._set_view(self)
         self.box._set_parent(None)
         self.box.on_paint(0, 0)
@@ -78,36 +82,40 @@ class MainView(View):
                                                 y-self.active_button_bar.y,
                                                 root_x, root_y)
                 return
-        self.box.on_click(button, x, y, root_x, root_y)
+        self.box.on_click(button, math.floor(x / self.zoom), math.floor(y / self.zoom), root_x, root_y)
 
     def on_drag_begin(self, x: int, y: int, root_x: int, root_y: int):
-        self.box.on_drag_begin(x, y, root_x, root_y)
+        self.box.on_drag_begin(math.floor(x / self.zoom), math.floor(y / self.zoom), root_x, root_y)
 
     def on_drag_move(self, x: int, y: int, root_x: int, root_y: int, total_dx: int, total_dy: int):
-        self.box.on_drag_move(x, y, root_x, root_y, total_dx, total_dy)
+        self.box.on_drag_move(math.floor(x / self.zoom), math.floor(y / self.zoom),
+                              root_x, root_y,
+                              math.floor(total_dx / self.zoom), math.floor(total_dy / self.zoom))
 
     def on_drag_end(self, x: int, y: int, root_x: int, root_y: int, total_dx: int, total_dy: int):
-        self.box.on_drag_end(x, y, root_x, root_y, total_dx, total_dy)
+        self.box.on_drag_end(math.floor(x / self.zoom), math.floor(y / self.zoom),
+                             root_x, root_y,
+                             math.floor(total_dx / self.zoom), math.floor(total_dy / self.zoom))
         # Call mouse move to reapply cursor
-        self.box.on_mouse_move(x, y, root_x, root_y)
+        self.box.on_mouse_move(math.floor(x / self.zoom), math.floor(y / self.zoom), root_x, root_y)
 
     def on_mouse_move(self, x: int, y: int, root_x: int, root_y: int):
-        self.box.on_mouse_move(x, y, root_x, root_y)
+        self.box.on_mouse_move(math.floor(x / self.zoom), math.floor(y / self.zoom), root_x, root_y)
 
     def zoom_in(self):
-        self.zoom += 20
-        if self.zoom > 500:
-            self.zoom = 500
+        self.zoom_goal += 20
+        if self.zoom_goal > 500:
+            self.zoom_goal = 500
         self.zoom_factor_button.text = self.zoom_text()
 
     def zoom_out(self):
-        self.zoom -= 20
-        if self.zoom < 20:
-            self.zoom = 20
+        self.zoom_goal -= 20
+        if self.zoom_goal < 20:
+            self.zoom_goal = 20
         self.zoom_factor_button.text = self.zoom_text()
 
     def zoom_text(self) -> str:
-        return str(int(self.zoom)) + "%"
+        return str(int(self.zoom_goal)) + "%"
 
     def on_start_all(self):
         pass

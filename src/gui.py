@@ -17,12 +17,13 @@ class Gui(object):
     def __init__(self, argv: list[str]):
         self.argv = argv
 
-        gui_scale = 1
         init_width = 1920
         init_height = 980
 
         self.engine = Engine(argv[0])
         self.engine.update_all_status()
+
+        self.view = MainView()
 
         gui_box = Box(0, 0, init_width, init_height)
         gui_box.draggable = False
@@ -36,7 +37,7 @@ class Gui(object):
 
         gui_box.add_box(main_box)
 
-        stat = StatBox(100, 100, 200, 100)
+        stat = StatBox(100, 100, 200, 100, self.view)
         stat.available_bounding_boxes = [(0, 0, init_width, init_height, 0)]
         stat.current_box = (0, 0, init_width, init_height, 0)
         # for i in range(0, 20):
@@ -55,12 +56,12 @@ class Gui(object):
 
         for node in self.engine.nodes.values():
             for service in node.services.values():
-                service_box = ServiceBox(service)
+                service_box = ServiceBox(service, self.view)
                 service_box.available_bounding_boxes = [(0, 0, init_width, init_height, 0)]
                 service_box.current_box = (0, 0, init_width, init_height, 0)
                 main_box.add_box(service_box)
                 for intf in service.intfs.values():
-                    interface_box = InterfaceBox(intf)
+                    interface_box = InterfaceBox(intf, self.view)
                     if len(intf.component.links) > 0:
                         service_box.add_interface_box(interface_box, interface_box.x == 0 and interface_box.y == 0)
                     else:
@@ -85,7 +86,7 @@ class Gui(object):
                 # TODO Find out why components shift slightly after reload
                 service_box.on_resize(service_box.width, service_box.height)
 
-        self.view = MainView(gui_box)
+        self.view.set_box(gui_box)
 
     def run(self):
         update_thread = threading.Thread(target=self.engine.continuous_update)

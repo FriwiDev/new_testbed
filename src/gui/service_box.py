@@ -4,20 +4,20 @@ from live.engine_component import EngineService, EngineComponentStatus
 
 
 class ServiceBox(SystemBox):
-    def __init__(self, service: EngineService):
+    def __init__(self, service: EngineService, view: 'View'):
         super().__init__(service.component.gui_data.x, service.component.gui_data.y,
                          service.component.gui_data.width, service.component.gui_data.height)
         self.service = service
+        self.view = view
 
-        gui_scale = 1
         self.button_bar = ButtonBar(self.x, self.y, 3, 3)
-        self.on_off_button = Button(40 * gui_scale, 40 * gui_scale, None, "O", "Arial " + str(int(gui_scale * 20)),
+        self.on_off_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, None, "O", "Arial " + str(int(self.view.gui_scale * 20)),
                                     on_press=lambda x, y: self.on_press_on_off())
-        self.ping_button = Button(40 * gui_scale, 40 * gui_scale, None, "P", "Arial " + str(int(gui_scale * 20)),
+        self.ping_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, None, "P", "Arial " + str(int(self.view.gui_scale * 20)),
                                    on_press=lambda x, y: self.on_press_ping())
-        self.iperf_button = Button(40 * gui_scale, 40 * gui_scale, None, "S", "Arial " + str(int(gui_scale * 20)),
+        self.iperf_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, None, "S", "Arial " + str(int(self.view.gui_scale * 20)),
                                 on_press=lambda x, y: self.on_press_iperf())
-        self.destroy_button = Button(40 * gui_scale, 40 * gui_scale, None, "D", "Arial " + str(int(gui_scale * 20)),
+        self.destroy_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, None, "D", "Arial " + str(int(self.view.gui_scale * 20)),
                                 on_press=lambda x, y: self.on_press_destroy())
         self.button_bar.add_button(self.on_off_button)
         self.button_bar.add_button(self.ping_button)
@@ -37,14 +37,17 @@ class ServiceBox(SystemBox):
         else:
             self.fill = '#707070'
         super().on_paint(offs_x, offs_y)
-        abs_x = self.x + offs_x
-        abs_y = self.y + offs_y
-        self.view.create_text(abs_x + self.width / 2, abs_y + self.height / 2 - 2, self.service.component.name)
+        abs_x = self.x * self.view.zoom + offs_x
+        abs_y = self.y * self.view.zoom + offs_y
+        self.view.create_text(abs_x + self.width / 2 * self.view.zoom,
+                              abs_y + self.height / 2 * self.view.zoom - 2 * self.view.gui_scale,
+                              self.service.component.name,
+                              font="Arial "+str(int(12*self.view.zoom)))
 
         if self.focus:
             self.button_bar._set_view(self.view)
-            self.button_bar.x = offs_x+self.x+self.width/2-self.button_bar.width/2
-            self.button_bar.y = offs_y+self.y-self.button_bar.height
+            self.button_bar.x = offs_x+self.x*self.view.zoom+self.width/2*self.view.zoom-self.button_bar.width/2
+            self.button_bar.y = offs_y+self.y*self.view.zoom-self.button_bar.height
 
     def on_focus_gain(self):
         self.view.set_active_button_bar(self.button_bar)
