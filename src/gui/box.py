@@ -28,6 +28,7 @@ class Box(object):
         self.allowed_directions = [Box.NORTH, Box.WEST, Box.SOUTH, Box.EAST]
 
         self.fill = 'white'
+        self.focus = False
 
     def add_line(self, end: 'Box', dash: tuple[int, int] or None):
         if self not in end.remote_line_endings:
@@ -120,10 +121,32 @@ class Box(object):
         pass
 
     def on_click(self, button: int, x: int, y: int, root_x: int, root_y: int):
+        found = False
         for box in self.subboxes.__reversed__():
             if box._is_in_box(x, y):
                 box.on_click(button, x - box.x, y - box.y, root_x, root_y)
-                return
+                found = True
+            else:
+                box.on_click_other()
+        if found:
+            return
+        # Click was in our box and not in subbox
+        if not self.focus:
+            self.focus = True
+            self.on_focus_gain()
+
+    def on_click_other(self):
+        for box in self.subboxes.__reversed__():
+            box.on_click_other()
+        if self.focus:
+            self.focus = False
+            self.on_focus_loose()
+
+    def on_focus_gain(self):
+        pass
+
+    def on_focus_loose(self):
+        pass
 
     def on_mouse_move(self, x: int, y: int, root_x: int, root_y: int):
         rel_x = x - self.x

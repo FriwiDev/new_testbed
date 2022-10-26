@@ -20,7 +20,6 @@ class Gui(object):
         gui_scale = 1
         init_width = 1920
         init_height = 980
-        self.zoom = 100
 
         self.engine = Engine(argv[0])
         self.engine.update_all_status()
@@ -36,19 +35,6 @@ class Gui(object):
         main_box.current_box = (0, 0, init_width, init_height, 0)
 
         gui_box.add_box(main_box)
-
-        zoom_box = ButtonBar(x=10 * gui_scale, y=init_height - 10 * gui_scale)
-        zoom_box.add_button(Button(40 * gui_scale, 40 * gui_scale, None, "-", "Arial " + str(int(gui_scale * 20)),
-                                   on_press=lambda x, y: self.zoom_out()))
-        self.zoom_factor_button = Button(80 * gui_scale, 40 * gui_scale, None,
-                                         self.zoom_text(), "Arial " + str(int(gui_scale * 14)),
-                                         on_press=None, enabled=False, text_offs_y=int((20 - 14) / 2 * gui_scale))
-        zoom_box.add_button(self.zoom_factor_button)
-        zoom_box.add_button(Button(40 * gui_scale, 40 * gui_scale, None, "+", "Arial " + str(int(gui_scale * 20)),
-                                   on_press=lambda x, y: self.zoom_in()))
-        zoom_box.y -= zoom_box.height
-
-        gui_box.add_box(zoom_box)
 
         stat = StatBox(100, 100, 200, 100)
         stat.available_bounding_boxes = [(0, 0, init_width, init_height, 0)]
@@ -119,21 +105,6 @@ class Gui(object):
         update_thread.join()
         for x in ifstat_threads:
             x.join()
-
-    def zoom_in(self):
-        self.zoom += 20
-        if self.zoom > 500:
-            self.zoom = 500
-        self.zoom_factor_button.text = self.zoom_text()
-
-    def zoom_out(self):
-        self.zoom -= 20
-        if self.zoom < 20:
-            self.zoom = 20
-        self.zoom_factor_button.text = self.zoom_text()
-
-    def zoom_text(self) -> str:
-        return str(int(self.zoom)) + "%"
 
 
 def main(argv: list[str]):

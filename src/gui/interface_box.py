@@ -1,5 +1,6 @@
 from extensions.macvlan_extension import MacVlanServiceExtension
 from gui.box import Box
+from gui.button import ButtonBar, Button
 from live.engine_component import EngineInterface, EngineComponentStatus
 from network.network_utils import NetworkUtils
 from ssh.ip_addr_ssh_command import InterfaceState
@@ -16,6 +17,21 @@ class InterfaceBox(Box):
         self.resizeable = False
         self.debug = False
         self.admin_net = isinstance(intf.extension, MacVlanServiceExtension)
+        
+        gui_scale = 1
+        self.button_bar = ButtonBar(self.x, self.y, 3, 3)
+        self.on_off_button = Button(40 * gui_scale, 40 * gui_scale, None, "O", "Arial " + str(int(gui_scale * 20)),
+                                   on_press=lambda x, y: self.on_press_on_off())
+        self.debug_button = Button(40 * gui_scale, 40 * gui_scale, None, "i", "Arial " + str(int(gui_scale * 20)),
+                                   on_press=lambda x, y: self.on_press_debug())
+        self.rx_button = Button(40 * gui_scale, 40 * gui_scale, None, "RX", "Arial " + str(int(gui_scale * 20)),
+                 on_press=lambda x, y: self.on_press_rx_button())
+        self.tx_button = Button(40 * gui_scale, 40 * gui_scale, None, "TX", "Arial " + str(int(gui_scale * 20)),
+                                on_press=lambda x, y: self.on_press_tx_button())
+        self.button_bar.add_button(self.on_off_button)
+        self.button_bar.add_button(self.debug_button)
+        self.button_bar.add_button(self.rx_button)
+        self.button_bar.add_button(self.tx_button)
 
     def on_resize(self, width: int, height: int):
         super(InterfaceBox, self).on_resize(width, height)
@@ -54,9 +70,10 @@ class InterfaceBox(Box):
                 self.draw_interface_debug(abs_x - self.INTERFACE_DEBUG_WIDTH,
                                           abs_y + self.height / 2 - self.INTERFACE_DEBUG_HEIGHT / 2)
 
-    def on_click(self, button: int, x: int, y: int, root_x: int, root_y: int):
-        if button == 1:
-            self.debug = not self.debug
+        if self.focus:
+            self.button_bar._set_view(self.view)
+            self.button_bar.x = offs_x+self.x+self.width/2-self.button_bar.width/2
+            self.button_bar.y = offs_y+self.y-self.button_bar.height
 
     def draw_interface_debug(self, abs_x: int, abs_y: int):
         self.view.canvas.create_rectangle(abs_x, abs_y, abs_x + self.INTERFACE_DEBUG_WIDTH,
@@ -115,3 +132,22 @@ class InterfaceBox(Box):
 
     def format_percent(self, per: float) -> str:
         return format(per * 100, ".1f").removesuffix(".0") + "%"
+    
+    def on_focus_gain(self):
+        self.view.set_active_button_bar(self.button_bar)
+    
+    def on_focus_loose(self):
+        if self.view.active_button_bar == self.button_bar:
+            self.view.set_active_button_bar(None)
+
+    def on_press_on_off(self):
+        pass
+
+    def on_press_debug(self):
+        self.debug = not self.debug
+
+    def on_press_rx_button(self):
+        pass
+
+    def on_press_tx_button(self):
+        pass
