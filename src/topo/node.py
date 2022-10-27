@@ -10,8 +10,15 @@ class NodeType(Enum):
 
 
 class Node(ABC):
+    """A node that is used to execute services."""
+
     def __init__(self, name: str, node_type: NodeType, ssh_remote: str, ssh_port: int = 22,
                  ssh_work_dir: str = None):
+        """name: the name of the node
+           node_type: type of node for easier identification
+           ssh_remote: the connection address for remote devices to connect to (e.g. root@10.0.1.1)
+           ssh_port: the port used by remote devices to connect via ssh
+           ssh_work_dir: the work dir used by external devices on this node (if None, no workdir switch)"""
         self.name = name
         self.type = node_type
         self.ssh_work_dir = ssh_work_dir

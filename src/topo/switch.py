@@ -11,18 +11,24 @@ from topo.service import ServiceType
 
 
 class Switch(LXCService, ABC):
-    """A Switch is a Node that is running an OpenFlow switch."""
+    """A Switch is a service that is running an OpenFlow switch."""
 
-    port_base = 1  # Switches start with port 1 in OpenFlow #TODO Remove?
     dpid_len = 16  # digits in dpid passed to switch
 
     def __init__(self, name, executor: 'Node', service_type: 'ServiceType', image: str = "ubuntu", cpu: str = None,
-                 memory: str = None, dpid: str = None, opts: str = '', listen_port: int = None,
-                 controllers: list['Controller'] = None):
-        """dpid: dpid hex string (or None to derive from name, e.g. s1 -> 1)
+                 cpu_allowance: str = None, memory: str = None, dpid: str = None, opts: str = '',
+                 listen_port: int = None, controllers: list['Controller'] = None):
+        """name: name for switch
+           executor: node this service is running on
+           service_type: the type of this service for easier identification
+           cpu: string limiting cpu core limits (None for unlimited, "n" for n cores)
+           cpu_allowance: string limiting cpu usage(None for unlimited, "n%" for n% usage)
+           memory: string limiting memory usage (None for unlimited, "nMB" for n MB limit, other units work as well)
+           dpid: dpid hex string (or None to derive from name, e.g. s1 -> 1)
            opts: additional switch options
-           listenPort: port to listen on for dpctl connections"""
-        super().__init__(name, executor, service_type, image, cpu, memory)
+           listenPort: port to listen on for dpctl connections
+           controllers: the controllers to attach to this switch"""
+        super().__init__(name, executor, service_type, image, cpu, cpu_allowance, memory)
         if controllers is None:
             controllers = []
         self.dpid = self.default_dpid(dpid)
@@ -68,9 +74,9 @@ class Switch(LXCService, ABC):
 
 
 class OVSSwitch(Switch):
-    """Open vSwitch switch. Depends on ovs-vsctl."""
+    """Open vSwitch switch."""
 
-    def __init__(self, name, executor: 'Node', cpu: str = None, memory: str = None,
+    def __init__(self, name, executor: 'Node', cpu: str = None, cpu_allowance: str = None, memory: str = None,
                  dpid=None, opts='', listen_port=None,
                  controllers: list['Controller'] = None,
                  fail_mode='secure', datapath='kernel', inband=False, protocols=None, reconnectms=1000,
@@ -78,14 +84,24 @@ class OVSSwitch(Switch):
                  local_network: ipaddress.ip_address or str or None = None,
                  local_mac: str or None = None):
         """name: name for switch
+           executor: node this service is running on
+           cpu: string limiting cpu core limits (None for unlimited, "n" for n cores)
+           cpu_allowance: string limiting cpu usage(None for unlimited, "n%" for n% usage)
+           memory: string limiting memory usage (None for unlimited, "nMB" for n MB limit, other units work as well)
+           dpid: dpid hex string (or None to derive from name, e.g. s1 -> 1)
+           opts: additional switch options
+           listenPort: port to listen on for dpctl connections
            failMode: controller loss behavior (secure|standalone)
            datapath: userspace or kernel mode (kernel|user)
            inband: use in-band control (False)
            protocols: use specific OpenFlow version(s) (e.g. OpenFlow13)
                       Unspecified (or old OVS version) uses OVS default
            reconnectms: max reconnect timeout in ms (0/None for default)
-           stp: enable STP (False, requires failMode=standalone)"""
-        super().__init__(name, executor, ServiceType.OVS, "ovs", cpu, memory, dpid=dpid, opts=opts,
+           stp: enable STP (False, requires failMode=standalone)
+           local_ip: local ip address for switch device
+           local_network: network for local_ip
+           local_mac: mac address for local switch device"""
+        super().__init__(name, executor, ServiceType.OVS, "ovs", cpu, cpu_allowance, memory, dpid=dpid, opts=opts,
                          listen_port=listen_port, controllers=controllers)
         self.fail_mode = fail_mode
         self.datapath = datapath
@@ -93,7 +109,6 @@ class OVSSwitch(Switch):
         self.protocols = protocols
         self.reconnectms = reconnectms
         self.stp = stp
-        self._uuids = []  # controller UUIDs #TODO ?
         self.local_ip = local_ip
         self.local_network = local_network
         self.local_mac = local_mac

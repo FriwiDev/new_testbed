@@ -12,6 +12,7 @@ from topo.util import MacUtil, ClassUtil
 
 
 class Topo(object):
+    """A topology represents a network setup."""
     def __init__(self, nodes=None,
                  links=None,
                  services=None,
@@ -81,6 +82,8 @@ class Topo(object):
 
     @abstractmethod
     def create(self, *args, **params):
+        """Method to be implemented by every topology implementation. Shapes the topology.
+           args[0] is list of arguments passed from the command line."""
         pass
 
     def add_service(self, service: Service):

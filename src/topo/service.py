@@ -14,7 +14,12 @@ class ServiceType(Enum):
 
 
 class Service(ABC):
+    """A service running on a node."""
+
     def __init__(self, name: str, executor: Node, service_type: ServiceType = None):
+        """name: name for service
+           executor: node this service is running on
+           service_type: the type of this service for easier identification"""
         self.name = name
         self.type = service_type
         self.executor = executor

@@ -9,7 +9,7 @@ class LinkType(Enum):
 
 
 class Link(object):
-    # TODO Check and potentially add mac generation to serialized config
+    """A link between two services."""
 
     def __init__(self, topo: 'Topo', service1: Service, service2: Service,
                  link_type: LinkType,
@@ -18,9 +18,19 @@ class Link(object):
                  delay: int = 0, loss: float = 0,
                  delay_variation: int = 0, delay_correlation: float = 0,
                  loss_correlation: float = 0):
-        """
-        Values for loss and correlations always [0;1]
-        """
+        """topo: The topology
+           service1: one end
+           service2: another end
+           link_type: type of link to use for cross-node connections. Connections on the same node always use bridges.
+           intf_name1: name of intf on service1 (can be assigned automatically)
+           intf_name2: name of intf on service2 (can be assigned automatically)
+           mac_addr1: mac addr of intf on service1 (can be assigned automatically)
+           mac_addr2: mac addr of intf on service2 (can be assigned automatically)
+           delay: delay in ms emulated on this link
+           loss: part of packets that should be emulated "lost" on this link (between 0 and 1)
+           delay_variation: possible variation of delay in ms
+           delay_correlation: correlation of delay variation between packets (between 0 and 1)
+           loss_correlation: correlation of loss variation between packets (between 0 and 1)"""
         self.service1 = service1
         self.service2 = service2
         self.link_type = link_type

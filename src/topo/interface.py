@@ -4,7 +4,11 @@ from gui.gui_data_attachment import GuiDataAttachment
 
 
 class Interface(object):
+    """An interface of a node or service."""
+
     def __init__(self, name: str, mac_address: str = None):
+        """name: The name of the interface
+           mac_address: The mac address of the interface"""
         self.name = name
         self.mac_address = mac_address
         self.ips: list[ip_address] = []
