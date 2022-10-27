@@ -1,6 +1,7 @@
 from tkinter import PhotoImage
 
 from gui.box import Box
+from gui.images import Images
 
 
 class Button(object):
@@ -20,6 +21,8 @@ class Button(object):
         self.enabled = enabled
         self.text_offs_y = text_offs_y
         self.disabled_fill = '#C0C0C0'
+        self._last_image = None
+        self._scaled_img = None
 
     def _set_view(self, view: 'View'):
         self.view = view
@@ -27,15 +30,20 @@ class Button(object):
     def on_paint(self, offs_x: int, offs_y: int):
         abs_x = self.x + offs_x
         abs_y = self.y + offs_y
-        self.view.canvas.create_rectangle(abs_x, abs_y, abs_x + self.width, abs_y + self.height,
-                                          fill=self.fill if self.enabled else self.disabled_fill)
         if self.image:
-            img_x = abs_x + self.width / 2 - self.image.width() / 2
-            img_y = abs_y + self.height / 2 - self.image.height() / 2
-            self.view.canvas.create_image((img_x, img_y), image=self.image)
+            if self.image != self._last_image:
+                self._last_image = self.image
+                self._scaled_img = Images.get_with_size(self.image, self.width, self.height)
+            img_x = abs_x + self.width / 2
+            img_y = abs_y + self.height / 2
+            self.view.canvas.create_image((img_x, img_y), image=self._scaled_img)
+            self.view.canvas.create_rectangle(abs_x, abs_y, abs_x + self.width, abs_y + self.height,
+                                              fill='', outline='black')
         elif self.text:
             if not self.font:
                 self.font = "Arial 12"
+            self.view.canvas.create_rectangle(abs_x, abs_y, abs_x + self.width, abs_y + self.height,
+                                              fill=self.fill if self.enabled else self.disabled_fill)
             self.view.create_text(abs_x + self.width / 2, abs_y + self.height / 2 + self.text_offs_y,
                                   self.text, self.font, fill=self.foreground)
         else:

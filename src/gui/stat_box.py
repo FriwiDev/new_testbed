@@ -168,7 +168,7 @@ class StatBox(Box):
         cross_size = int(cross_width * self.view.zoom)
         if not self.cross or not self.cross_size or self.cross_size != cross_size:
             self.cross_size = cross_size
-            self.cross = Images.get_with_size(Images.router, self.cross_size, self.cross_size)
+            self.cross = Images.get_with_size(Images.close, self.cross_size, self.cross_size)
         self.view.canvas.create_image(offs_x + (self.x + self.width - cross_offs - cross_width / 2) * self.view.zoom,
                                       offs_y + (self.y + cross_offs + cross_width / 2) * self.view.zoom,
                                       image=self.cross)

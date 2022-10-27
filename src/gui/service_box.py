@@ -2,6 +2,7 @@ import threading
 
 from gui.box import Box
 from gui.button import ButtonBar, Button
+from gui.images import Images
 from gui.interface_box import InterfaceBox
 from gui.stat_box import StatBoxUtil
 from gui.system_box import SystemBox
@@ -16,15 +17,16 @@ class ServiceBox(SystemBox):
         self.view = view
 
         self.button_bar = ButtonBar(self.x, self.y, 3, 3)
-        self.on_off_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, None, "O", "Arial " + str(int(self.view.gui_scale * 20)),
+        self.on_off_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, Images.run, "O",
+                                    "Arial " + str(int(self.view.gui_scale * 20)),
                                     on_press=lambda x, y: self.on_press_on_off())
-        self.ping_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, None, "P",
+        self.ping_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, Images.ping_disabled, "P",
                                   "Arial " + str(int(self.view.gui_scale * 20)),
                                   on_press=lambda x, y: self.on_press_ping_or_iperf(lambda x: self.on_ping_select(x)))
-        self.iperf_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, None, "S",
+        self.iperf_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, Images.iperf_disabled, "S",
                                    "Arial " + str(int(self.view.gui_scale * 20)),
                                    on_press=lambda x, y: self.on_press_ping_or_iperf(lambda x: self.on_iperf_select(x)))
-        self.destroy_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, None, "D",
+        self.destroy_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, Images.destroy, "D",
                                      "Arial " + str(int(self.view.gui_scale * 20)),
                                      on_press=lambda x, y: self.on_press_destroy())
         self.button_bar.add_button(self.on_off_button)
@@ -71,21 +73,25 @@ class ServiceBox(SystemBox):
 
         if self.focus:
             if self.view.in_toggle:
-                self.on_off_button.text = "W"
-                self.destroy_button.text = "W"
                 self.on_off_button.enabled = False
                 self.destroy_button.enabled = False
+                self.on_off_button.image = Images.wait
+                self.destroy_button.image = Images.wait
             else:
-                self.on_off_button.text = "Off" if self.service.status == EngineComponentStatus.RUNNING else "On"
-                self.destroy_button.text = "D"
                 self.on_off_button.enabled = True
                 self.destroy_button.enabled = True
+                self.on_off_button.image = Images.stop if self.service.status == EngineComponentStatus.RUNNING else Images.run
+                self.destroy_button.image = Images.destroy
             if self.service.status == EngineComponentStatus.RUNNING:
                 self.ping_button.enabled = True
                 self.iperf_button.enabled = True
+                self.ping_button.image = Images.ping_enabled
+                self.iperf_button.image = Images.iperf_enabled
             else:
                 self.ping_button.enabled = False
                 self.iperf_button.enabled = False
+                self.ping_button.image = Images.ping_disabled
+                self.iperf_button.image = Images.iperf_disabled
 
             self.button_bar._set_view(self.view)
             self.button_bar.x = offs_x + self.x * self.view.zoom + self.width / 2 * self.view.zoom - self.button_bar.width / 2

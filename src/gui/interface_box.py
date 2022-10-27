@@ -3,6 +3,7 @@ import threading
 from extensions.macvlan_extension import MacVlanServiceExtension
 from gui.box import Box
 from gui.button import ButtonBar, Button
+from gui.images import Images
 from gui.stat_box import StatBoxUtil, StatBoxDataSupplier
 from live.engine_component import EngineInterface, EngineComponentStatus, EngineInterfaceState
 from network.network_utils import NetworkUtils
@@ -22,16 +23,16 @@ class InterfaceBox(Box):
         self.admin_net = isinstance(intf.extension, MacVlanServiceExtension)
 
         self.button_bar = ButtonBar(self.x, self.y, 3, 3)
-        self.on_off_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, None, "W",
+        self.on_off_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, Images.wait, "W",
                                     "Arial " + str(int(self.view.gui_scale * 20)),
                                     on_press=lambda x, y: self.on_press_on_off())
-        self.debug_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, None, "i",
+        self.debug_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, Images.info, "i",
                                    "Arial " + str(int(self.view.gui_scale * 20)),
                                    on_press=lambda x, y: self.on_press_debug())
-        self.rx_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, None, "RX",
+        self.rx_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, Images.rx, "RX",
                                 "Arial " + str(int(self.view.gui_scale * 20)),
                                 on_press=lambda x, y: self.on_press_rx_button())
-        self.tx_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, None, "TX",
+        self.tx_button = Button(40 * self.view.gui_scale, 40 * self.view.gui_scale, Images.tx, "TX",
                                 "Arial " + str(int(self.view.gui_scale * 20)),
                                 on_press=lambda x, y: self.on_press_tx_button())
         self.button_bar.add_button(self.on_off_button)
@@ -101,12 +102,15 @@ class InterfaceBox(Box):
             if self.view.in_toggle:
                 self.on_off_button.text = "W"
                 self.on_off_button.enabled = False
+                self.on_off_button.image = Images.wait
             elif self.intf.status == EngineComponentStatus.RUNNING:
                 self.on_off_button.text = "Off"
                 self.on_off_button.enabled = True
+                self.on_off_button.image = Images.stop
             else:
                 self.on_off_button.text = "On"
                 self.on_off_button.enabled = True
+                self.on_off_button.image = Images.run
 
             self.button_bar._set_view(self.view)
             self.button_bar.x = offs_x + self.x * self.view.zoom + self.width / 2 * self.view.zoom - self.button_bar.width / 2
@@ -205,6 +209,7 @@ class InterfaceBox(Box):
         self.stat_boxes.append(StatBoxUtil.create_traffic_box(self.view, StatBoxDataSupplier.IFSTAT_RX,
                                                               int(center_x - w / 2), int(center_y - h / 2), w, h,
                                                               self.intf))
+        self.view.set_active_button_bar(None)
 
     def on_press_tx_button(self):
         center_x = self.view.box.x + self.view.gui.main_box.x + self.view.width / self.view.zoom / 2
@@ -214,6 +219,7 @@ class InterfaceBox(Box):
         self.stat_boxes.append(StatBoxUtil.create_traffic_box(self.view, StatBoxDataSupplier.IFSTAT_TX,
                                                               int(center_x - w / 2), int(center_y - h / 2), w, h,
                                                               self.intf))
+        self.view.set_active_button_bar(None)
 
     def get_selectable_color(self):
         if self.view.select_mode:

@@ -35,18 +35,15 @@ class MainView(View):
 
         self.run_box = ButtonBar(x=10 * self.gui_scale, y=10 * self.gui_scale, padding=3 * self.gui_scale,
                                  margin=3 * self.gui_scale)
-        self.run_box.add_button(
-            Button(240 * self.gui_scale, 40 * self.gui_scale, None, "Testbed", "Arial " + str(int(self.gui_scale * 14)),
-                   on_press=None))
-        self.on_button = Button(40 * self.gui_scale, 40 * self.gui_scale, None, "R",
+        self.on_button = Button(40 * self.gui_scale, 40 * self.gui_scale, Images.run, "R",
                                 "Arial " + str(int(self.gui_scale * 20)),
                                 on_press=lambda x, y: self.on_action(self.do_start_all))
         self.run_box.add_button(self.on_button)
-        self.off_button = Button(40 * self.gui_scale, 40 * self.gui_scale, None, "S",
+        self.off_button = Button(40 * self.gui_scale, 40 * self.gui_scale, Images.stop, "S",
                                  "Arial " + str(int(self.gui_scale * 20)),
                                  on_press=lambda x, y: self.on_action(self.do_stop_all))
         self.run_box.add_button(self.off_button)
-        self.destroy_button = Button(40 * self.gui_scale, 40 * self.gui_scale, None, "D",
+        self.destroy_button = Button(40 * self.gui_scale, 40 * self.gui_scale, Images.destroy, "D",
                                      "Arial " + str(int(self.gui_scale * 20)),
                                      on_press=lambda x, y: self.on_action(self.do_destroy_all))
         self.run_box.add_button(self.destroy_button)
@@ -157,19 +154,19 @@ class MainView(View):
 
         # Run box
         if self.in_toggle:
-            self.on_button.text = "W"
-            self.off_button.text = "W"
-            self.destroy_button.text = "W"
             self.on_button.enabled = False
             self.off_button.enabled = False
             self.destroy_button.enabled = False
+            self.on_button.image = Images.wait
+            self.off_button.image = Images.wait
+            self.destroy_button.image = Images.wait
         else:
-            self.on_button.text = "R"
-            self.off_button.text = "S"
-            self.destroy_button.text = "D"
             self.on_button.enabled = True
             self.off_button.enabled = True
             self.destroy_button.enabled = True
+            self.on_button.image = Images.run
+            self.off_button.image = Images.stop
+            self.destroy_button.image = Images.destroy
         self.run_box.on_paint(0, 0)
 
         t = int(time.time() * 1000)
@@ -189,7 +186,7 @@ class MainView(View):
             cross_size = int(cross_width * self.gui_scale)
             if not self.cross or not self.cross_size or self.cross_size != cross_size:
                 self.cross_size = cross_size
-                self.cross = Images.get_with_size(Images.router, self.cross_size, self.cross_size)
+                self.cross = Images.get_with_size(Images.close, self.cross_size, self.cross_size)
             self.canvas.create_image(
                 self.width - (cross_offs + cross_width / 2) * self.gui_scale,
                 (cross_offs + cross_width / 2) * self.gui_scale,
