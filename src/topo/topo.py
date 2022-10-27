@@ -1,6 +1,7 @@
 import json
 from abc import abstractmethod
 
+from gui.topo_gui_data_attachment import TopoGuiDataAttachment
 from network.default_network_implementation import DefaultNetworkImplementation
 from topo.link import Link
 from topo.node import Node
@@ -32,6 +33,7 @@ class Topo(object):
         self.network_implementation.configure()
         for service in self.services.values():
             service.configure(self)
+        self.gui_data_attachment = TopoGuiDataAttachment()
 
     def to_dict(self) -> dict:
         nodes = []
@@ -47,7 +49,8 @@ class Topo(object):
             'nodes': nodes,
             'services': services,
             'links': links,
-            'network_implementation': self.network_implementation.to_dict()
+            'network_implementation': self.network_implementation.to_dict(),
+            'gui_data': self.gui_data_attachment.to_dict()
         }
 
     @classmethod
@@ -63,6 +66,8 @@ class Topo(object):
         x = in_dict['network_implementation']
         ret.network_implementation = ClassUtil.get_class_from_dict(x).from_dict(x)
         ret.network_implementation.inject_topology(ret)
+        if "gui_data" in in_dict.keys():
+            ret.gui_data_attachment = TopoGuiDataAttachment.from_dict(in_dict['gui_data'])
         return ret
 
     def export_topo(self) -> str:

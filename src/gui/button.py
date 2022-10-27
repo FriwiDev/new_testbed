@@ -83,6 +83,7 @@ class ButtonBar(Box):
     def on_paint(self, offs_x: int, offs_y: int):
         abs_x = self.x + offs_x
         abs_y = self.y + offs_y
+
         # Draw box itself
         self.view.canvas.create_rectangle(abs_x, abs_y, abs_x + self.width, abs_y + self.height, fill=self.fill)
         # Draw buttons
