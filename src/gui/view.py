@@ -9,9 +9,13 @@ class View(ABC):
     Images.load()
     root.tk.call('wm', 'iconphoto', root._w, Images.router_icon)
 
-    def __init__(self, title: str, width: int, height: int):
+    def __init__(self, title: str, fullscreen: bool, width: int, height: int):
+        if fullscreen:
+            View.root.attributes("-fullscreen", True)
+            self.frame = Frame(master=View.root)
+        else:
+            self.frame = Frame(master=View.root, width=width, height=height)
         self.popup_menu: Menu = None
-        self.frame = Frame(master=View.root, width=width, height=height)
         self.set_title(title)
         self.width = width
         self.height = height

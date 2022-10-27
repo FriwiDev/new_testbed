@@ -10,7 +10,7 @@ from live.engine import Engine
 
 class MainView(View):
 
-    def __init__(self, engine: Engine, gui: 'Gui'):
+    def __init__(self, engine: Engine, gui: 'Gui', fullscreen: bool):
         self.engine = engine
         self.gui = gui
         self.box = None
@@ -64,7 +64,7 @@ class MainView(View):
 
         self.last_scroll = 0
 
-        super().__init__("Testbed", 200, 100)
+        super().__init__("Testbed", fullscreen, 200, 100)
 
     def set_message(self, message: str, color: str = '#000000', cd: int = 4000, fade: int = 700):
         self.message = message
