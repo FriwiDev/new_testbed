@@ -10,15 +10,16 @@ from live.engine import Engine
 
 class MainView(View):
 
-    def __init__(self, engine: Engine):
+    def __init__(self, engine: Engine, gui: 'Gui'):
         self.engine = engine
+        self.gui = gui
         self.box = None
         self.active_button_bar = None
 
         self.gui_scale = 1
-        self.zoom_goal = 200
+        self.zoom_goal = 100
         self.zoom = 1
-        self.zoom_box = ButtonBar(x=10 * self.gui_scale, y=0 - 10 * self.gui_scale)
+        self.zoom_box = ButtonBar(x=10 * self.gui_scale, y=0 - 15 * self.gui_scale)
         self.zoom_box.add_button(
             Button(40 * self.gui_scale, 40 * self.gui_scale, None, "-", "Arial " + str(int(self.gui_scale * 20)),
                    on_press=lambda x, y: self.zoom_out()))
@@ -61,6 +62,8 @@ class MainView(View):
 
         self.in_toggle = False
 
+        self.last_scroll = 0
+
         super().__init__("Testbed", 200, 100)
 
     def set_message(self, message: str, color: str = '#000000', cd: int = 4000, fade: int = 700):
@@ -82,9 +85,8 @@ class MainView(View):
         self.active_button_bar = button_bar
 
     def on_resize(self, width: int, height: int):
-        self.box.on_resize(width, height)
         self.zoom_box.x = 10 * self.gui_scale
-        self.zoom_box.y = height - self.zoom_box.height - 10 * self.gui_scale
+        self.zoom_box.y = height - self.zoom_box.height - 15 * self.gui_scale
 
     def on_paint(self):
         # Main box
@@ -92,9 +94,58 @@ class MainView(View):
             return
         self.box._set_view(self)
         self.box._set_parent(None)
+
+        curr_zoom = float(self.zoom * 100 / self.gui_scale)
+        if self.zoom_goal - 0.05 <= curr_zoom <= self.zoom_goal + 0.05:
+            self.zoom = self.zoom_goal * self.gui_scale / 100
+        elif curr_zoom <= self.zoom_goal - 0.05:
+            self.zoom += 0.05
+        elif curr_zoom >= self.zoom_goal + 0.05:
+            self.zoom -= 0.05
+
+        min_x = self.width / self.zoom
+        min_y = self.height / self.zoom
+        max_x = self.gui.canvas_width
+        max_y = self.gui.canvas_height
+
+        if self.gui.main_box.x < min_x:
+            self.gui.main_box.x = min_x
+            self.last_scroll = time.time() * 1000
+        if self.gui.main_box.y < min_y:
+            self.gui.main_box.y = min_y
+            self.last_scroll = time.time() * 1000
+        if self.gui.main_box.x > max_x:
+            self.gui.main_box.x = max_x
+            self.last_scroll = time.time() * 1000
+        if self.gui.main_box.y > max_y:
+            self.gui.main_box.y = max_y
+            self.last_scroll = time.time() * 1000
+
+        if self.gui.main_box._dragging_anchor:
+            self.last_scroll = time.time() * 1000
+
         self.box.on_paint(0, 0)
+
         if self.active_button_bar:
             self.active_button_bar.on_paint(0, 0)
+
+        # Scroll bar (min_x/y is also the amount of pixels visible on screen
+        t = time.time() * 1000
+        if t - 1000 < self.last_scroll:
+            perc_x = (self.gui.main_box.x - min_x) / (max_x - min_x)
+            perc_y = (self.gui.main_box.y - min_y) / (max_y - min_y)
+            visible_perc_x = min_x / (self.gui.canvas_width)
+            visible_perc_y = min_y / (self.gui.canvas_height)
+            x = (self.width - 10 * self.gui_scale) * (1 - visible_perc_x) * (1 - perc_x)
+            y = self.height - self.gui_scale * 10
+            w = (self.width - 10 * self.gui_scale) * visible_perc_x
+            h = self.gui_scale * 5
+            self.canvas.create_rectangle(x, y, x + w, y + h, fill='#A0A0A0', outline='')
+            x = self.width - self.gui_scale * 10
+            y = (self.height - 10 * self.gui_scale) * (1 - visible_perc_y) * (1 - perc_y)
+            w = self.gui_scale * 5
+            h = (self.height - 10 * self.gui_scale) * visible_perc_y
+            self.canvas.create_rectangle(x, y, x + w, y + h, fill='#A0A0A0', outline='')
 
         # Zoom box
         self.zoom_box.on_paint(0, 0)
@@ -128,23 +179,25 @@ class MainView(View):
     def on_click(self, button: int, x: int, y: int, root_x: int, root_y: int):
         if self.run_box._is_in_box(x, y):
             self.run_box.on_click(button,
-                                   x-self.run_box.x,
-                                   y-self.run_box.y,
-                                   root_x, root_y)
+                                  x - self.run_box.x,
+                                  y - self.run_box.y,
+                                  root_x, root_y)
             return
         if self.zoom_box._is_in_box(x, y):
             self.zoom_box.on_click(button,
-                                   x-self.zoom_box.x,
-                                   y-self.zoom_box.y,
+                                   x - self.zoom_box.x,
+                                   y - self.zoom_box.y,
                                    root_x, root_y)
             return
         if self.active_button_bar:
             if self.active_button_bar._is_in_box(x, y):
                 self.active_button_bar.on_click(button,
-                                                x-self.active_button_bar.x,
-                                                y-self.active_button_bar.y,
+                                                x - self.active_button_bar.x,
+                                                y - self.active_button_bar.y,
                                                 root_x, root_y)
                 return
+        x += self.gui.canvas_width * self.zoom
+        y += self.gui.canvas_height * self.zoom
         self.box.on_click(button, math.floor(x / self.zoom), math.floor(y / self.zoom), root_x, root_y)
 
     def on_drag_begin(self, x: int, y: int, root_x: int, root_y: int):
@@ -173,8 +226,9 @@ class MainView(View):
 
     def zoom_out(self):
         self.zoom_goal -= 20
-        if self.zoom_goal < 20:
-            self.zoom_goal = 20
+        min_zoom = math.ceil(self.gui.max_width / self.gui.canvas_width * 100)
+        if self.zoom_goal < min_zoom:
+            self.zoom_goal += 20
         self.zoom_factor_button.text = self.zoom_text()
 
     def zoom_text(self) -> str:

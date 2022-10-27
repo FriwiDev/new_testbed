@@ -123,7 +123,11 @@ class Box(object):
                         dir_a = dir1
                         dir_b = dir2
             if point_a:
-                self._generate_line(point_a, point_b, dir_a, dir_b, line[1])
+                dash_a, dash_b = line[1]
+                if self.view.zoom > 1:
+                    dash_a = int(dash_a * self.view.zoom)
+                    dash_b = int(dash_b * self.view.zoom)
+                self._generate_line(point_a, point_b, dir_a, dir_b, (dash_a, dash_b))
         pass
 
     def on_click(self, button: int, x: int, y: int, root_x: int, root_y: int):
@@ -440,7 +444,7 @@ class Box(object):
         points.append(point_b[0]*self.view.zoom)
         points.append(point_b[1]*self.view.zoom)
 
-        self.view.canvas.create_line(points, dash=dash, width=self.view.zoom)
+        self.view.canvas.create_line(points, dash=dash, width=int(1 if self.view.zoom < 1 else self.view.zoom))
 
     def _walk_point(self, point: tuple[int, int], direction: int, pixels: int) -> tuple[int, int]:
         if direction == Box.NORTH:
