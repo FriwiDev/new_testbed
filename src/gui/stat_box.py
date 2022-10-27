@@ -277,8 +277,8 @@ class StatBox(Box):
             raise Exception("Invalid unit")
 
     def on_click(self, button: int, x: int, y: int, root_x: int, root_y: int):
-        cross_width = 40
-        cross_offs = 10
+        cross_width = 20
+        cross_offs = 5
         if not self.view.select_mode:
             if self.width - cross_width - cross_offs <= x < self.width - cross_offs \
                     and cross_offs <= y < cross_width + cross_offs:

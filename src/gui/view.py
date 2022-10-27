@@ -1,3 +1,4 @@
+import time
 from abc import ABC, abstractmethod
 from tkinter import Frame, Tk, BOTH, Canvas, Menu, PhotoImage, Button
 
@@ -9,7 +10,10 @@ class View(ABC):
     Images.load()
     root.tk.call('wm', 'iconphoto', root._w, Images.router_icon)
 
+    PRESS_COUNT_TIME = 200
+
     def __init__(self, title: str, fullscreen: bool, width: int, height: int):
+        self.full_screen = fullscreen
         if fullscreen:
             View.root.attributes("-fullscreen", True)
             self.frame = Frame(master=View.root)
@@ -125,9 +129,12 @@ class View(ABC):
 
     def _b1_press(self, event):
         self._pressed = event.x, event.y, event.x_root, event.y_root
+        self._press_time = time.time()*1000
 
     def _b1_motion(self, event):
         x, y, x_root, y_root = self._pressed
+        if self._press_time + View.PRESS_COUNT_TIME > time.time() * 1000:
+            return
         if not self._moved:
             self.on_drag_begin(x, y, x_root, y_root)
             self._moved = True

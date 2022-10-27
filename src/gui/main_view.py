@@ -4,6 +4,7 @@ import time
 
 from gui.box import Box
 from gui.button import ButtonBar, Button
+from gui.images import Images
 from gui.view import View
 from live.engine import Engine
 
@@ -63,6 +64,9 @@ class MainView(View):
         self.in_toggle = False
 
         self.last_scroll = 0
+
+        self.cross = None
+        self.cross_size = None
 
         super().__init__("Testbed", fullscreen, 200, 100)
 
@@ -176,7 +180,30 @@ class MainView(View):
             self.create_text(self.width / 2, self.height - 30 * self.gui_scale + (60 * self.gui_scale * perc),
                              self.message, "Arial " + str(int(15 * self.gui_scale)), fill=self.message_color)
 
+        # Draw cross
+        if self.full_screen:
+            cross_width = 40
+            cross_offs = 10
+
+            cross_size = int(cross_width * self.gui_scale)
+            if not self.cross or not self.cross_size or self.cross_size != cross_size:
+                self.cross_size = cross_size
+                self.cross = Images.get_with_size(Images.router, self.cross_size, self.cross_size)
+            self.canvas.create_image(
+                self.width - (cross_offs + cross_width / 2) * self.gui_scale,
+                (cross_offs + cross_width / 2) * self.gui_scale,
+                image=self.cross)
+
     def on_click(self, button: int, x: int, y: int, root_x: int, root_y: int):
+        # Cross
+        if self.full_screen:
+            cross_width = 40
+            cross_offs = 10
+            if self.width - cross_width - cross_offs <= x < self.width - cross_offs \
+                    and cross_offs <= y < cross_width + cross_offs:
+                self.root.destroy()
+                return
+
         if self.run_box._is_in_box(x, y):
             self.run_box.on_click(button,
                                   x - self.run_box.x,
