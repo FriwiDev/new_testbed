@@ -80,10 +80,10 @@ class LXCService(Service, ABC):
                 NetworkUtils.set_up(config, dev.name, self.lxc_prefix())
                 for i in range(len(dev.ips)):
                     NetworkUtils.add_ip(config, dev.name, dev.ips[i], dev.networks[i], self.lxc_prefix())
-        # Set up routes (if we are not a switch - switches are smarter)
-        if not self.is_switch():
-            for ip, via in self.build_routing_table().items():
-                NetworkUtils.add_route(config, ip, via, None, self.lxc_prefix())
+        # Set up routes
+        # For switch it is with only links to controllers
+        for ip, via in self.build_routing_table(for_switch=self.is_switch()).items():
+            NetworkUtils.add_route(config, ip, via, None, self.lxc_prefix())
 
         # Set up extensions
         for ext in self.extensions.values():
@@ -104,7 +104,7 @@ class LXCService(Service, ABC):
             'image': self.image,
             'cpu': self.cpu,
             'memory': self.memory,
-            'files': [{'path': PurePath(x).name, 'to': str(y)} for x, y in self.files],
+            'files': [{'path': str(PurePath(x)), 'to': str(y)} for x, y in self.files],
         }}
 
     @classmethod

@@ -390,7 +390,7 @@ class StatBoxUtil(object):
         stat.data_supplier = supp
         update_thread = threading.Thread(target=supp.run_chart)
         update_thread.start()
-        view.box.add_box(stat)
+        view.gui.main_box.add_box(stat)
         return stat
 
     @classmethod
@@ -403,7 +403,7 @@ class StatBoxUtil(object):
         stat.data_supplier = supp
         update_thread = threading.Thread(target=supp.run_chart)
         update_thread.start()
-        view.box.add_box(stat)
+        view.gui.main_box.add_box(stat)
         return stat
 
     @classmethod
@@ -429,7 +429,7 @@ class StatBoxUtil(object):
         stat.data_supplier = supp
         update_thread = threading.Thread(target=supp.run_chart)
         update_thread.start()
-        view.box.add_box(stat)
+        view.gui.main_box.add_box(stat)
         return stat
 
     @classmethod

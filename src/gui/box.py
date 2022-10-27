@@ -165,6 +165,9 @@ class Box(object):
         pass
 
     def on_mouse_move(self, x: int, y: int, root_x: int, root_y: int):
+        if not self.view:
+            return
+
         rel_x = x - self.x
         rel_y = y - self.y
 

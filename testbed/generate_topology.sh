@@ -7,7 +7,8 @@ then
   exit 1
 fi
 
-[ -d "$( dirname "$0" )/work" ] || mkdir "$( dirname "$0" )/work"
-python3 "$@" > "$( dirname "$0" )/work/current_topology.json"
+DIRNAME=$(pwd)/$(dirname "$0")/work
 
-echo "Generation script executed"
+[ -d "$DIRNAME" ] || mkdir "$DIRNAME"
+cd "$( dirname "$1" )"
+python3 "$DIRNAME/../$1" "$DIRNAME" "${@:2}"

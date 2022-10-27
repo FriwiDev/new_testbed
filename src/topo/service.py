@@ -97,15 +97,16 @@ class Service(ABC):
     def command_prefix(self) -> str:
         return ""
 
-    def get_reachable_ips_via_for_other(self, intf: Interface) -> dict[ipaddress, int]:
-        return self.get_reachable_ips_via_for_other_recursive(intf, [], 0)
+    def get_reachable_ips_via_for_other(self, intf: Interface, for_switch: bool = False) -> dict[ipaddress, int]:
+        return self.get_reachable_ips_via_for_other_recursive(intf, [], 0, for_switch)
 
-    def get_reachable_ips_via_for_other_recursive(self, intf: Interface, visited: list['Service'], hops: int) -> \
-            dict[ipaddress, int]:
+    def get_reachable_ips_via_for_other_recursive(self, intf: Interface, visited: list['Service'], hops: int,
+                                                  for_switch: bool = False) -> dict[ipaddress, int]:
         ret = {}
-        for ip in intf.ips:
-            if not ip.is_loopback:
-                ret[ip] = hops
+        if not for_switch or self.is_controller():
+            for ip in intf.ips:
+                if not ip.is_loopback:
+                    ret[ip] = hops
         if self in visited:
             return ret
         visited = visited.copy()
@@ -118,21 +119,22 @@ class Service(ABC):
                         # Rintf is an interface that is not connected to a remote controller -> add it
                         for ip, h in rintf.other_end_service.get_reachable_ips_via_for_other_recursive(rintf.other_end,
                                                                                                        visited,
-                                                                                                       hops + 1) \
+                                                                                                       hops + 1,
+                                                                                                       for_switch) \
                                 .items():
                             if ip not in ret or ret[ip] > h:
                                 ret[ip] = h
         return ret
 
-    def get_reachable_ips_via(self, intf: Interface) -> dict[ipaddress, int]:
+    def get_reachable_ips_via(self, intf: Interface, for_switch: bool = False) -> dict[ipaddress, int]:
         if intf.other_end is None or intf.other_end_service is None:
             return {}
-        reachable = intf.other_end_service.get_reachable_ips_via_for_other(intf.other_end)
+        reachable = intf.other_end_service.get_reachable_ips_via_for_other(intf.other_end, for_switch)
         # Now iterate over all other interfaces and find if there is a shorter path via another way
         for other in self.intfs:
             if other != intf:
                 if other.other_end_service:
-                    other_reachable = other.other_end_service.get_reachable_ips_via_for_other(other.other_end)
+                    other_reachable = other.other_end_service.get_reachable_ips_via_for_other(other.other_end, for_switch)
                     for ip, h in other_reachable.items():
                         if ip in reachable and reachable[ip] > h:
                             # There is a better way to reach the desired ip
@@ -147,13 +149,13 @@ class Service(ABC):
                 return True
         return False
 
-    def build_routing_table(self, with_tunnel: bool = False) -> dict[ipaddress, ipaddress]:
+    def build_routing_table(self, with_tunnel: bool = False, for_switch: bool = False) -> dict[ipaddress, ipaddress]:
         routing_table = {}
         routing_hops = {}
         # Add entries to table and replace with shorter options, if any
         for intf in self.intfs:
             if with_tunnel or not intf.is_tunnel:
-                entries = self.get_reachable_ips_via(intf)
+                entries = self.get_reachable_ips_via(intf, for_switch)
                 for ip, h in entries.items():
                     if ip not in routing_table or routing_hops[ip] > h:
                         routing_table[ip] = intf.ips[0]

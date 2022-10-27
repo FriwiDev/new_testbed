@@ -1,4 +1,6 @@
 import json
+import os
+import shutil
 from abc import abstractmethod
 
 from gui.topo_gui_data_attachment import TopoGuiDataAttachment
@@ -22,7 +24,7 @@ class Topo(object):
         if services is None:
             services = {}
         if network_implementation is None:
-            network_implementation = DefaultNetworkImplementation("10.0.0.0/24", "239.1.1.1")  # TODO Add better default
+            network_implementation = DefaultNetworkImplementation("10.0.0.0/24", "239.1.1.1")
         self.mac_util = MacUtil()
         self.nodes = nodes
         self.links = links
@@ -98,7 +100,7 @@ class Topo(object):
         return self.services[name]
 
     def add_node(self, node: Node):
-        if node.name in self.nodes:
+        if node.name in self.nodes.keys():
             raise Exception(f"Node with name {node.name} already exists")
         self.nodes[node.name] = node
         # We do not determine the mac addresses for real hardware (at least not for now)
@@ -137,3 +139,21 @@ class TopoUtil(object):
         file = open(file_path, "w")
         file.write(ret)
         file.close()
+
+    @classmethod
+    def run_build(cls, argv: list[str], topo_type: type):
+        if len(argv) <= 1:
+            raise Exception("No output dir specified!")
+
+        dir = argv[1]
+        if os.path.exists(dir) and os.path.isdir(dir):
+            shutil.rmtree(dir)
+        os.makedirs(dir)
+
+        topo = topo_type(argv[2:])
+
+        out = open(dir + "/current_topology.json", "w")
+        out.write(topo.export_topo())
+        out.close()
+
+        print("Topology created!")

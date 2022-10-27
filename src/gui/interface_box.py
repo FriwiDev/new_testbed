@@ -198,8 +198,8 @@ class InterfaceBox(Box):
         self.debug = not self.debug
 
     def on_press_rx_button(self):
-        center_x = 1920 / 2  # TODO Adapt
-        center_y = 1080 / 2
+        center_x = self.view.box.x + self.view.gui.main_box.x + self.view.width / self.view.zoom / 2
+        center_y = self.view.box.y + self.view.gui.main_box.y + self.view.height / self.view.zoom / 2
         w = 400
         h = 200
         self.stat_boxes.append(StatBoxUtil.create_traffic_box(self.view, StatBoxDataSupplier.IFSTAT_RX,
@@ -207,8 +207,8 @@ class InterfaceBox(Box):
                                                               self.intf))
 
     def on_press_tx_button(self):
-        center_x = 1920 / 2  # TODO Adapt
-        center_y = 1080 / 2
+        center_x = self.view.box.x + self.view.gui.main_box.x + self.view.width / self.view.zoom / 2
+        center_y = self.view.box.y + self.view.gui.main_box.y + self.view.height / self.view.zoom / 2
         w = 400
         h = 200
         self.stat_boxes.append(StatBoxUtil.create_traffic_box(self.view, StatBoxDataSupplier.IFSTAT_TX,

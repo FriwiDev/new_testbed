@@ -131,18 +131,20 @@ class ServiceBox(SystemBox):
                 if self.service.engine.calculate_ip(self.service.component, box.intf.component):
                     reachable.append(box)
         if len(reachable) == 0:
-            # TODO Report error in lower font
+            self.view.set_message("No target reachable from this component", color='#FF0000')
             return
+        self.view.set_message("Please select a target", color='#FFFFFF', cd=60*60*1000)
         self.view.set_select_mode(reachable)
         self.view.select_callback = callback
 
     def on_ping_select(self, box: 'ServiceBox' or 'InterfaceBox' or None):
         self.view.set_select_mode(None)
         self.view.select_callback = None
+        self.view.set_message("")
         if not box:
             return
-        center_x = 1920 / 2  # TODO Adapt
-        center_y = 1080 / 2
+        center_x = self.view.box.x + self.view.gui.main_box.x + self.view.width / self.view.zoom / 2
+        center_y = self.view.box.y + self.view.gui.main_box.y + self.view.height / self.view.zoom / 2
         w = 400
         h = 200
         self.stat_boxes.append(StatBoxUtil.create_ping_box(self.view,
@@ -153,14 +155,18 @@ class ServiceBox(SystemBox):
     def on_iperf_select(self, box: 'ServiceBox' or 'InterfaceBox' or None):
         self.view.set_select_mode(None)
         self.view.select_callback = None
+        self.view.set_message("")
         if not box:
             return
         if isinstance(box, InterfaceBox):
             target = box.intf.parent.component
             target_dev = box.intf.component
+            target_dev_eng = box.intf
         else:
             target = box.service.component
             target_dev = target
+            target_dev_eng = box.service
+        self.view.set_message(f"Running Iperf {self.service.get_name()} -> {target_dev_eng.get_name()} in background...")
         thread = threading.Thread(target=lambda: self.run_iperf(target, target_dev))
         thread.start()
 

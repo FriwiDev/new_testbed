@@ -33,15 +33,16 @@ class Controller(LXCService, ABC):
 class RyuController(Controller):
     def __init__(self, name: str, executor: 'Node', cpu: str = None, memory: str = None,
                  port: int = 6653, protocol: str = 'tcp',
-                 script_path: str = None):
+                 script_path: str = "defaults/simple_switch.py"):
         super().__init__(name, executor, ServiceType.RYU, "ryu", cpu, memory, port, protocol)
-        self.script_path = script_path
-        self.add_file(Path("defaults"), Path("/tmp"))  # TODO this does not work with external scripts
+        self.script_path = "/tmp/" + script_path
+        p = Path(script_path)
+        if p.is_file():
+            p = p.parent
+        self.add_file(p.absolute(), Path("/tmp"))
 
     def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration', create: bool):
         super().append_to_configuration(config_builder, config, create)
-        if self.script_path is None:
-            self.script_path = "/tmp/defaults/simple_switch.py"
         log = f'/tmp/controller_{self.name}.log'
         if self.script_path is None:
             config.add_command(
