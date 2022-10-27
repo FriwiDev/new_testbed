@@ -37,13 +37,33 @@ if [ "$ANSWER" = "yes" ]||[ "$ANSWER" = "y" ]; then
   fi
 fi
 
+read -p "Uninstall tkinter? (yes/no, default: no): " ANSWER
+if [ "$ANSWER" = "yes" ]||[ "$ANSWER" = "y" ]; then
+  if command -v pacman &> /dev/null
+  then
+      pacman -Rcns tk
+  else
+      apt-get purge python3-tk
+  fi
+fi
+
 read -p "Uninstall python3? (yes/no, default: no): " ANSWER
 if [ "$ANSWER" = "yes" ]||[ "$ANSWER" = "y" ]; then
   if command -v pacman &> /dev/null
   then
-      pacman -Rcns python3 tk
+      pacman -Rcns python3
   else
-      apt-get purge python3 python3-tk
+      apt-get purge python3
+  fi
+fi
+
+read -p "Uninstall wireguard? (yes/no, default: no): " ANSWER
+if [ "$ANSWER" = "yes" ]||[ "$ANSWER" = "y" ]; then
+  if command -v pacman &> /dev/null
+  then
+      pacman -Rcns wireguard-tools
+  else
+      apt-get purge wireguard-tools
   fi
 fi
 
