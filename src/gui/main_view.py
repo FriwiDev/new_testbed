@@ -17,7 +17,7 @@ class MainView(View):
         self.box = None
         self.active_button_bar = None
 
-        self.gui_scale = 1
+        self.gui_scale = 1.0
         self.zoom_goal = 100
         self.zoom = 1
         self.zoom_box = ButtonBar(x=10 * self.gui_scale, y=0 - 15 * self.gui_scale)
@@ -100,11 +100,12 @@ class MainView(View):
         self.box._set_parent(None)
 
         curr_zoom = float(self.zoom * 100 / self.gui_scale)
-        if self.zoom_goal - 0.05 <= curr_zoom <= self.zoom_goal + 0.05:
+        bound = float(0.05 * 100 / self.gui_scale)
+        if self.zoom_goal - bound <= curr_zoom <= self.zoom_goal + bound:
             self.zoom = self.zoom_goal * self.gui_scale / 100
-        elif curr_zoom <= self.zoom_goal - 0.05:
+        elif curr_zoom < self.zoom_goal - bound:
             self.zoom += 0.05
-        elif curr_zoom >= self.zoom_goal + 0.05:
+        elif curr_zoom > self.zoom_goal + bound:
             self.zoom -= 0.05
 
         min_x = self.width / self.zoom
