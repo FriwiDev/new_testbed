@@ -10,7 +10,7 @@ from topo.util import ClassUtil
 
 
 class ServiceType(Enum):
-    NONE, OVS, RYU = range(3)
+    NONE, OVS, RYU, DSMF, ESMF = range(5)
 
 
 class Service(ABC):
@@ -129,6 +129,8 @@ class Service(ABC):
                                 .items():
                             if ip not in ret or ret[ip] > h:
                                 ret[ip] = h
+                for x in self.gateway_to_subnets:
+                    ret[x] = 1
         return ret
 
     def get_reachable_ips_via(self, intf: Interface, for_switch: bool = False) -> dict[ipaddress, int]:

@@ -1,3 +1,4 @@
+import ipaddress
 from abc import ABC
 from ipaddress import ip_address, ip_network
 
@@ -36,7 +37,7 @@ class NetworkUtils(ABC):
         pass
 
     @classmethod
-    def add_route(cls, config: 'Configuration', ip: ip_address, via_ip: ip_address, via_network: ip_network = None,
+    def add_route(cls, config: 'Configuration', ip: ipaddress, via_ip: ip_address, via_network: ip_network = None,
                   prefix: str = None):
         if ip.is_loopback or via_ip.is_loopback:
             pass

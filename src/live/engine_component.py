@@ -4,6 +4,7 @@ from ipaddress import ip_network, ip_address
 
 from extensions.macvlan_extension import MacVlanServiceExtension
 from extensions.wireguard_extension import WireguardServiceExtension
+from ssh.lock_read_command import LockReadSSHCommand
 from topo.interface import Interface
 from topo.node import Node
 from topo.service import Service
@@ -75,3 +76,11 @@ class EngineNode(EngineComponent):
 
     def get_name(self):
         return f"{self.component.name}"
+
+    def read_topology(self) -> Topo or None:
+        cmd = LockReadSSHCommand(self.component, "/tmp", "current_topology.json")
+        cmd.run()
+        if cmd.content == "":
+            return None
+        else:
+            return Topo.import_topo(cmd.content)

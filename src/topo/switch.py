@@ -17,7 +17,8 @@ class Switch(LXCService, ABC):
 
     def __init__(self, name, executor: 'Node', service_type: 'ServiceType', image: str = "ubuntu", cpu: str = None,
                  cpu_allowance: str = None, memory: str = None, dpid: str = None, opts: str = '',
-                 listen_port: int = None, controllers: list['Controller'] = None):
+                 listen_port: int = None, controllers: list['Controller'] = None,
+                 gateway_to_subnets: list[ipaddress.ip_network] = None):
         """name: name for switch
            executor: node this service is running on
            service_type: the type of this service for easier identification
@@ -35,6 +36,7 @@ class Switch(LXCService, ABC):
         self.opts = opts
         self.listen_port = listen_port
         self.controllers = controllers
+        self.gateway_to_subnets = gateway_to_subnets if gateway_to_subnets else []
 
     def to_dict(self) -> dict:
         # Merge own data into super class data
@@ -42,7 +44,8 @@ class Switch(LXCService, ABC):
             'dpid': self.dpid,
             'opts': self.opts,
             'listen_port': str(self.listen_port),
-            'controllers': [cont.name for cont in self.controllers]
+            'controllers': [cont.name for cont in self.controllers],
+            'gateway_to_subnets': [str(g) for g in self.gateway_to_subnets]
         }}
 
     @classmethod
@@ -53,6 +56,7 @@ class Switch(LXCService, ABC):
         ret.opts = in_dict['opts']
         ret.listen_port = None if in_dict['listen_port'] == "None" else int(in_dict['listen_port'])
         ret.controllers = [topo.get_service(name) for name in in_dict['controllers']]
+        ret.gateway_to_subnets = [ipaddress.ip_network(v) for v in in_dict['gateway_to_subnets']]
         return ret
 
     def default_dpid(self, dpid=None):

@@ -125,6 +125,9 @@ class Topo(object):
         return [link for link in self.links
                 if (link.service1, link.service2) in ((service1, service2), (service2, service1))]
 
+    def __eq__(self, other: 'Topo') -> bool:
+        return self.export_topo().__eq__(other.export_topo())
+
 
 class TopoUtil(object):
     @classmethod

@@ -1,4 +1,5 @@
 import ipaddress
+import os
 import time
 
 from config.configuration import Configuration
@@ -9,6 +10,7 @@ from platforms.linux_server.linux_node import LinuxNode
 from ssh.ifstat_command import IfstatSSHCommand
 from ssh.ip_addr_ssh_command import IpAddrSSHCommand, InterfaceState
 from ssh.iperf_command import IperfSSHCommand, IperfClientSSHCommand
+from ssh.lock_read_command import LockReadSSHCommand
 from ssh.lxc_container_command import LxcContainerListCommand, LXCContainerStatus
 from ssh.ping_ssh_command import PingSSHCommand
 from ssh.ssh_command import SSHCommand
@@ -18,12 +20,23 @@ from topo.node import Node, NodeType
 from topo.service import Service
 from topo.topo import Topo, TopoUtil
 
+from ssh.lock_write_command import LockWriteSSHCommand
+
 
 class Engine(object):
-    def __init__(self, topo: Topo or str, local_node: Node = LinuxNode("local", NodeType.LINUX_ARCH, "root@localhost")):
+    def __init__(self, topo: Topo or str or None,
+                 local_node: Node = LinuxNode("local", NodeType.LINUX_ARCH, "root@localhost")):
+        if not topo:
+            cmd = LockReadSSHCommand(local_node, "/tmp", "current_topology.json")
+            cmd.run()
+            if cmd.content == "":
+                raise Exception("No topo stored on current node and no topology given!")
+            else:
+                topo = Topo.import_topo(cmd.content)
         if isinstance(topo, str):
             topo = TopoUtil.from_file(topo)
         self.topo = topo
+        self.altered_topo: Topo or None = None
         self.local_node = local_node
         self.nodes: dict[str, EngineNode] = {}
         for node in topo.nodes.values():
@@ -32,6 +45,7 @@ class Engine(object):
 
     def continuous_update(self):
         while not self.stop_updating:
+            self.synchronize_topologies()
             self.update_all_status()
             time.sleep(10)
 
@@ -352,3 +366,45 @@ class Engine(object):
             return None
         else:
             raise Exception("Target is neither Service nor Interface")
+
+    def write_topology_to_all(self, topo: Topo):
+        # Write with lock
+        content = topo.export_topo()
+        path = "/tmp/flush_topo.json"
+        f = open(path, "w")
+        f.write(content)
+        f.close()
+        for node in topo.nodes.values():
+            cmd = LockWriteSSHCommand(node, "/tmp", "current_topology.json", path)
+            cmd.run()
+        os.remove(path)
+
+    def get_local_node(self) -> EngineNode:
+        return self.nodes.get(self.local_node.name)
+
+    def synchronize_topologies(self):
+        new_topo = self.get_local_node().read_topology()
+        if new_topo:
+            if not new_topo == self.topo:
+                self.on_topology_change(new_topo)
+        else:
+            self.write_topology_to_all(self.topo)
+
+    def on_topology_change(self, new_topo: Topo):
+        # TODO observer pattern for gui
+        pass
+
+    def begin_topology_changes(self):
+        if self.altered_topo:
+            raise Exception("Testbed is already being edited!")
+        self.altered_topo = Topo.import_topo(self.topo.export_topo())
+
+    def flush_topology_changes(self):
+        if not self.altered_topo:
+            raise Exception("Testbed has not been edited!")
+        old_topo = self.topo
+        self.write_topology_to_all(self.altered_topo)
+        self.topo = self.altered_topo
+        self.altered_topo = None
+        # Now build and deploy differences
+        # TODO

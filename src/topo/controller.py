@@ -45,7 +45,7 @@ class RyuController(Controller):
 
     def __init__(self, name: str, executor: 'Node', cpu: str = None, cpu_allowance: str = None, memory: str = None,
                  port: int = 6653, protocol: str = 'tcp',
-                 script_path: str = "defaults/simple_switch.py"):
+                 script_path: str = "../examples/defaults/simple_switch.py"):
         """name: name for service
            executor: node this service is running on
            cpu: string limiting cpu core limits (None for unlimited, "n" for n cores)
@@ -56,11 +56,17 @@ class RyuController(Controller):
            script_path: the script (relative to your topology script) to use for this controller.
                         The whole folder the script is in will be copied"""
         super().__init__(name, executor, ServiceType.RYU, "ryu", cpu, cpu_allowance, memory, port, protocol)
-        self.script_path = "/tmp/" + script_path
         p = Path(script_path)
         if p.is_file():
+            self.script_path = "/tmp/" + p.parent.name + "/" + p.name
             p = p.parent
-        self.add_file(p.absolute(), Path("/tmp"))
+            self.add_file(p.absolute(), Path("/tmp"))
+        elif p.is_dir():
+            self.script_path = "/tmp/" + p.name
+            self.add_file(p.absolute(), Path("/tmp"))
+        else:
+            # We use a default config that is already on the controller
+            self.script_path = script_path
 
     def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration', create: bool):
         super().append_to_configuration(config_builder, config, create)
@@ -68,12 +74,12 @@ class RyuController(Controller):
         if self.script_path is None:
             config.add_command(
                 Command(self.lxc_prefix() +
-                        f"ryu-manager --verbose &> {log} &"),
+                        f"ryu-manager --verbose --ofp-tcp-listen-port {self.port} &> {log} &"),
                 Command(self.lxc_prefix() + "killall ryu-manager"))
         else:
             config.add_command(
                 Command(self.lxc_prefix() +
-                        f"ryu-manager --verbose {self.script_path} &> {log} &"),
+                        f"ryu-manager --verbose {self.script_path} --ofp-tcp-listen-port {self.port} &> {log} &"),
                 Command(self.lxc_prefix() + "killall ryu-manager"))
 
     def is_switch(self) -> bool:

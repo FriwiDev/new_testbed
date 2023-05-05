@@ -37,7 +37,7 @@ class Gui(object):
         self.engine.update_all_status()
 
         self.view = MainView(self.engine, self, fullscreen)
-        self.view.gui_scale = self.max_width / 1920  # 1K is standard scale
+        self.view.gui_scale = self.max_height / 1080  # 1K is standard scale
 
         gui_box = Box(-self.canvas_width, -self.canvas_height,
                       self.canvas_width * 2 + self.max_width, self.canvas_height * 2 + self.max_height)

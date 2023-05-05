@@ -51,13 +51,15 @@ Here are two examples for ryu and openvswitch.
 
 ### Ryu Controller
 ```shell
-lxc remote add --protocol simplestreams ubuntu-minimal https://cloud-images.ubuntu.com/minimal/releases/
+lxc remote add --protocol simplestreams ubuntu-minimal https://cloud-images.ubuntu.com/minimal/releases/ || true
 lxc init ubuntu-minimal:focal ryu --profile default --profile macvlan
 lxc start ryu
 sleep 3 #Allow container to perform dhcp and establish a connection
 lxc exec ryu -- apt update
 lxc exec ryu -- apt upgrade -y
 lxc exec ryu -- apt install -y iputils-ping net-tools iperf3 python3-ryu wireguard tcpdump ifstat
+# Install ovs-common to have ovs-ofctl command
+lxc exec ryu -- apt install -y openvswitch-common || true # Installation will fail due to hostname service :/
 lxc exec ryu -- apt clean
 lxc exec ryu -- apt autoremove -y
 lxc stop ryu
@@ -73,7 +75,7 @@ lxc rm ryu
 ### OpenVSwitch
 
 ```shell
-lxc remote add --protocol simplestreams ubuntu-minimal https://cloud-images.ubuntu.com/minimal/releases/
+lxc remote add --protocol simplestreams ubuntu-minimal https://cloud-images.ubuntu.com/minimal/releases/ || true
 lxc init ubuntu-minimal:focal ovs --profile default --profile macvlan
 lxc start ovs
 sleep 3 #Allow container to perform dhcp and establish a connection
@@ -100,7 +102,7 @@ lxc rm ovs
 ### Basic host
 
 ```shell
-lxc remote add --protocol simplestreams ubuntu-minimal https://cloud-images.ubuntu.com/minimal/releases/
+lxc remote add --protocol simplestreams ubuntu-minimal https://cloud-images.ubuntu.com/minimal/releases/ || true
 lxc init ubuntu-minimal:focal simple-host --profile default --profile macvlan
 lxc start simple-host
 sleep 3 #Allow container to perform dhcp and establish a connection
