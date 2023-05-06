@@ -19,8 +19,10 @@ class Images(ABC):
     ping_enabled: Image = None
     run: Image = None
     rx: Image = None
+    save: Image = None
     stop: Image = None
     tx: Image = None
+    upload: Image = None
     wait: Image = None
 
     @classmethod
@@ -38,8 +40,10 @@ class Images(ABC):
         cls.ping_enabled = ViewUtils.load_image("../res/images/ping_enabled.png")
         cls.run = ViewUtils.load_image("../res/images/run.png")
         cls.rx = ViewUtils.load_image("../res/images/rx.png")
+        cls.save = ViewUtils.load_image("../res/images/save.png")
         cls.stop = ViewUtils.load_image("../res/images/stop.png")
         cls.tx = ViewUtils.load_image("../res/images/tx.png")
+        cls.upload = ViewUtils.load_image("../res/images/upload.png")
         cls.wait = ViewUtils.load_image("../res/images/wait.png")
 
     @classmethod

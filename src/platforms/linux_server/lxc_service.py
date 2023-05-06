@@ -110,9 +110,9 @@ class LXCService(Service, ABC):
     def command_prefix(self) -> str:
         return self.lxc_prefix()
 
-    def to_dict(self) -> dict:
+    def to_dict(self, without_gui: bool = False) -> dict:
         # Merge own data into super class data
-        return {**super(LXCService, self).to_dict(), **{
+        return {**super(LXCService, self).to_dict(without_gui), **{
             'image': self.image,
             'cpu': self.cpu,
             'memory': self.memory,

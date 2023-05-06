@@ -75,7 +75,7 @@ class Node(ABC):
     def get_configuration_builder(self, topo: 'Topo'):
         pass
 
-    def to_dict(self) -> dict:
+    def to_dict(self, without_gui: bool = False) -> dict:
         intfs = []
         for i in self.intfs:
             intfs.append(i.to_dict())
@@ -89,8 +89,8 @@ class Node(ABC):
             'ssh_work_dir': self.ssh_work_dir,
             'ssh_lock_dir': self.ssh_lock_dir,
             'current_virtual_device_num': str(self.current_virtual_device_num),
-            'intfs': intfs,
-            'gui_data': self.gui_data.to_dict()
+            'intfs': [intf.to_dict(without_gui) for intf in self.intfs],
+            'gui_data': None if without_gui else self.gui_data.to_dict()
         }
 
     @classmethod

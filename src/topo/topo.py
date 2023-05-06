@@ -38,13 +38,13 @@ class Topo(object):
             service.configure(self)
         self.gui_data_attachment = TopoGuiDataAttachment()
 
-    def to_dict(self) -> dict:
+    def to_dict(self, without_gui: bool = False) -> dict:
         nodes = []
         for n in self.nodes:
-            nodes.append(self.nodes[n].to_dict())
+            nodes.append(self.nodes[n].to_dict(without_gui))
         services = []
         for s in self.services:
-            services.append(self.services[s].to_dict())
+            services.append(self.services[s].to_dict(without_gui))
         links = []
         for link in self.links:
             links.append(link.to_dict())
@@ -73,8 +73,8 @@ class Topo(object):
             ret.gui_data_attachment = TopoGuiDataAttachment.from_dict(in_dict['gui_data'])
         return ret
 
-    def export_topo(self) -> str:
-        return json.dumps(self.to_dict(), indent=4)
+    def export_topo(self, without_gui: bool = False) -> str:
+        return json.dumps(self.to_dict(without_gui), indent=4)
 
     @classmethod
     def import_topo(cls, in_json: str) -> 'Topo':
@@ -127,6 +127,9 @@ class Topo(object):
 
     def __eq__(self, other: 'Topo') -> bool:
         return self.export_topo().__eq__(other.export_topo())
+
+    def eq_without_gui(self, other: 'Topo') -> bool:
+        return self.export_topo(True).__eq__(other.export_topo(True))
 
 
 class TopoUtil(object):

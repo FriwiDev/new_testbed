@@ -24,9 +24,9 @@ class Controller(LXCService, ABC):
         self.port = port
         self.protocol = protocol
 
-    def to_dict(self) -> dict:
+    def to_dict(self, without_gui: bool = False) -> dict:
         # Merge own data into super class data
-        return {**super(Controller, self).to_dict(), **{
+        return {**super(Controller, self).to_dict(without_gui), **{
             'port': str(self.port),
             'protocol': self.protocol
         }}
@@ -88,9 +88,9 @@ class RyuController(Controller):
     def is_controller(self) -> bool:
         return True
 
-    def to_dict(self) -> dict:
+    def to_dict(self, without_gui: bool = False) -> dict:
         # Merge own data into super class data
-        return {**super(RyuController, self).to_dict(), **{
+        return {**super(RyuController, self).to_dict(without_gui), **{
             'script_path': self.script_path
         }}
 

@@ -29,7 +29,7 @@ class Interface(object):
         self.networks.append(network)
         return self
 
-    def to_dict(self) -> dict:
+    def to_dict(self, without_gui: bool = False) -> dict:
         ip_str = []
         for ip in self.ips:
             ip_str.append(format(ip))
@@ -42,7 +42,7 @@ class Interface(object):
             'networks': network_str,
             'mac_addr': self.mac_address,
             'bind_name': self.bind_name,
-            'gui_data': self.gui_data.to_dict()
+            'gui_data': None if without_gui else self.gui_data.to_dict()
         }
 
     @classmethod

@@ -38,9 +38,9 @@ class Switch(LXCService, ABC):
         self.controllers = controllers
         self.gateway_to_subnets = gateway_to_subnets if gateway_to_subnets else []
 
-    def to_dict(self) -> dict:
+    def to_dict(self, without_gui: bool = False) -> dict:
         # Merge own data into super class data
-        return {**super(Switch, self).to_dict(), **{
+        return {**super(Switch, self).to_dict(without_gui), **{
             'dpid': self.dpid,
             'opts': self.opts,
             'listen_port': str(self.listen_port),
@@ -252,9 +252,9 @@ class OVSSwitch(Switch):
     def is_controller(self) -> bool:
         return False
 
-    def to_dict(self) -> dict:
+    def to_dict(self, without_gui: bool = False) -> dict:
         # Merge own data into super class data
-        return {**super(OVSSwitch, self).to_dict(), **{
+        return {**super(OVSSwitch, self).to_dict(without_gui), **{
             'fail_mode': self.fail_mode,
             'datapath': self.datapath,
             'inband': str(self.inband),

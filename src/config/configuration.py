@@ -10,6 +10,9 @@ class Command(object):
             return ""
         return self.cmd
 
+    def __eq__(self, other):
+        return self.cmd == other.cmd
+
 
 class File(object):
     def __init__(self, name: str):

@@ -557,3 +557,7 @@ class Box(object):
 
         for box in self.subboxes:
             box.update_select_mode()
+
+    def clear_boxes(self):
+        self.lines.clear()
+        self.subboxes.clear()

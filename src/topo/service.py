@@ -31,7 +31,7 @@ class Service(ABC):
         """To be implemented by services. Will execute when the topology is fully loaded."""
         pass
 
-    def to_dict(self) -> dict:
+    def to_dict(self, without_gui: bool = False) -> dict:
         intfs = []
         for i in self.intfs:
             intfs.append(i.to_dict())
@@ -41,9 +41,9 @@ class Service(ABC):
             'name': self.name,
             'executor': self.executor.name,
             'type': self.type.name,
-            'intfs': [intf.to_dict() for intf in self.intfs],
+            'intfs': [intf.to_dict(without_gui) for intf in self.intfs],
             'service_extensions': [ext.to_dict() for ext in self.extensions.values()],
-            'gui_data': self.gui_data.to_dict()
+            'gui_data': None if without_gui else self.gui_data.to_dict()
         }
 
     @classmethod

@@ -3,6 +3,7 @@ from os import PathLike
 from pathlib import Path
 
 from config.configuration import Configuration
+from config.delta_configuration_builder import DeltaConfigurationBuilder
 from config.export.configuration_exporter import ConfigurationExporter
 from ssh.output_consumer import PrintOutputConsumer
 from ssh.ssh_command import SSHCommand, FileSendCommand
@@ -72,6 +73,32 @@ class SSHConfigurationExporter(ConfigurationExporter):
     def stop(self, topo: 'Topo', builder: 'ConfigurationBuilder', service: 'Service'):
         config = builder.build_service_enable(service)
         self._stop_with_config(config, topo)
+
+    def regress(self, old_topo: 'Topo', builder: 'ConfigurationBuilder', old_service: 'Service',
+                new_service: 'Service'):
+        config_old = builder.build_service(old_service)
+        config_new = builder.build_service(new_service)
+        delta_config = DeltaConfigurationBuilder.get_delta(config_old, config_new)
+        self._stop_with_config(delta_config, old_topo)
+
+    def advance(self, new_topo: 'Topo', builder: 'ConfigurationBuilder', old_service: 'Service',
+                new_service: 'Service'):
+        config_old = builder.build_service(old_service)
+        config_new = builder.build_service(new_service)
+        delta_config = DeltaConfigurationBuilder.get_delta(config_old, config_new)
+        self._start_with_config(delta_config, new_topo)
+
+    def regress_node(self, old_topo: 'Topo', old_builder: 'ConfigurationBuilder', new_builder: 'ConfigurationBuilder'):
+        config_old = old_builder.build_base()
+        config_new = new_builder.build_base()
+        delta_config = DeltaConfigurationBuilder.get_delta(config_old, config_new)
+        self._stop_with_config(delta_config, old_topo)
+
+    def advance_node(self, new_topo: 'Topo', old_builder: 'ConfigurationBuilder', new_builder: 'ConfigurationBuilder'):
+        config_old = old_builder.build_base()
+        config_new = new_builder.build_base()
+        delta_config = DeltaConfigurationBuilder.get_delta(config_old, config_new)
+        self._start_with_config(delta_config, new_topo)
 
     def copy(self, service: 'Service', file: PathLike, base: str):
         if os.path.isdir(file):
