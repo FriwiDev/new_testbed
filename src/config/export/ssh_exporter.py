@@ -102,6 +102,8 @@ class SSHConfigurationExporter(ConfigurationExporter):
 
     def copy(self, service: 'Service', file: PathLike, base: str):
         if os.path.isdir(file):
+            if file.name == "__pycache__" or file.name.endswith(".egg-info"):
+                return
             print("Creating dir " + str(file) + " on " + base + file.name)
             cmd = SSHCommand(self.node, service.command_prefix() + "mkdir -p \"" + base + file.name + "\"")
             cmd.run()
@@ -111,6 +113,8 @@ class SSHConfigurationExporter(ConfigurationExporter):
             for sub in os.listdir(file):
                 self.copy(service, Path(str(file) + "/" + str(sub)), base + file.name + "/")
         else:
+            if file.name.endswith(".egg"):
+                return
             remote = base + file.name
             print("Uploading " + str(file) + " to " + remote)
             cmd = FileSendCommand(self.node, service.command_prefix(), str(os.path.abspath(file)), remote)

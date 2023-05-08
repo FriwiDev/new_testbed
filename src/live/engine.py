@@ -181,9 +181,10 @@ class Engine(object):
         if isinstance(old_component, Node):
             node = self.nodes[old_component.name]
             if node.status == EngineComponentStatus.RUNNING or node.status == EngineComponentStatus.STOPPED:
-                old_config = old_component.get_configuration_builder(old_topo).build()
+                old_builder = old_component.get_configuration_builder(old_topo)
+                old_config = old_builder.build()
                 exporter = SSHConfigurationExporter(old_config, old_component)
-                exporter.regress_node(old_topo, old_config, new_component.get_configuration_builder(new_topo))
+                exporter.regress_node(old_topo, old_builder, new_component.get_configuration_builder(new_topo))
             elif node.status == EngineComponentStatus.UNREACHABLE:
                 raise Exception(f"Can not regress node {old_component.name} because it is currently unreachable")
         elif isinstance(old_component, Service):
@@ -202,9 +203,10 @@ class Engine(object):
             node = self.nodes[new_component.name]
             node.component = new_component
             if node.status == EngineComponentStatus.RUNNING or node.status == EngineComponentStatus.STOPPED:
-                new_config = new_component.get_configuration_builder(new_topo).build()
+                new_builder = new_component.get_configuration_builder(new_topo)
+                new_config = new_builder.build()
                 exporter = SSHConfigurationExporter(new_config, new_component)
-                exporter.advance_node(new_topo, old_component.get_configuration_builder(old_topo).build(), new_config)
+                exporter.advance_node(new_topo, old_component.get_configuration_builder(old_topo), new_builder)
             elif node.status == EngineComponentStatus.UNREACHABLE:
                 raise Exception(f"Can not advance node {new_component.name} because it is currently unreachable")
         elif isinstance(new_component, Service):
