@@ -7,6 +7,7 @@ from config.export.ssh_exporter import SSHConfigurationExporter
 from live.engine_component import EngineNode, EngineComponentStatus, EngineService, EngineInterfaceState, \
     EngineInterface
 from live.engine_topology_change_listener import EngineTopologyChangeListener
+from live.testbed_service import TestbedService
 from platforms.linux_server.lxc_service import LXCService
 from ssh.ifstat_command import IfstatSSHCommand
 from ssh.ip_addr_ssh_command import IpAddrSSHCommand, InterfaceState
@@ -24,7 +25,7 @@ from topo.topo import Topo, TopoUtil
 
 
 class Engine(object):
-    def __init__(self, topo: Topo or str or None,
+    def __init__(self, topo: Topo or str or None = None,
                  local_node: Node or None = None):
         if not topo:
             cmd = LockReadSSHCommand(local_node, "/tmp", "current_topology.json")
@@ -58,7 +59,9 @@ class Engine(object):
         while not self.stop_updating:
             start = time.time()
             if subject.status == EngineComponentStatus.RUNNING:
-                self.cmd_ifstat(subject.component, 5, lambda itf, rx, tx: self._set_ifstat_data(subject, itf, rx, tx))
+                if len(subject.intfs) > 0:
+                    self.cmd_ifstat(subject.component, 5,
+                                    lambda itf, rx, tx: self._set_ifstat_data(subject, itf, rx, tx))
             stop = time.time()
             time.sleep((start - stop + 10) % 1)
 
@@ -253,6 +256,8 @@ class Engine(object):
 
     def update_interface_status(self, component: EngineNode or EngineService):
         if component.status == EngineComponentStatus.RUNNING:
+            if len(component.intfs) == 0:
+                return
             command = self.cmd_ip_addr(component.component)
             tcqdisc = self.cmd_tc_qdisc(component.component)
             for intf in component.intfs.values():
@@ -425,6 +430,10 @@ class Engine(object):
         for node in topo.nodes.values():
             cmd = LockWriteSSHCommand(node, "/tmp", "current_topology.json", path)
             cmd.run()
+        for service in topo.services.values():
+            if isinstance(service, TestbedService):
+                cmd = LockWriteSSHCommand(service, "/tmp", "current_topology.json", path)
+                cmd.run()
         os.remove(path)
 
     def get_local_node(self) -> EngineNode:
@@ -540,3 +549,9 @@ class Engine(object):
         # Post work: Update everything locally
         self.on_topology_change(old_topo, self.topo)
         self.update_all_status()
+
+    def get_service_by_name(self, name: str) -> EngineService or None:
+        for node in self.nodes.values():
+            if node.services[name]:
+                return node.services[name]
+        return None

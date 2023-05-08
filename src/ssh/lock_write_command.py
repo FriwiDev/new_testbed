@@ -1,13 +1,12 @@
-from ssh.output_consumer import OutputConsumer
 from ssh.ssh_command import SSHCommand
 from topo.node import Node
 from topo.service import Service
 
 
 class LockWriteSSHCommand(SSHCommand):
-    def __init__(self, node: Node, dir: str, file: str, local: str):
+    def __init__(self, node: Node or Service, dir: str, file: str, local: str):
         super().__init__(node, "")
-        self.prefix = ""
+        self.prefix = node.command_prefix() if isinstance(node, Service) else ""
         self.dir = dir
         self.file = file
         self.local = local

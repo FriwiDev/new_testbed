@@ -1,10 +1,14 @@
+import ipaddress
 from abc import ABC, abstractmethod
 from enum import Enum
 from ipaddress import ip_network, ip_address
 
 from extensions.macvlan_extension import MacVlanServiceExtension
 from extensions.wireguard_extension import WireguardServiceExtension
+from live.engine_component import EngineService
 from ssh.lock_read_command import LockReadSSHCommand
+from ssh.output_consumer import PrintOutputConsumer
+from ssh.ssh_command import SSHCommand
 from topo.interface import Interface
 from topo.node import Node
 from topo.service import Service
@@ -26,8 +30,11 @@ class EngineComponent(ABC):
         self.status = EngineComponentStatus.UNREACHABLE
 
     @abstractmethod
-    def get_name(self):
+    def get_name(self) -> str:
         pass
+
+    def __str__(self):
+        return self.get_name()
 
 
 class EngineInterface(EngineComponent):
@@ -42,7 +49,7 @@ class EngineInterface(EngineComponent):
         self.ifstat: (int, int) or None = None
         self.tcqdisc: (int, int, float, float, float) = (0, 0, 0, 0, 0)
 
-    def get_name(self):
+    def get_name(self) -> str:
         return f"{self.component.name}@{self.parent.component.name}"
 
 
@@ -59,9 +66,26 @@ class EngineService(EngineComponent):
             elif isinstance(ext, MacVlanServiceExtension):
                 self.intfs["eth0"].extension = ext
 
-    def get_name(self):
+    def get_name(self) -> str:
         return f"{self.component.name}"
 
+    def get_reachable_ip_from_other_by_subnet(self, other: EngineService) -> ipaddress.ip_address or None:
+        for intf in other.intfs.values():
+            for _, subnet in intf.live_ips:
+                for intf_local in self.intfs.values():
+                    for ip_local, subnet_local in intf_local.live_ips:
+                        if subnet_local == subnet:
+                            return ip_local
+        return None
+
+    def cmd(self, cmd: str):
+        cmd = SSHCommand(self.parent.component, self.component.command_prefix() + cmd)
+        cmd.run()
+
+    def cmd_print(self, cmd: str):
+        cmd = SSHCommand(self.parent.component, self.component.command_prefix() + cmd)
+        cmd.add_consumer(PrintOutputConsumer())
+        cmd.run()
 
 class EngineNode(EngineComponent):
     def __init__(self, engine: 'Engine', component: Node, topo: Topo):
@@ -74,7 +98,7 @@ class EngineNode(EngineComponent):
         for intf in component.intfs:
             self.intfs[intf.name] = EngineInterface(engine, intf, self)
 
-    def get_name(self):
+    def get_name(self) -> str:
         return f"{self.component.name}"
 
     def read_topology(self) -> Topo or None:
@@ -84,3 +108,12 @@ class EngineNode(EngineComponent):
             return None
         else:
             return Topo.import_topo(cmd.content)
+
+    def cmd(self, cmd: str):
+        cmd = SSHCommand(self.component, cmd)
+        cmd.run()
+
+    def cmd_print(self, cmd: str):
+        cmd = SSHCommand(self.component, cmd)
+        cmd.add_consumer(PrintOutputConsumer())
+        cmd.run()

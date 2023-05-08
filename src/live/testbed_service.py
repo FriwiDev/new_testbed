@@ -27,6 +27,8 @@ class TestbedService(LXCService, ABC):
         self.add_file(os.path.abspath(pathlib.Path(testbed_dir + "/src")), pathlib.Path("/tmp/testbed"))
         # Add ssh keys to upload
         self.add_file(os.path.abspath(pathlib.Path(key_dir)), pathlib.Path("/tmp"))
+        # Add testbed topology to service
+        self.add_file(pathlib.Path(testbed_dir + "/testbed/work/current_topology.json"), pathlib.Path("/tmp"))
 
     @abstractmethod
     def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration', create: bool):

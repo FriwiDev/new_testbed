@@ -1,4 +1,6 @@
+from config.configuration import Command
 from live.testbed_service import TestbedService
+from ssh.localcommand import LocalCommand
 from topo.node import Node
 from topo.service import ServiceType
 
@@ -18,6 +20,11 @@ class DSMFService(TestbedService):
 
     def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration', create: bool):
         super().append_to_configuration(config_builder, config, create)
+        config.add_command(Command(
+            self.command_prefix() + "bash -c " + LocalCommand.encapsule_command("cd /tmp/testbed/src && python3 "
+                                                                                "topo/edgeslicing/dsmf.py > "
+                                                                                "/tmp/dsmf.log")),
+                           Command())
 
     def to_dict(self, without_gui: bool = False) -> dict:
         # Merge own data into super class data
