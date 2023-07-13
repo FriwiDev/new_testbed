@@ -45,7 +45,8 @@ class RyuController(Controller):
 
     def __init__(self, name: str, executor: 'Node', cpu: str = None, cpu_allowance: str = None, memory: str = None,
                  port: int = 6653, protocol: str = 'tcp',
-                 script_path: str = "../examples/defaults/simple_switch.py"):
+                 script_path: str = "../examples/defaults/simple_switch.py",
+                 image: str = "ryu"):
         """name: name for service
            executor: node this service is running on
            cpu: string limiting cpu core limits (None for unlimited, "n" for n cores)
@@ -55,7 +56,7 @@ class RyuController(Controller):
            protocol: typically tcp or udp
            script_path: the script (relative to your topology script) to use for this controller.
                         The whole folder the script is in will be copied"""
-        super().__init__(name, executor, ServiceType.RYU, "ryu", cpu, cpu_allowance, memory, port, protocol)
+        super().__init__(name, executor, ServiceType.RYU, image, cpu, cpu_allowance, memory, port, protocol)
         p = Path(script_path)
         if p.is_file():
             self.script_path = "/tmp/" + p.parent.name + "/" + p.name

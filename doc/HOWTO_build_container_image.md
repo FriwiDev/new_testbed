@@ -58,8 +58,6 @@ sleep 3 #Allow container to perform dhcp and establish a connection
 lxc exec ryu -- apt update
 lxc exec ryu -- apt upgrade -y
 lxc exec ryu -- apt install -y iputils-ping net-tools iperf3 python3-ryu wireguard tcpdump ifstat
-# Install ovs-common to have ovs-ofctl command
-lxc exec ryu -- apt install -y openvswitch-common || true # Installation will fail due to hostname service :/
 lxc exec ryu -- apt clean
 lxc exec ryu -- apt autoremove -y
 lxc stop ryu

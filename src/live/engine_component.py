@@ -5,7 +5,6 @@ from ipaddress import ip_network, ip_address
 
 from extensions.macvlan_extension import MacVlanServiceExtension
 from extensions.wireguard_extension import WireguardServiceExtension
-from live.engine_component import EngineService
 from ssh.lock_read_command import LockReadSSHCommand
 from ssh.output_consumer import PrintOutputConsumer
 from ssh.ssh_command import SSHCommand
@@ -69,7 +68,7 @@ class EngineService(EngineComponent):
     def get_name(self) -> str:
         return f"{self.component.name}"
 
-    def get_reachable_ip_from_other_by_subnet(self, other: EngineService) -> ipaddress.ip_address or None:
+    def get_reachable_ip_from_other_by_subnet(self, other: 'EngineService') -> ipaddress.ip_address or None:
         for intf in other.intfs.values():
             for _, subnet in intf.live_ips:
                 for intf_local in self.intfs.values():

@@ -80,7 +80,7 @@ class Switch(LXCService, ABC):
 class OVSSwitch(Switch):
     """Open vSwitch switch."""
 
-    def __init__(self, name, executor: 'Node', cpu: str = None, cpu_allowance: str = None, memory: str = None,
+    def __init__(self, name, executor: 'Node', image: str = "ovs", cpu: str = None, cpu_allowance: str = None, memory: str = None,
                  dpid=None, opts='', listen_port=None,
                  controllers: list['Controller'] = None,
                  fail_mode='secure', datapath='kernel', inband=False, protocols=None, reconnectms=1000,
@@ -105,7 +105,7 @@ class OVSSwitch(Switch):
            local_ip: local ip address for switch device
            local_network: network for local_ip
            local_mac: mac address for local switch device"""
-        super().__init__(name, executor, ServiceType.OVS, "ovs", cpu, cpu_allowance, memory, dpid=dpid, opts=opts,
+        super().__init__(name, executor, ServiceType.OVS, image, cpu, cpu_allowance, memory, dpid=dpid, opts=opts,
                          listen_port=listen_port, controllers=controllers)
         self.fail_mode = fail_mode
         self.datapath = datapath

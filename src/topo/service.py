@@ -102,6 +102,13 @@ class Service(ABC):
     def command_prefix(self) -> str:
         return ""
 
+    def get_valid_ip_for(self, other: 'Service') -> ipaddress or None:
+        routing_table = other.build_routing_table()
+        for ip, via in routing_table.items():
+            if self.has_ip(ip):
+                return ip
+        return None
+
     def get_reachable_ips_via_for_other(self, intf: Interface, for_switch: bool = False) -> dict[ipaddress, int]:
         return self.get_reachable_ips_via_for_other_recursive(intf, [], 0, for_switch)
 

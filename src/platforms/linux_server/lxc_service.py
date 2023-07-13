@@ -131,8 +131,9 @@ class LXCService(Service, ABC):
 
 
 class SimpleLXCHost(LXCService):
-    def __init__(self, name: str, executor: 'Node', cpu: str = None, cpu_allowance: str = None, memory: str = None):
-        super().__init__(name, executor, ServiceType.NONE, "simple-host", cpu, cpu_allowance, memory)
+    def __init__(self, name: str, executor: 'Node', cpu: str = None, cpu_allowance: str = None, memory: str = None,
+                 image: str = "simple-host"):
+        super().__init__(name, executor, ServiceType.NONE, image, cpu, cpu_allowance, memory)
 
     def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration', create: bool):
         super().append_to_configuration(config_builder, config, create)
