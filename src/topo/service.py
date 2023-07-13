@@ -16,13 +16,14 @@ class ServiceType(Enum):
 class Service(ABC):
     """A service running on a node."""
 
-    def __init__(self, name: str, executor: Node, service_type: ServiceType = None):
+    def __init__(self, name: str, executor: Node, service_type: ServiceType = None, late_init: bool = False):
         """name: name for service
            executor: node this service is running on
            service_type: the type of this service for easier identification"""
         self.name = name
         self.type = service_type
         self.executor = executor
+        self.late_init = late_init
         self.intfs: list[Interface] = []
         self.extensions: dict[str, ServiceExtension] = {}
         self.gui_data: GuiDataAttachment = GuiDataAttachment()
@@ -50,7 +51,8 @@ class Service(ABC):
     def from_dict(cls, topo: 'Topo', in_dict: dict) -> 'Service':
         """Internal method to initialize from dictionary."""
         ret = cls(in_dict['name'],
-                  topo.get_node(in_dict['executor']))
+                  topo.get_node(in_dict['executor']),
+                  late_init=True)
         for intf in in_dict['intfs']:
             ret.intfs.append(Interface.from_dict(intf))
         for ext in in_dict['service_extensions']:

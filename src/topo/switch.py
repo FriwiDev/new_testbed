@@ -15,7 +15,7 @@ class Switch(LXCService, ABC):
 
     dpid_len = 16  # digits in dpid passed to switch
 
-    def __init__(self, name, executor: 'Node', service_type: 'ServiceType', image: str = "ubuntu", cpu: str = None,
+    def __init__(self, name, executor: 'Node', service_type: 'ServiceType', late_init: bool = False, image: str = "ubuntu", cpu: str = None,
                  cpu_allowance: str = None, memory: str = None, dpid: str = None, opts: str = '',
                  listen_port: int = None, controllers: list['Controller'] = None,
                  gateway_to_subnets: list[ipaddress.ip_network] = None):
@@ -32,6 +32,7 @@ class Switch(LXCService, ABC):
         super().__init__(name, executor, service_type, image, cpu, cpu_allowance, memory)
         if controllers is None:
             controllers = []
+        self.late_init = late_init
         self.dpid = self.default_dpid(dpid)
         self.opts = opts
         self.listen_port = listen_port
@@ -71,6 +72,8 @@ class Switch(LXCService, ABC):
             if nums:
                 dpid = hex(int(nums[0]))[2:]
             else:
+                if self.late_init:
+                    return
                 raise Exception('Unable to derive default datapath ID - '
                                 'please either specify a dpid or use a '
                                 'canonical switch name such as s23.')
@@ -80,7 +83,7 @@ class Switch(LXCService, ABC):
 class OVSSwitch(Switch):
     """Open vSwitch switch."""
 
-    def __init__(self, name, executor: 'Node', image: str = "ovs", cpu: str = None, cpu_allowance: str = None, memory: str = None,
+    def __init__(self, name, executor: 'Node', late_init: bool = False, image: str = "ovs", cpu: str = None, cpu_allowance: str = None, memory: str = None,
                  dpid=None, opts='', listen_port=None,
                  controllers: list['Controller'] = None,
                  fail_mode='secure', datapath='kernel', inband=False, protocols=None, reconnectms=1000,
@@ -105,7 +108,7 @@ class OVSSwitch(Switch):
            local_ip: local ip address for switch device
            local_network: network for local_ip
            local_mac: mac address for local switch device"""
-        super().__init__(name, executor, ServiceType.OVS, image, cpu, cpu_allowance, memory, dpid=dpid, opts=opts,
+        super().__init__(name, executor, ServiceType.OVS, late_init, image, cpu, cpu_allowance, memory, dpid=dpid, opts=opts,
                          listen_port=listen_port, controllers=controllers)
         self.fail_mode = fail_mode
         self.datapath = datapath

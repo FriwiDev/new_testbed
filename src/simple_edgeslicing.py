@@ -51,6 +51,8 @@ class SimpleEdgeslicing(Topo):
         self.add_service(controller2)
         self.add_service(switch2)
         self.add_service(switchbn)
+        self.add_service(vpn1)
+        self.add_service(vpn2)
         self.add_service(host1)
         self.add_service(host2)
 

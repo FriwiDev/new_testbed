@@ -9,7 +9,7 @@ from topo.service import ServiceType
 class Controller(LXCService, ABC):
     """A controller is a service providing instructions to an OpenFlow switch."""
 
-    def __init__(self, name: str, executor: 'Node', service_type: 'ServiceType', image: str = "ubuntu", cpu: str = None,
+    def __init__(self, name: str, executor: 'Node', service_type: 'ServiceType', late_init: bool = False, image: str = "ubuntu", cpu: str = None,
                  cpu_allowance: str = None, memory: str = None,
                  port: int = 6653, protocol: str = 'tcp'):
         """name: name for service
@@ -20,7 +20,7 @@ class Controller(LXCService, ABC):
            memory: string limiting memory usage (None for unlimited, "nMB" for n MB limit, other units work as well)
            port: the port to bind to (for switches to connect)
            protocol: typically tcp or udp"""
-        super().__init__(name, executor, service_type, image, cpu, cpu_allowance, memory)
+        super().__init__(name, executor, service_type, late_init, image, cpu, cpu_allowance, memory)
         self.port = port
         self.protocol = protocol
 
@@ -43,7 +43,7 @@ class Controller(LXCService, ABC):
 class RyuController(Controller):
     """A ryu controller."""
 
-    def __init__(self, name: str, executor: 'Node', cpu: str = None, cpu_allowance: str = None, memory: str = None,
+    def __init__(self, name: str, executor: 'Node', late_init: bool = False, cpu: str = None, cpu_allowance: str = None, memory: str = None,
                  port: int = 6653, protocol: str = 'tcp',
                  script_path: str = "../examples/defaults/simple_switch.py",
                  image: str = "ryu"):
@@ -56,7 +56,7 @@ class RyuController(Controller):
            protocol: typically tcp or udp
            script_path: the script (relative to your topology script) to use for this controller.
                         The whole folder the script is in will be copied"""
-        super().__init__(name, executor, ServiceType.RYU, image, cpu, cpu_allowance, memory, port, protocol)
+        super().__init__(name, executor, ServiceType.RYU, late_init, image, cpu, cpu_allowance, memory, port, protocol)
         p = Path(script_path)
         if p.is_file():
             self.script_path = "/tmp/" + p.parent.name + "/" + p.name

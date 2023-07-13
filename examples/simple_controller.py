@@ -18,7 +18,7 @@ class SimpleController(Topo):
 
     def create(self, *args, **params):
         # Create a node to execute on
-        node = LinuxNode(name="testnode", node_type=NodeType.LINUX_DEBIAN, ssh_remote="root@localhost")
+        node = LinuxNode(name="testnode", node_type=NodeType.LINUX_DEBIAN, ssh_remote="root@10.0.1.9")
         self.add_node(node)
         # Create and append all services (one controller, one switch and two hosts)
         controller1 = RyuController(name="controller1", executor=node, script_path="defaults/simple_switch.py")
