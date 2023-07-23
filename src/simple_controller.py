@@ -23,28 +23,19 @@ class SimpleController(Topo):
         # Create and append all services (one controller, one switch and two hosts)
         controller1 = RyuController(name="controller1", executor=node, script_path="../examples/defaults/simple_switch.py")
         switch1 = OVSSwitch(name="switch1", executor=node, fail_mode='secure', controllers=[controller1])
-        controller2 = RyuController(name="controller2", executor=node,
-                                    script_path="../examples/defaults/simple_switch.py")
-        switch2 = OVSSwitch(name="switch2", executor=node, fail_mode='secure', controllers=[controller2])
         host1 = SimpleLXCHost(name="host1", executor=node)
         host2 = SimpleLXCHost(name="host2", executor=node)
         self.add_service(controller1)
         self.add_service(switch1)
-        self.add_service(controller2)
-        self.add_service(switch2)
         self.add_service(host1)
         self.add_service(host2)
         # Create links between (host1, host2, controller1) <-> switch1
         linkc1 = Link(self, service1=switch1, service2=controller1, link_type=LinkType.VXLAN)
-        linkc2 = Link(self, service1=switch2, service2=controller2, link_type=LinkType.VXLAN)
         link1 = Link(self, service1=host1, service2=switch1, link_type=LinkType.VXLAN)
-        link2 = Link(self, service1=switch1, service2=switch2, link_type=LinkType.VXLAN)
-        link3 = Link(self, service1=switch2, service2=host2, link_type=LinkType.VXLAN)
+        link2 = Link(self, service1=switch1, service2=host2, link_type=LinkType.VXLAN)
         self.add_link(linkc1)
-        self.add_link(linkc2)
         self.add_link(link1)
         self.add_link(link2)
-        self.add_link(link3)
         pass
 
 

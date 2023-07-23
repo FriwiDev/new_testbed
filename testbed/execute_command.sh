@@ -13,4 +13,4 @@ then
   exit 1
 fi
 
-python3 "$( dirname "$0" )/../src/execute_command.py" "$( dirname "$0" )/work/current_topology.json" "$@"
+../venv/bin/python "$( dirname "$0" )/../src/execute_command.py" "$( dirname "$0" )/work/current_topology.json" "$@"

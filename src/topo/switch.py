@@ -29,7 +29,7 @@ class Switch(LXCService, ABC):
            opts: additional switch options
            listenPort: port to listen on for dpctl connections
            controllers: the controllers to attach to this switch"""
-        super().__init__(name, executor, service_type, image, cpu, cpu_allowance, memory)
+        super().__init__(name, executor, service_type, late_init, image, cpu, cpu_allowance, memory)
         if controllers is None:
             controllers = []
         self.late_init = late_init

@@ -542,7 +542,7 @@ class Engine(object):
         for x in self.topo.services:
             if x not in old_topo.services.keys():
                 service = self.topo.services.get(x)
-                node = self.nodes[service.executor]
+                node = self.nodes[service.executor.name]
                 node.services[x] = EngineService(self, service, node)
                 self.on_component_change(None, node.services[x])
 
