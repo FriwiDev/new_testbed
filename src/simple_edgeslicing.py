@@ -83,7 +83,7 @@ class SimpleEdgeslicing(Topo):
                                        connection=Utils.get_connections(vpn2))
         ]
 
-        # Create controll structures
+        # Create control structures
         dsmf1 = DSMF(name="DSMF1", executor=node, network="net1", controllers=[controller1], vpn_gateways=[vpn1, vpn2], networks=networks, switches=[switch1], network_borders=network_borders_net1)
         esmf1 = ESMF(name="ESMF1", executor=node, network="net1", coordinators=[], vpn_gateways=[vpn1, vpn2], networks=networks, domain_controller=dsmf1, slice_id_range=Range(1000, 1999), tunnel_id_range=Range(1000, 1999))
         dsmf2 = DSMF(name="DSMF2", executor=node, network="net2", controllers=[controller2], vpn_gateways=[vpn1, vpn2], networks=networks, switches=[switch2], network_borders=network_borders_net2)
@@ -109,6 +109,11 @@ class SimpleEdgeslicing(Topo):
         linkc22 = Link(self, service1=vpn2, service2=dsmf2, link_type=LinkType.VXLAN)
         linkc23 = Link(self, service1=dsmf2, service2=esmf2, link_type=LinkType.VXLAN)
 
+        linkc30 = Link(self, service1=dsmf1, service2=controller1, link_type=LinkType.VXLAN)
+        linkc31 = Link(self, service1=switch1, service2=controller1, link_type=LinkType.VXLAN)
+        linkc32 = Link(self, service1=dsmf2, service2=controller2, link_type=LinkType.VXLAN)
+        linkc33 = Link(self, service1=switch2, service2=controller2, link_type=LinkType.VXLAN)
+
         # Append all links
         self.add_link(linke1)
 
@@ -120,6 +125,11 @@ class SimpleEdgeslicing(Topo):
         self.add_link(linkc21)
         self.add_link(linkc22)
         self.add_link(linkc23)
+
+        self.add_link(linkc30)
+        self.add_link(linkc31)
+        self.add_link(linkc32)
+        self.add_link(linkc33)
         pass
 
 

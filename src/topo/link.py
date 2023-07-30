@@ -43,18 +43,28 @@ class Link(object):
             self.intf1 = service1.get_interface(self.intf_name1)
         else:
             self.intf1 = service1.add_interface_by_name(self.intf_name1)
+            if service1.main_ip is None:
+                service1.main_ip = topo.network_implementation.get_network_address_generator().generate_ip(service1, self.intf1)
+            if service1.main_network is None:
+                service1.main_network = topo.network_implementation.get_network_address_generator().generate_network(service1, self.intf1)
             self.intf1.add_ip(
-                topo.network_implementation.get_network_address_generator().generate_ip(service1, self.intf1),
-                topo.network_implementation.get_network_address_generator().generate_network(service1, self.intf1)
+                service1.main_ip,
+                service1.main_network
             )
         self.intf1.links.append(self)
         if service2.get_interface(self.intf_name2):
             self.intf2 = service2.get_interface(self.intf_name2)
         else:
             self.intf2 = service2.add_interface_by_name(self.intf_name2)
+            if service2.main_ip is None:
+                service2.main_ip = topo.network_implementation.get_network_address_generator().generate_ip(service2,
+                                                                                                           self.intf2)
+            if service2.main_network is None:
+                service2.main_network = topo.network_implementation.get_network_address_generator().generate_network(
+                    service2, self.intf2)
             self.intf2.add_ip(
-                topo.network_implementation.get_network_address_generator().generate_ip(service2, self.intf2),
-                topo.network_implementation.get_network_address_generator().generate_network(service2, self.intf2)
+                service2.main_ip,
+                service2.main_network
             )
         self.intf2.links.append(self)
         # Apply mac addresses to devices, if any were provided

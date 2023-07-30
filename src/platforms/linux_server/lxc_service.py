@@ -93,9 +93,9 @@ class LXCService(Service, ABC):
                 for i in range(len(dev.ips)):
                     NetworkUtils.add_ip(config, dev.name, dev.ips[i], dev.networks[i], self.lxc_prefix())
         # Set up routes
-        # For switch it is with only links to controllers
+        # For switch it is with only links to controllers and excluded devices
         for ip, via in self.build_routing_table(for_switch=self.is_switch()).items():
-            NetworkUtils.add_route(config, ip, via, None, self.lxc_prefix())
+            NetworkUtils.add_route(config, ip, None, None, via, self.lxc_prefix())
 
         # Set up extensions
         for ext in self.extensions.values():

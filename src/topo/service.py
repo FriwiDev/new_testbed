@@ -25,6 +25,8 @@ class Service(ABC):
         self.executor = executor
         self.late_init = late_init
         self.intfs: list[Interface] = []
+        self.main_ip: ipaddress or None = None
+        self.main_network: ipaddress or None = None
         self.extensions: dict[str, ServiceExtension] = {}
         self.gui_data: GuiDataAttachment = GuiDataAttachment()
 
@@ -42,6 +44,8 @@ class Service(ABC):
             'name': self.name,
             'executor': self.executor.name,
             'type': self.type.name,
+            'main_ip': str(self.main_ip),
+            'main_network': str(self.main_network),
             'intfs': [intf.to_dict(without_gui) for intf in self.intfs],
             'service_extensions': [ext.to_dict() for ext in self.extensions.values()],
             'gui_data': None if without_gui else self.gui_data.to_dict()
@@ -58,6 +62,8 @@ class Service(ABC):
         for ext in in_dict['service_extensions']:
             ret.extensions[ext['name']] = (ClassUtil.get_class_from_dict(ext).from_dict(topo, ext, ret))
         ret.gui_data = GuiDataAttachment.from_dict(in_dict['gui_data'])
+        ret.main_ip = ipaddress.ip_address(in_dict['main_ip'])
+        ret.main_network = ipaddress.ip_network(in_dict['main_network'])
         return ret
 
     @abstractmethod
@@ -126,10 +132,11 @@ class Service(ABC):
         visited = visited.copy()
         visited.append(self)
         if self.is_switch():
-            # Switches expose all other devices if calling instance is not a controller of this switch
-            if intf.other_end_service is not None and intf.other_end_service not in self.controllers:
+            # Switches expose all other devices if calling instance is not a controller of or excluded from this switch
+            if intf.other_end_service is not None and intf.other_end_service not in self.controllers\
+                    and not self.is_switch_exclude(intf):
                 for rintf in self.intfs:
-                    if rintf.other_end_service not in self.controllers:
+                    if rintf.other_end_service not in self.controllers and not self.is_switch_exclude(rintf):
                         # Rintf is an interface that is not connected to a remote controller -> add it
                         for ip, h in rintf.other_end_service.get_reachable_ips_via_for_other_recursive(rintf.other_end,
                                                                                                        visited,
@@ -165,22 +172,23 @@ class Service(ABC):
                 return True
         return False
 
-    def build_routing_table(self, with_tunnel: bool = False, for_switch: bool = False) -> dict[ipaddress, ipaddress]:
+    def build_routing_table(self, with_tunnel: bool = False, for_switch: bool = False) -> dict[ipaddress, Interface]:
         routing_table = {}
         routing_hops = {}
         # Add entries to table and replace with shorter options, if any
         for intf in self.intfs:
-            if with_tunnel or not intf.is_tunnel:
-                entries = self.get_reachable_ips_via(intf, for_switch)
-                for ip, h in entries.items():
-                    if ip not in routing_table or routing_hops[ip] > h:
-                        routing_table[ip] = intf.ips[0]
-                        routing_hops[ip] = h
+            if not self.is_switch() or intf.other_end_service in self.controllers or self.is_switch_exclude(intf):
+                if with_tunnel or not intf.is_tunnel:
+                    entries = self.get_reachable_ips_via(intf, False)
+                    for ip, h in entries.items():
+                        if ip not in routing_table or routing_hops[ip] > h:
+                            routing_table[ip] = intf
+                            routing_hops[ip] = h
         # Delete local addresses from table
         to_del = []
         for ip, h in routing_table.items():
             if self.is_local_ip(ip):
-                to_del.append(routing_table[ip])
+                to_del.append(ip)
         for del_ip in to_del:
             del routing_table[del_ip]
         # Return final table

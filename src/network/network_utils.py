@@ -38,20 +38,24 @@ class NetworkUtils(ABC):
 
     @classmethod
     def add_route(cls, config: 'Configuration', ip: ipaddress, via_ip: ip_address, via_network: ip_network = None,
-                  prefix: str = None):
-        if ip.is_loopback or via_ip.is_loopback:
+                  via_dev: 'Interface' or None = None, prefix: str = None):
+        if ip.is_loopback or (via_ip is not None and via_ip.is_loopback):
             pass
         if prefix is None:
             prefix = ''
         else:
             prefix += ' '
-        if via_network is None:
-            config.add_command(Command(f"{prefix}ip route add {str(ip)} via {str(via_ip)}"),
-                               Command(f"{prefix}ip route del {str(ip)}"))
-        else:
+        if via_network is not None:
             config.add_command(
                 Command(f"{prefix}ip route add {str(ip)} via {str(via_ip)}/{str(via_network.prefixlen)}"),
                 Command(f"{prefix}ip route del {str(ip)}"))
+        elif via_dev is not None:
+            config.add_command(
+                Command(f"{prefix}ip route add {str(ip)} dev {str(via_dev.name)}"),
+                Command(f"{prefix}ip route del {str(ip)}"))
+        else:
+            config.add_command(Command(f"{prefix}ip route add {str(ip)} via {str(via_ip)}"),
+                               Command(f"{prefix}ip route del {str(ip)}"))
         pass
 
     @classmethod

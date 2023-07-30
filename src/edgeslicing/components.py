@@ -9,6 +9,7 @@ from platforms.linux_server.linux_configuration_builder import LinuxConfiguratio
 from platforms.linux_server.lxc_service import SimpleLXCHost
 from ssh.localcommand import LocalCommand
 from topo.controller import RyuController
+from topo.interface import Interface
 from topo.service import Service
 from topo.switch import OVSSwitch
 from topo.topo import Topo
@@ -20,6 +21,7 @@ class Network(object):
         self.reachable = reachable
         self.preferred_vpn = preferred_vpn
         self.subnets = subnets
+        self.subnet = None if len(self.subnets) == 0 else self.subnets[0]
 
     def to_dict(self) -> dict:
         return {
@@ -146,8 +148,8 @@ class AbstractConfiguration(object):
             return obj
         if isinstance(obj, Enum):
             return obj.name
-        if isinstance(obj, ipaddress.IPv4Address or ipaddress.IPv6Address \
-                           or ipaddress.IPv4Network or ipaddress.IPv6Network):
+        if isinstance(obj, ipaddress.IPv4Address) or isinstance(obj, ipaddress.IPv6Address) \
+                           or isinstance(obj, ipaddress.IPv4Network) or isinstance(obj, ipaddress.IPv6Network):
             return str(obj)
         ret = {}
         for x, y in obj.items() if isinstance(obj, dict) else vars(obj).items():
@@ -235,15 +237,14 @@ class ESMF(SimpleLXCHost):
                                        LocalCommand.encapsule_command(
                                            "echo " + LocalCommand.encapsule_command(
                                                json.dumps(self.get_config(config_builder.topo).to_dict())
-                                               .replace('\"', '\'')
-                                           ) + " > config.json"
+                                           ) + " > domain_config.json"
                                        )
                                    ),
                            Command()
                            )
         # Run the module
-        config.add_command(Command(self.lxc_prefix() + "python3 -m esmf_server"),
-                           Command())
+        config.add_command(Command(self.lxc_prefix() + "bash -c \"echo \\\"python3 -m esmf_server\\\" | at now\""),
+                           Command(self.lxc_prefix() + "pkill python3"))
 
     def get_config(self, topo: Topo) -> ESMFConfiguration:
         self.coordinators = [(topo.get_service(x) if isinstance(x, str) else x) for x in self.coordinators]
@@ -322,15 +323,14 @@ class DSMF(SimpleLXCHost):
                                        LocalCommand.encapsule_command(
                                            "echo " + LocalCommand.encapsule_command(
                                                json.dumps(self.get_config(config_builder.topo).to_dict())
-                                               .replace('\"', '\'')
-                                           ) + " > config.json"
+                                           ) + " > domain_config.json"
                                        )
                                    ),
                            Command()
                            )
         # Run the module
-        config.add_command(Command(self.lxc_prefix() + "python3 -m dsmf_server"),
-                           Command())
+        config.add_command(Command(self.lxc_prefix() + "bash -c \"echo \\\"python3 -m dsmf_server\\\" | at now\""),
+                           Command(self.lxc_prefix() + "pkill python3"))
 
     def get_config(self, topo: Topo) -> DSMFConfiguration:
         self.controllers = [(topo.get_service(x) if isinstance(x, str) else x) for x in self.controllers]
@@ -412,8 +412,8 @@ class VPNGateway(SimpleLXCHost):
         config.add_command(Command(self.lxc_prefix() + "sysctl -w net.ipv4.ip_forward=1"),
                            Command())
         # Run the module
-        config.add_command(Command(self.lxc_prefix() + "python3 -m vpn_gateway_server"),
-                           Command())
+        config.add_command(Command(self.lxc_prefix() + "bash -c \"echo \\\"python3 -m vpn_gateway_server\\\" | at now\""),
+                           Command(self.lxc_prefix() + "pkill python3"))
 
     def to_dict(self, without_gui: bool = False) -> dict:
         # Merge own data into super class data
@@ -455,7 +455,7 @@ class QueueableOVSSwitch(OVSSwitch):
            local_ip: local ip address for switch device
            local_network: network for local_ip
            local_mac: mac address for local switch device"""
-        super().__init__(name, executor, late_init, "slicing-switch", cpu, cpu_allowance, memory,
+        super().__init__(name, executor, late_init, "slicing-ovs", cpu, cpu_allowance, memory,
                          dpid, opts, listen_port,
                          controllers,
                          fail_mode, datapath, inband, protocols, reconnectms,
@@ -469,8 +469,11 @@ class QueueableOVSSwitch(OVSSwitch):
         if not isinstance(config_builder, LinuxConfigurationBuilder):
             raise Exception("Can only configure OVS on Linux nodes")
         # Run the module
-        config.add_command(Command(self.lxc_prefix() + "python3 -m switch_server"),
-                           Command())
+        config.add_command(Command(self.lxc_prefix() + "bash -c \"echo \\\"python3 -m switch_server\\\" | at now\""),
+                           Command(self.lxc_prefix() + "pkill python3"))
+
+    def is_switch_exclude(self, intf: Interface):
+        return isinstance(intf.other_end_service, DSMF)
 
     def to_dict(self, without_gui: bool = False) -> dict:
         # Merge own data into super class data
