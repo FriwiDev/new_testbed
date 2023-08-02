@@ -75,12 +75,12 @@ class SimpleEdgeslicing(Topo):
         # Create network borders
         network_borders_net1 = [
             NetworkBorderConfiguration(network_name="bn", device_name="vpn1", device_type=DeviceType.VPN,
-                                       connection=Utils.get_connections(vpn1))
+                                       connection=Utils.get_connection(vpn1, "bn"))
         ]
 
         network_borders_net2 = [
             NetworkBorderConfiguration(network_name="bn", device_name="vpn2", device_type=DeviceType.VPN,
-                                       connection=Utils.get_connections(vpn2))
+                                       connection=Utils.get_connection(vpn2, "bn"))
         ]
 
         # Create control structures

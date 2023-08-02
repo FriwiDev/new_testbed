@@ -90,7 +90,7 @@ class DeviceType(Enum):
 
 
 class NetworkBorderConfiguration(object):
-    def __init__(self, network_name: str, device_name: str, device_type: DeviceType, connection: [Connection]):
+    def __init__(self, network_name: str, device_name: str, device_type: DeviceType, connection: Connection):
         self.network_name = network_name
         self.device_name = device_name
         self.device_type = device_type
@@ -101,7 +101,7 @@ class NetworkBorderConfiguration(object):
             'network_name': str(self.network_name),
             'device_name': str(self.device_name),
             'device_type': self.device_type.name,
-            'connections': [x.to_dict() for x in self.connection]
+            'connection': self.connection.to_dict()
         }
 
     @classmethod
@@ -111,7 +111,7 @@ class NetworkBorderConfiguration(object):
             network_name=in_dict['network_name'],
             device_name=in_dict['device_name'],
             device_type=DeviceType[in_dict['device_type']],
-            connection=[Connection.from_dict(x) for x in in_dict['connections']]
+            connection=Connection.from_dict(in_dict['connection'])
         )
 
 
@@ -210,6 +210,15 @@ class Utils(object):
             i += 1
         return ret
 
+    @classmethod
+    def get_connection(cls, srv: Service, target_net: str) -> Connection:
+        i = 0
+        for x in srv.intfs:
+            if x.other_end_service and x.other_end_service.network == target_net:
+                return Connection(x.name, i, x.other_end_service.name)
+            i += 1
+        return None
+
 
 class ESMF(SimpleLXCHost):
     def __init__(self, name: str, executor: 'Node', late_init: bool = False, network: str = None, coordinators: ['ESMF' or str] = None,
@@ -257,7 +266,7 @@ class ESMF(SimpleLXCHost):
                                 network=x.network, name=x.name)
             for x in self.coordinators]
         vpns = [
-            DeviceConfiguration(ip=x.get_valid_ip_for(self), port=8083, connections=Utils.get_connections(x),
+            DeviceConfiguration(ip=x.main_ip, port=8083, connections=Utils.get_connections(x),
                                 network=x.network, name=x.name)
             for x in self.vpn_gateways]
         dc = DeviceConfiguration(ip=self.domain_controller.get_valid_ip_for(self), port=8081,
@@ -346,7 +355,7 @@ class DSMF(SimpleLXCHost):
             for x in self.vpn_gateways]
         sw = [
             DeviceConfiguration(ip=x.get_valid_ip_for(self), port=8082, connections=Utils.get_connections(x),
-                                network=x.network, name=x.name)
+                                network=x.network, name=x.name, dpid=x.dpid)
             for x in self.switches]
         return DSMFConfiguration(self.type, self.network, co, vpns, sw, self.network_borders, self.networks,
                                  self.reservable_bitrate)
@@ -381,7 +390,7 @@ class DSMF(SimpleLXCHost):
 
 class EdgeslicingController(RyuController):
     def __init__(self, name: str, executor: 'Node', late_init: bool = False, network: str = None):
-        super().__init__(name, executor, late_init, script_path="../examples/defaults/simple_switch.py",  # TODO-NOW change to rest
+        super().__init__(name, executor, late_init, script_path="../examples/defaults/ofctl_rest.py",
                          image="slicing-controller")
         self.network = network
 

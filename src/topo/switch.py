@@ -204,12 +204,14 @@ class OVSSwitch(Switch):
             for link in config_builder.topo.links:
                 if link.intf1 in self.intfs or link.intf2 in self.intfs:
                     # We are connected to this link
-                    other = link.intf1 if link.intf2 in self.intfs else link.intf2
-                    for ip in other.ips:
-                        if not ip.is_loopback:
-                            # We found a non-loopback address that is reachable by us
-                            found_ip = ip
-                            break
+                    match = link.intf2.other_end_service if link.intf2 in self.intfs else link.intf1.other_end_service
+                    if match == c:
+                        other = link.intf1 if link.intf2 in self.intfs else link.intf2
+                        for ip in other.ips:
+                            if not ip.is_loopback:
+                                # We found a non-loopback address that is reachable by us
+                                found_ip = ip
+                                break
                 if found_ip is not None:
                     break
             if found_ip is None:
