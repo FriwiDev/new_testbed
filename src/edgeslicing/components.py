@@ -505,11 +505,11 @@ class EdgeslicingLXCHost(SimpleLXCHost):
         if not isinstance(config_builder, LinuxConfigurationBuilder):
             raise Exception("Can only configure OVS on Linux nodes")
         # Add ARP entries for other hosts
-        for host in config_builder.topo.services:
+        for host in config_builder.topo.services.values():
             if host != self and isinstance(host, EdgeslicingLXCHost):
                 for intf in host.intfs:
                     for ip in intf.ips:
-                        if not ip.is_loopback():
+                        if not ip.is_loopback:
                             config.add_command(
                                     Command(self.lxc_prefix() + f"arp -s {str(ip)} {intf.mac_address} || true"),
                                     Command(self.lxc_prefix() + f"arp -d {str(ip)} || true"))
