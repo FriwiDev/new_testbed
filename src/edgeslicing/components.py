@@ -203,7 +203,7 @@ class Utils(object):
     @classmethod
     def get_connections(cls, srv: Service) -> [Connection]:
         ret = []
-        i = 0
+        i = 1
         for x in srv.intfs:
             if x.other_end_service:
                 ret.append(Connection(x.name, i, x.other_end_service.name))
@@ -212,7 +212,7 @@ class Utils(object):
 
     @classmethod
     def get_connection(cls, srv: Service, target_net: str) -> Connection:
-        i = 0
+        i = 1
         for x in srv.intfs:
             if x.other_end_service and x.other_end_service.network == target_net:
                 return Connection(x.name, i, x.other_end_service.name)
@@ -417,9 +417,6 @@ class VPNGateway(SimpleLXCHost):
         super().append_to_configuration(config_builder, config, create)
         if not isinstance(config_builder, LinuxConfigurationBuilder):
             raise Exception("Can only configure OVS on Linux nodes")
-        # Enable ip forwarding
-        config.add_command(Command(self.lxc_prefix() + "sysctl -w net.ipv4.ip_forward=1"),
-                           Command())
         # Run the module
         config.add_command(Command(self.lxc_prefix() + "bash -c \"echo \\\"python3 -m vpn_gateway_server\\\" | at now\""),
                            Command(self.lxc_prefix() + "pkill python3"))
@@ -507,6 +504,15 @@ class EdgeslicingLXCHost(SimpleLXCHost):
         super().append_to_configuration(config_builder, config, create)
         if not isinstance(config_builder, LinuxConfigurationBuilder):
             raise Exception("Can only configure OVS on Linux nodes")
+        # Add ARP entries for other hosts
+        for host in config_builder.topo.services:
+            if host != self and isinstance(host, EdgeslicingLXCHost):
+                for intf in host.intfs:
+                    for ip in intf.ips:
+                        if not ip.is_loopback():
+                            config.add_command(
+                                    Command(self.lxc_prefix() + f"arp -s {str(ip)} {intf.mac_address} || true"),
+                                    Command(self.lxc_prefix() + f"arp -d {str(ip)} || true"))
 
     def to_dict(self, without_gui: bool = False) -> dict:
         # Merge own data into super class data
