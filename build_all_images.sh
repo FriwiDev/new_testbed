@@ -1,56 +1,7 @@
-# Building a minimal container image
+#!/bin/bash
+set -e
 
-To build a container image with minimal packages and one specific network component,
-you will first need to create a container with a minimal linux distro.
-
-For example, you can create a container with Ubuntu:
-```shell
-lxc remote add --protocol simplestreams ubuntu-minimal https://cloud-images.ubuntu.com/minimal/releases/
-lxc init ubuntu-minimal <container_name> --profile default --profile macvlan
-```
-You can find information on where the macvlan profile is coming from [here](HOWTO_container_with_dhcp.md).
-
-Then you can fire up your container and start setting up the environment that you
-want to put in the image.
-```shell
-lxc start <container_name>
-lxc exec <container_name> -- <your_command_inside_of_container>
-# ...
-```
-
-After you set up everything inside the container, it is time to export the container
-to an image.
-```shell
-# Clear the apt cache on debian based systems (to make the image smaller)
-lxc exec <container_name> -- apt clean
-# ...and autoremove packages
-lxc exec <container_name> -- apt autoremove
-# Detach the container from the hosts LAN (when using macvlan profile from above)
-lxc stop <container_name> #Stop container
-lxc config edit ryu # Edit config and remove macvlan profile
-lxc start <container_name> # Start container again to remove potentially cached network device
-# Stop the container
-lxc stop <container_name>
-# Create a snapshot of the container
-lxc snapshot <container_name> <snapshot_name>
-# Publish a new image from our snapshot
-lxc publish <container_name>/<snapshot_name> --public
-# Export our image to a Gzipped tarball (path without .tar.gz)
-lxc image export <container_name>/<snapshot_name> <path>
-```
-
-Now you can distribute the image inside the tarball and import the image anywhere with
-(path optionally with .tar.gz):
-```shell
-lxc import <path> --alias <image_name> --public
-```
-
-## Examples
-
-Here are two examples for ryu and openvswitch.
-
-### Ryu Controller
-```shell
+# Build ryu
 lxc remote add --protocol simplestreams ubuntu-minimal https://cloud-images.ubuntu.com/minimal/releases/ || true
 lxc rm -f ryu || true
 lxc init ubuntu-minimal:focal ryu --profile default --profile macvlan
@@ -69,11 +20,8 @@ lxc snapshot ryu snap1
 lxc publish ryu/snap1 --public
 lxc image export ryu img/ryu-ubuntu-20.04-minimal
 lxc rm ryu
-```
 
-### OpenVSwitch
-
-```shell
+# Build ovs
 lxc remote add --protocol simplestreams ubuntu-minimal https://cloud-images.ubuntu.com/minimal/releases/ || true
 lxc rm -f ovs || true
 lxc init ubuntu-minimal:focal ovs --profile default --profile macvlan
@@ -97,11 +45,8 @@ lxc snapshot ovs snap1
 lxc publish ovs/snap1 --public
 lxc image export ovs img/ovs-ubuntu-20.04-minimal
 lxc rm ovs
-```
 
-### Basic host
-
-```shell
+# Build simple host
 lxc remote add --protocol simplestreams ubuntu-minimal https://cloud-images.ubuntu.com/minimal/releases/ || true
 lxc rm -f simple-host || true
 lxc init ubuntu-minimal:focal simple-host --profile default --profile macvlan
@@ -120,4 +65,4 @@ lxc snapshot simple-host snap1
 lxc publish simple-host/snap1 --public
 lxc image export simple-host img/simple-host-ubuntu-20.04-minimal
 lxc rm simple-host
-```
+
