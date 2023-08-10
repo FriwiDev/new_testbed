@@ -15,7 +15,7 @@ class StatBox(Box):
     BITS_PER_SEC_UNIT = 2
 
     DEFAULT_UNIT_SUFFIXES = ["", "K", "M", "G", "T"]
-    MILLISECONDS_UNIT_SUFFIXES = ["ms", "s"]
+    MILLISECONDS_UNIT_SUFFIXES = ["us", "ms", "s"]
     BITS_PER_SEC_UNIT_SUFFIXES = ["Bit/s", "KBit/s", "MBit/s", "GBit/s", "TBit/s"]
 
     def __init__(self, x: int, y: int, width: int, height: int, view: 'View'):
@@ -253,10 +253,12 @@ class StatBox(Box):
         if unit == StatBox.DEFAULT_UNIT:
             return ""
         elif unit == StatBox.MILLISECONDS_UNIT:
-            if unit_step >= 1000:
+            if unit_step >= 1000000:
                 return " (s)"
-            else:
+            elif unit_step >= 1000:
                 return " (ms)"
+            else:
+                return " (us)"
         elif unit == StatBox.BITS_PER_SEC_UNIT:
             suffix = 0
             while unit_step >= 1000:

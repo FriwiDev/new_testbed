@@ -10,5 +10,5 @@ fi
 DIRNAME=$(pwd)/$(dirname "$0")/work
 
 [ -d "$DIRNAME" ] || mkdir "$DIRNAME"
-cd "$( dirname "$1" )"
+cd "$( dirname "$1" )/../../src"
 ../venv/bin/python "$DIRNAME/../$1" "$DIRNAME" "${@:2}"

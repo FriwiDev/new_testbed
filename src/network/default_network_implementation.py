@@ -145,9 +145,13 @@ class DefaultNetworkImplementation(NetworkImplementation):
                 NetworkUtils.set_up(config, "v" + link.intf1.bind_name)
                 NetworkUtils.set_up(config, "v" + link.intf2.bind_name)
                 # Add qdisc (if required)
-                if link.delay > 0 or link.loss > 0:
+                if link.delay > 0 or link.loss > 0 or link.bandwidth > 0:
                     NetworkUtils.add_qdisc(config, "v" + link.intf1.bind_name, link.delay, link.loss,
-                                           link.delay_variation, link.delay_correlation, link.loss_correlation)
+                                           link.delay_variation, link.delay_correlation, link.loss_correlation,
+                                           link.bandwidth, link.burst)
+                    NetworkUtils.add_qdisc(config, "v" + link.intf2.bind_name, link.delay, link.loss,
+                                           link.delay_variation, link.delay_correlation, link.loss_correlation,
+                                           link.bandwidth, link.burst)
             else:
                 if link.link_type == LinkType.VXLAN:
                     # We only manage one end -> route via vxlan
@@ -189,10 +193,16 @@ class DefaultNetworkImplementation(NetworkImplementation):
                     raise Exception("Unknown link type for link " + link.service1.name + " <-> " + link.service2.name)
 
     def generate_qdisc(self, node: Node, config: Configuration, link: Link):
-        if link.service1.executor == node and (link.delay > 0 or link.loss > 0):
+        if link.service1.executor == node and (link.delay > 0 or link.loss > 0 or link.bandwidth > 0):
             NetworkUtils.add_qdisc(config, ("vx-" if link.link_type is LinkType.VXLAN else "") + link.intf1.bind_name,
                                    link.delay, link.loss,
-                                   link.delay_variation, link.delay_correlation, link.loss_correlation)
+                                   link.delay_variation, link.delay_correlation, link.loss_correlation,
+                                   link.bandwidth, link.burst)
+        if link.service2.executor == node and (link.delay > 0 or link.loss > 0 or link.bandwidth > 0):
+            NetworkUtils.add_qdisc(config, ("vx-" if link.link_type is LinkType.VXLAN else "") + link.intf2.bind_name,
+                                   link.delay, link.loss,
+                                   link.delay_variation, link.delay_correlation, link.loss_correlation,
+                                   link.bandwidth, link.burst)
 
     def to_dict(self) -> dict:
         # Merge own data into super class data

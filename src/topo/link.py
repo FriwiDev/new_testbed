@@ -17,7 +17,8 @@ class Link(object):
                  mac_addr1: str = None, mac_addr2: str = None,
                  delay: int = 0, loss: float = 0,
                  delay_variation: int = 0, delay_correlation: float = 0,
-                 loss_correlation: float = 0):
+                 loss_correlation: float = 0,
+                 bandwidth: int = 0, burst: int = 0):
         """topo: The topology
            service1: one end
            service2: another end
@@ -30,7 +31,10 @@ class Link(object):
            loss: part of packets that should be emulated "lost" on this link (between 0 and 1)
            delay_variation: possible variation of delay in ms
            delay_correlation: correlation of delay variation between packets (between 0 and 1)
-           loss_correlation: correlation of loss variation between packets (between 0 and 1)"""
+           loss_correlation: correlation of loss variation between packets (between 0 and 1)
+           bandwidth: in bit/s
+           burst: in bit/s
+           """
         self.service1 = service1
         self.service2 = service2
         self.link_type = link_type
@@ -87,6 +91,8 @@ class Link(object):
         self.delay_variation = delay_variation
         self.delay_correlation = delay_correlation
         self.loss_correlation = loss_correlation
+        self.bandwidth = bandwidth
+        self.burst = burst
         self.link_id = -1
 
     def to_dict(self) -> dict:
@@ -102,6 +108,8 @@ class Link(object):
             'delay_correlation': str(self.delay_correlation),
             'loss': str(self.loss),
             'loss_correlation': str(self.loss_correlation),
+            'bandwidth': str(self.bandwidth),
+            'burst': str(self.burst),
             'link_id': str(self.link_id),
             'link_type': str(self.link_type.name)
         }
@@ -121,6 +129,8 @@ class Link(object):
         ret.delay_correlation = float(in_dict['delay_correlation'])
         ret.loss = float(in_dict['loss'])
         ret.loss_correlation = float(in_dict['loss_correlation'])
+        ret.bandwidth = int(in_dict['bandwidth'])
+        ret.burst = int(in_dict['burst'])
         ret.link_id = int(in_dict['link_id'])
         return ret
 

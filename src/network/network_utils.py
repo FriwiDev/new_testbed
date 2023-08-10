@@ -61,28 +61,48 @@ class NetworkUtils(ABC):
     @classmethod
     def add_qdisc(cls, config: 'Configuration', dev_name: str, delay: int, loss: float,
                   delay_variation: int = 0, delay_correlation: float = 0, loss_correlation: float = 0,
+                  bandwidth: int = 0, burst: int = 0,
                   prefix: str = None):
         if prefix is None:
             prefix = ''
         else:
             prefix += ' '
 
-        cmd = f"{prefix}tc qdisc add dev {dev_name} root netem"
-        if delay > 0:
-            cmd += f" delay {delay}"
-            if delay_variation > 0:
-                cmd += f" {delay_variation}"
-                if delay_correlation > 0:
-                    cmd += f" {delay_correlation * 100}%"
-        if loss > 0:
-            cmd += f" loss {loss * 100}%"
-            if loss_correlation > 0:
-                cmd += f" {loss_correlation * 100}%"
+        if delay > 0 or loss > 0:
+            cmd = f"{prefix}tc qdisc add dev {dev_name} root handle 1: netem"
+            if delay > 0:
+                cmd += f" delay {delay}"
+                if delay_variation > 0:
+                    cmd += f" {delay_variation}"
+                    if delay_correlation > 0:
+                        cmd += f" {delay_correlation * 100}%"
+            if loss > 0:
+                cmd += f" loss {loss * 100}%"
+                if loss_correlation > 0:
+                    cmd += f" {loss_correlation * 100}%"
 
-        config.add_command(
-            Command(cmd),
-            Command(f"{prefix}tc qdisc delete dev {dev_name} root netem || true")
-        )
+            config.add_command(
+                Command(cmd),
+                Command(f"{prefix}tc qdisc delete dev {dev_name} root netem || true")
+            )
+
+            if bandwidth > 0:
+                if burst == 0:
+                    burst = bandwidth / 10
+                config.add_command(
+                    Command(f"{prefix}tc qdisc add dev {dev_name} parent 1: handle 2: tbf rate {bandwidth} burst {int(burst/8)} "
+                            f"limit {int(burst/8)}"),
+                    Command(f"{prefix}tc qdisc delete dev {dev_name} parent 1: handle 2 || true")
+                )
+        else:
+            if bandwidth > 0:
+                if burst == 0:
+                    burst = bandwidth
+                config.add_command(
+                    Command(f"{prefix}tc qdisc add dev {dev_name} root tbf rate {bandwidth} burst {int(burst/8)} "
+                            f"limit {int(burst/8)}"),
+                    Command(f"{prefix}tc qdisc delete dev {dev_name} root tbf || true")
+                )
 
     @classmethod
     def format_bytes(cls, bytes: float) -> str:
