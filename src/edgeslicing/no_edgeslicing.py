@@ -1,9 +1,7 @@
 import sys
 
-from edgeslicing.components import EdgeslicingController, ESMF, DSMF, VPNGateway, QueueableOVSSwitch, Network, \
-    NetworkBorderConfiguration, DeviceType, Utils, EdgeslicingLXCHost, Range
+from edgeslicing.components import EdgeslicingLXCHost
 from platforms.linux_server.linux_node import LinuxNode
-from platforms.linux_server.lxc_service import SimpleLXCHost
 from topo.link import Link, LinkType
 from topo.node import NodeType
 from topo.switch import OVSSwitch
@@ -12,7 +10,7 @@ from topo.topo import Topo, TopoUtil
 """
 A baseline scenario to test what happens when we do not use our edgeslicing approach.
 We build a setup with two switches so that we have a shared domain between them to test on.
-All links are limited to 1G.
+All links are limited to 1G, except for those of the adversaries.
 """
 class NoEdgeslicing(Topo):
 
