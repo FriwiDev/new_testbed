@@ -97,7 +97,7 @@ class NetworkUtils(ABC):
         else:
             if bandwidth > 0:
                 if burst == 0:
-                    burst = bandwidth
+                    burst = bandwidth * 1.25
                 config.add_command(
                     Command(f"{prefix}tc qdisc add dev {dev_name} root tbf rate {bandwidth} burst {int(burst/8)} "
                             f"limit {int(burst/8)}"),

@@ -32,46 +32,57 @@ class LocalEdgeslicing(Topo):
         vpn1 = VPNGateway(name="vpn1", executor=node, network="net1")
         vpn2 = VPNGateway(name="vpn2", executor=node, network="net2")
         controller1 = EdgeslicingController(name="controller1", executor=node, network="net1")
-        switch1 = QueueableOVSSwitch(name="switch1", executor=node, fail_mode='secure', controllers=[controller1], network="net1")
+        switch1a = QueueableOVSSwitch(name="switch1a", executor=node, fail_mode='secure', dpid='1', controllers=[controller1], network="net1")
+        switch1b = QueueableOVSSwitch(name="switch1b", executor=node, fail_mode='secure', dpid='2', controllers=[controller1],
+                                     network="net1")
         controller2 = EdgeslicingController(name="controller2", executor=node, network="net2")
-        switch2 = QueueableOVSSwitch(name="switch2", executor=node, fail_mode='secure', controllers=[controller2], network="net2")
+        switch2a = QueueableOVSSwitch(name="switch2a", executor=node, fail_mode='secure', dpid='3', controllers=[controller2],
+                                     network="net2")
+        switch2b = QueueableOVSSwitch(name="switch2b", executor=node, fail_mode='secure', dpid='4', controllers=[controller2], network="net2")
         controllerbn = EdgeslicingController(name="controllerbn", executor=node, network="bn")
-        switchbn = QueueableOVSSwitch(name="switchbn", executor=node, fail_mode='secure', dpid="3", controllers=[controllerbn], network="bn")
+        switchbna = QueueableOVSSwitch(name="switchbna", executor=node, fail_mode='secure', dpid="5", controllers=[controllerbn], network="bn")
+        switchbnb = QueueableOVSSwitch(name="switchbnb", executor=node, fail_mode='secure', dpid="6",
+                                      controllers=[controllerbn], network="bn")
         host1 = EdgeslicingLXCHost(name="h1", executor=node, network="net1")
         host2 = EdgeslicingLXCHost(name="h2", executor=node, network="net2")
         adv1 = EdgeslicingLXCHost(name="adv1", executor=node, network="net1")
-        adv2 = EdgeslicingLXCHost(name="adv2", executor=node, network="net1")
-        adv3 = EdgeslicingLXCHost(name="adv3", executor=node, network="net2")
-        adv4 = EdgeslicingLXCHost(name="adv4", executor=node, network="net2")
+        adv2 = EdgeslicingLXCHost(name="adv2", executor=node, network="net2")
 
         # Append services
         self.add_service(controller1)
-        self.add_service(switch1)
+        self.add_service(switch1a)
+        self.add_service(switch1b)
         self.add_service(controller2)
-        self.add_service(switch2)
+        self.add_service(switch2a)
+        self.add_service(switch2b)
         self.add_service(controllerbn)
-        self.add_service(switchbn)
+        self.add_service(switchbna)
+        self.add_service(switchbnb)
         self.add_service(vpn1)
         self.add_service(vpn2)
         self.add_service(host1)
         self.add_service(host2)
         self.add_service(adv1)
         self.add_service(adv2)
-        self.add_service(adv3)
-        self.add_service(adv4)
 
         # Create links
-        link1 = Link(self, service1=host1, service2=switch1, link_type=LinkType.VXLAN, bandwidth=1000000000)
-        link2 = Link(self, service1=switch1, service2=vpn1, link_type=LinkType.VXLAN, bandwidth=1000000000)
-        link3 = Link(self, service1=vpn1, service2=switchbn, link_type=LinkType.VXLAN, bandwidth=1000000000)
-        link4 = Link(self, service1=switchbn, service2=vpn2, link_type=LinkType.VXLAN, bandwidth=1000000000)
-        link5 = Link(self, service1=vpn2, service2=switch2, link_type=LinkType.VXLAN, bandwidth=1000000000)
-        link6 = Link(self, service1=switch2, service2=host2, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        link1 = Link(self, service1=host1, service2=switch1a, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        link2 = Link(self, service1=switch1a, service2=switch1b, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        link3 = Link(self, service1=switch1b, service2=vpn1, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        link4 = Link(self, service1=vpn1, service2=switchbna, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        link5 = Link(self, service1=switchbna, service2=switchbnb, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        link6 = Link(self, service1=switchbnb, service2=vpn2, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        link7 = Link(self, service1=vpn2, service2=switch2a, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        link8 = Link(self, service1=switch2a, service2=switch2b, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        link9 = Link(self, service1=switch2b, service2=host2, link_type=LinkType.VXLAN, bandwidth=1000000000)
 
-        linka1 = Link(self, service1=adv1, service2=switch1, link_type=LinkType.VXLAN, bandwidth=2000000000)
-        linka2 = Link(self, service1=adv2, service2=switch1, link_type=LinkType.VXLAN, bandwidth=2000000000)
-        linka3 = Link(self, service1=adv3, service2=switch2, link_type=LinkType.VXLAN, bandwidth=2000000000)
-        linka4 = Link(self, service1=adv4, service2=switch2, link_type=LinkType.VXLAN, bandwidth=2000000000)
+        # Adversaries get more bandwidth to be able to disturb - just like in our base example
+        linka1 = Link(self, service1=adv1, service2=switch1a, link_type=LinkType.VXLAN, bandwidth=2000000000)
+        linka2 = Link(self, service1=adv2, service2=switch2b, link_type=LinkType.VXLAN, bandwidth=2000000000)
+
+        # VPN bypass links for normal traffic
+        linkb1 = Link(self, service1=switch1b, service2=switchbna, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        linkb2 = Link(self, service1=switch2a, service2=switchbnb, link_type=LinkType.VXLAN, bandwidth=1000000000)
 
         # Append all links
         self.add_link(link1)
@@ -80,11 +91,15 @@ class LocalEdgeslicing(Topo):
         self.add_link(link4)
         self.add_link(link5)
         self.add_link(link6)
+        self.add_link(link7)
+        self.add_link(link8)
+        self.add_link(link9)
 
         self.add_link(linka1)
         self.add_link(linka2)
-        self.add_link(linka3)
-        self.add_link(linka4)
+
+        self.add_link(linkb1)
+        self.add_link(linkb2)
 
         # Create network borders
         network_borders_net1 = [
@@ -98,19 +113,19 @@ class LocalEdgeslicing(Topo):
         ]
 
         network_borders_bn = [
-            NetworkBorderConfiguration(network_name="net1", device_name="switchbn", device_type=DeviceType.SWITCH,
-                                       connection=Utils.get_connection(switchbn, "net1")),
-            NetworkBorderConfiguration(network_name="net2", device_name="switchbn", device_type=DeviceType.SWITCH,
-                                       connection=Utils.get_connection(switchbn, "net2"))
+            NetworkBorderConfiguration(network_name="net1", device_name="switchbna", device_type=DeviceType.SWITCH,
+                                       connection=Utils.get_connection(switchbna, "net1")),
+            NetworkBorderConfiguration(network_name="net2", device_name="switchbnb", device_type=DeviceType.SWITCH,
+                                       connection=Utils.get_connection(switchbnb, "net2"))
         ]
 
         # Create control structures
-        dsmf1 = DSMF(name="DSMF1", executor=node, network="net1", controllers=[controller1], vpn_gateways=[vpn1, vpn2], networks=networks, switches=[switch1], network_borders=network_borders_net1)
+        dsmf1 = DSMF(name="DSMF1", executor=node, network="net1", controllers=[controller1], vpn_gateways=[vpn1, vpn2], networks=networks, switches=[switch1a, switch1b], network_borders=network_borders_net1)
         esmf1 = ESMF(name="ESMF1", executor=node, network="net1", coordinators=[], vpn_gateways=[vpn1, vpn2], networks=networks, domain_controller=dsmf1, slice_id_range=Range(1000, 1999), tunnel_id_range=Range(1000, 1999))
-        dsmf2 = DSMF(name="DSMF2", executor=node, network="net2", controllers=[controller2], vpn_gateways=[vpn1, vpn2], networks=networks, switches=[switch2], network_borders=network_borders_net2)
+        dsmf2 = DSMF(name="DSMF2", executor=node, network="net2", controllers=[controller2], vpn_gateways=[vpn1, vpn2], networks=networks, switches=[switch2a, switch2b], network_borders=network_borders_net2)
         esmf2 = ESMF(name="ESMF2", executor=node, network="net2", coordinators=[], vpn_gateways=[vpn1, vpn2], networks=networks, domain_controller=dsmf2, slice_id_range=Range(2000, 2999), tunnel_id_range=Range(2000, 2999))
         dtmf = DSMF(name="DTMF", executor=node, network="bn", controllers=[controllerbn], vpn_gateways=[vpn1, vpn2],
-                     networks=networks, switches=[switchbn], network_borders=network_borders_bn)
+                     networks=networks, switches=[switchbna, switchbnb], network_borders=network_borders_bn)
         ctmf = ESMF(name="CTMF", executor=node, network="bn", coordinators=[], vpn_gateways=[vpn1, vpn2],
                      networks=networks, domain_controller=dtmf, slice_id_range=Range(3000, 3999),
                      tunnel_id_range=Range(3000, 3999))
@@ -131,25 +146,31 @@ class LocalEdgeslicing(Topo):
         linke1 = Link(self, service1=host1, service2=esmf1, link_type=LinkType.VXLAN, bandwidth=1000000000)
 
         linkc10 = Link(self, service1=esmf1, service2=esmf2, link_type=LinkType.VXLAN, bandwidth=1000000000)
-        linkc11 = Link(self, service1=switch1, service2=dsmf1, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        linkc11a = Link(self, service1=switch1a, service2=dsmf1, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        linkc11b = Link(self, service1=switch1b, service2=dsmf1, link_type=LinkType.VXLAN, bandwidth=1000000000)
         linkc12 = Link(self, service1=vpn1, service2=dsmf1, link_type=LinkType.VXLAN, bandwidth=1000000000)
         linkc13 = Link(self, service1=dsmf1, service2=esmf1, link_type=LinkType.VXLAN, bandwidth=1000000000)
 
-        linkc21 = Link(self, service1=switch2, service2=dsmf2, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        linkc21a = Link(self, service1=switch2a, service2=dsmf2, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        linkc21b = Link(self, service1=switch2b, service2=dsmf2, link_type=LinkType.VXLAN, bandwidth=1000000000)
         linkc22 = Link(self, service1=vpn2, service2=dsmf2, link_type=LinkType.VXLAN, bandwidth=1000000000)
         linkc23 = Link(self, service1=dsmf2, service2=esmf2, link_type=LinkType.VXLAN, bandwidth=1000000000)
 
         linkc30 = Link(self, service1=dsmf1, service2=controller1, link_type=LinkType.VXLAN, bandwidth=1000000000)
-        linkc31 = Link(self, service1=switch1, service2=controller1, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        linkc31a = Link(self, service1=switch1a, service2=controller1, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        linkc31b = Link(self, service1=switch1b, service2=controller1, link_type=LinkType.VXLAN, bandwidth=1000000000)
         linkc32 = Link(self, service1=dsmf2, service2=controller2, link_type=LinkType.VXLAN, bandwidth=1000000000)
-        linkc33 = Link(self, service1=switch2, service2=controller2, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        linkc33a = Link(self, service1=switch2a, service2=controller2, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        linkc33b = Link(self, service1=switch2b, service2=controller2, link_type=LinkType.VXLAN, bandwidth=1000000000)
 
         linkc40 = Link(self, service1=esmf1, service2=ctmf, link_type=LinkType.VXLAN, bandwidth=1000000000)
         linkc41 = Link(self, service1=ctmf, service2=esmf2, link_type=LinkType.VXLAN, bandwidth=1000000000)
         linkc42 = Link(self, service1=ctmf, service2=dtmf, link_type=LinkType.VXLAN, bandwidth=1000000000)
-        linkc43 = Link(self, service1=dtmf, service2=switchbn, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        linkc43a = Link(self, service1=dtmf, service2=switchbna, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        linkc43b = Link(self, service1=dtmf, service2=switchbnb, link_type=LinkType.VXLAN, bandwidth=1000000000)
         linkc44 = Link(self, service1=dtmf, service2=controllerbn, link_type=LinkType.VXLAN, bandwidth=1000000000)
-        linkc45 = Link(self, service1=switchbn, service2=controllerbn, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        linkc45a = Link(self, service1=switchbna, service2=controllerbn, link_type=LinkType.VXLAN, bandwidth=1000000000)
+        linkc45b = Link(self, service1=switchbnb, service2=controllerbn, link_type=LinkType.VXLAN, bandwidth=1000000000)
 
         linkc50 = Link(self, service1=adv1, service2=esmf1, link_type=LinkType.VXLAN, bandwidth=1000000000)
 
@@ -157,25 +178,31 @@ class LocalEdgeslicing(Topo):
         self.add_link(linke1)
 
         self.add_link(linkc10)
-        self.add_link(linkc11)
+        self.add_link(linkc11a)
+        self.add_link(linkc11b)
         self.add_link(linkc12)
         self.add_link(linkc13)
 
-        self.add_link(linkc21)
+        self.add_link(linkc21a)
+        self.add_link(linkc21b)
         self.add_link(linkc22)
         self.add_link(linkc23)
 
         self.add_link(linkc30)
-        self.add_link(linkc31)
+        self.add_link(linkc31a)
+        self.add_link(linkc31b)
         self.add_link(linkc32)
-        self.add_link(linkc33)
+        self.add_link(linkc33a)
+        self.add_link(linkc33b)
 
         self.add_link(linkc40)
         self.add_link(linkc41)
         self.add_link(linkc42)
-        self.add_link(linkc43)
+        self.add_link(linkc43a)
+        self.add_link(linkc43b)
         self.add_link(linkc44)
-        self.add_link(linkc45)
+        self.add_link(linkc45a)
+        self.add_link(linkc45b)
 
         self.add_link(linkc50)
         pass

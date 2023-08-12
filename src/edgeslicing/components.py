@@ -417,6 +417,21 @@ class VPNGateway(SimpleLXCHost):
         super().append_to_configuration(config_builder, config, create)
         if not isinstance(config_builder, LinuxConfigurationBuilder):
             raise Exception("Can only configure OVS on Linux nodes")
+        # Stop to offload to not create invalid udp packets
+        for intf in self.intfs:
+            config.add_command(
+                Command(self.lxc_prefix() + f"ethtool --offload {intf.name} tx off"),
+                Command())
+        # Add ARP entries for other vpn gateways
+        for host in config_builder.topo.services.values():
+            if host != self and isinstance(host, VPNGateway):
+                for intf in host.intfs:
+                    if intf.other_end_service and intf.other_end_service.network != host.network:  # TODO-FW Change this for VPN gateways that are not at the edge of network boundaries
+                        for ip in intf.ips:
+                            if not ip.is_loopback:
+                                config.add_command(
+                                    Command(self.lxc_prefix() + f"arp -s {str(ip)} {intf.mac_address} || true"),
+                                    Command(self.lxc_prefix() + f"arp -d {str(ip)} || true"))
         # Run the module
         config.add_command(Command(self.lxc_prefix() + "bash -c \"echo \\\"python3 -m vpn_gateway_server\\\" | at now\""),
                            Command(self.lxc_prefix() + "pkill python3"))
@@ -474,6 +489,11 @@ class QueueableOVSSwitch(OVSSwitch):
         super().append_to_configuration(config_builder, config, create)
         if not isinstance(config_builder, LinuxConfigurationBuilder):
             raise Exception("Can only configure OVS on Linux nodes")
+        # Stop to offload to not create invalid udp packets
+        for intf in self.intfs:
+            config.add_command(
+                Command(self.lxc_prefix() + f"ethtool --offload {intf.name} tx off"),
+                Command())
         # Run the module
         config.add_command(Command(self.lxc_prefix() + "bash -c \"echo \\\"python3 -m switch_server\\\" | at now\""),
                            Command(self.lxc_prefix() + "pkill python3"))
@@ -504,15 +524,26 @@ class EdgeslicingLXCHost(SimpleLXCHost):
         super().append_to_configuration(config_builder, config, create)
         if not isinstance(config_builder, LinuxConfigurationBuilder):
             raise Exception("Can only configure OVS on Linux nodes")
+        # Set own mtu
+        for intf in self.intfs:
+            config.add_command(
+                Command(self.lxc_prefix() + f"ip link set {intf.name} mtu 1300"),
+                Command())
+        # Stop to offload to not create invalid udp packets
+        for intf in self.intfs:
+            config.add_command(
+                Command(self.lxc_prefix() + f"ethtool --offload {intf.name} tx off"),
+                Command())
         # Add ARP entries for other hosts
         for host in config_builder.topo.services.values():
             if host != self and isinstance(host, EdgeslicingLXCHost):
                 for intf in host.intfs:
-                    for ip in intf.ips:
-                        if not ip.is_loopback:
-                            config.add_command(
-                                    Command(self.lxc_prefix() + f"arp -s {str(ip)} {intf.mac_address} || true"),
-                                    Command(self.lxc_prefix() + f"arp -d {str(ip)} || true"))
+                    if intf.other_end_service and not isinstance(intf.other_end_service, ESMF):
+                        for ip in intf.ips:
+                            if not ip.is_loopback:
+                                config.add_command(
+                                        Command(self.lxc_prefix() + f"arp -s {str(ip)} {intf.mac_address} || true"),
+                                        Command(self.lxc_prefix() + f"arp -d {str(ip)} || true"))
 
     def to_dict(self, without_gui: bool = False) -> dict:
         # Merge own data into super class data
