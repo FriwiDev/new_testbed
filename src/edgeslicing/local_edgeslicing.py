@@ -45,8 +45,8 @@ class LocalEdgeslicing(Topo):
                                       controllers=[controllerbn], network="bn")
         host1 = EdgeslicingLXCHost(name="h1", executor=node, network="net1")
         host2 = EdgeslicingLXCHost(name="h2", executor=node, network="net2")
-        adv1 = EdgeslicingLXCHost(name="adv1", executor=node, network="net1")
-        adv2 = EdgeslicingLXCHost(name="adv2", executor=node, network="net2")
+        adv1 = EdgeslicingLXCHost(name="adv1", executor=node, network="net1", cpu="1")
+        adv2 = EdgeslicingLXCHost(name="adv2", executor=node, network="net2", cpu="1")
 
         # Append services
         self.add_service(controller1)
@@ -77,8 +77,8 @@ class LocalEdgeslicing(Topo):
         link9 = Link(self, service1=switch2b, service2=host2, link_type=LinkType.VXLAN, bandwidth=1000000000)
 
         # Adversaries get more bandwidth to be able to disturb - just like in our base example
-        linka1 = Link(self, service1=adv1, service2=switch1a, link_type=LinkType.VXLAN, bandwidth=2000000000)
-        linka2 = Link(self, service1=adv2, service2=switch2b, link_type=LinkType.VXLAN, bandwidth=2000000000)
+        linka1 = Link(self, service1=adv1, service2=switch1a, link_type=LinkType.VXLAN, bandwidth=10000000000)  # 10G
+        linka2 = Link(self, service1=adv2, service2=switch2b, link_type=LinkType.VXLAN, bandwidth=10000000000)  # 10G
 
         # VPN bypass links for normal traffic
         linkb1 = Link(self, service1=switch1b, service2=switchbna, link_type=LinkType.VXLAN, bandwidth=1000000000)

@@ -516,8 +516,9 @@ class QueueableOVSSwitch(OVSSwitch):
 
 
 class EdgeslicingLXCHost(SimpleLXCHost):
-    def __init__(self, name: str, executor: 'Node', late_init: bool = False, network: str = None):
-        super().__init__(name, executor, late_init, image="slicing-host")
+    def __init__(self, name: str, executor: 'Node', late_init: bool = False, network: str = None,
+                 cpu: str or None = None):
+        super().__init__(name, executor, late_init, image="slicing-host", cpu=cpu)
         self.network = network
 
     def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration', create: bool):
