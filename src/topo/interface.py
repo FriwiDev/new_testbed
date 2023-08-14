@@ -1,3 +1,4 @@
+import typing
 from ipaddress import ip_address, ip_network
 
 from gui.gui_data_attachment import GuiDataAttachment

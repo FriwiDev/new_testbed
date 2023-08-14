@@ -1,6 +1,7 @@
 import math
 import threading
 import time
+import typing
 
 from gui.box import Box
 from gui.button import ButtonBar, Button

@@ -1,4 +1,5 @@
 import time
+import typing
 from abc import ABC, abstractmethod
 from tkinter import Frame, Tk, BOTH, Canvas, Menu, PhotoImage, Button
 

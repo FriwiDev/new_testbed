@@ -1,3 +1,5 @@
+import typing
+
 from gui.box import Box
 
 

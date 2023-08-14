@@ -1,5 +1,6 @@
 import ipaddress
 import json
+import typing
 from enum import Enum
 
 from config.configuration import Command

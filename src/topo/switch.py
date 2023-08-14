@@ -1,5 +1,6 @@
 import ipaddress
 import re
+import typing
 from abc import ABC
 
 from config.configuration import Command

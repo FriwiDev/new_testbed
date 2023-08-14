@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import typing
 from abc import abstractmethod
 
 from gui.topo_gui_data_attachment import TopoGuiDataAttachment

@@ -1,5 +1,6 @@
 import importlib
 import subprocess
+import typing
 
 
 class MacUtil(object):

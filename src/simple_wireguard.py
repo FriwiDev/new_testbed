@@ -1,4 +1,5 @@
 import sys
+import typing
 
 from extensions.wireguard_extension_builder import WireguardExtensionBuilder
 from platforms.linux_server.linux_node import LinuxNode

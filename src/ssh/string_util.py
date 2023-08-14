@@ -1,3 +1,6 @@
+import typing
+
+
 class StringUtil(object):
     @classmethod
     def get_argument_starting_with(cls, args: typing.List[str], prefix: str) -> str:

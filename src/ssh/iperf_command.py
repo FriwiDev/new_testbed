@@ -1,5 +1,6 @@
 import threading
 import time
+import typing
 
 from ssh.output_consumer import OutputConsumer
 from ssh.ssh_command import SSHCommand

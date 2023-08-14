@@ -1,4 +1,5 @@
 import ipaddress
+import typing
 from abc import ABC, abstractmethod
 from enum import Enum
 from ipaddress import ip_network, ip_address

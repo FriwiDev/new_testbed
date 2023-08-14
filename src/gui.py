@@ -1,5 +1,6 @@
 import sys
 import threading
+import typing
 
 from screeninfo import get_monitors
 

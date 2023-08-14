@@ -1,3 +1,4 @@
+import typing
 from typing import Dict
 
 from ssh.output_consumer import OutputConsumer

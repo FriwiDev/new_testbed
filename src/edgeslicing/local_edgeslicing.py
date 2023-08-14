@@ -1,4 +1,5 @@
 import sys
+import typing
 
 from edgeslicing.components import EdgeslicingController, ESMF, DSMF, VPNGateway, QueueableOVSSwitch, Network, \
     NetworkBorderConfiguration, DeviceType, Utils, EdgeslicingLXCHost, Range

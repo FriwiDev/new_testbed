@@ -1,3 +1,4 @@
+import typing
 from tkinter import PhotoImage
 
 from gui.box import Box

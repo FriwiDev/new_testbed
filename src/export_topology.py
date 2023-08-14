@@ -1,4 +1,5 @@
 import sys
+import typing
 
 from config.export.file_exporter import FileConfigurationExporter
 from topo.topo import TopoUtil

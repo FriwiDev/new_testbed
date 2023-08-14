@@ -1,3 +1,6 @@
+import typing
+
+
 class Box(object):
     NORTH = 0
     WEST = 1

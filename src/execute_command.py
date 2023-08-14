@@ -1,4 +1,5 @@
 import sys
+import typing
 
 from ssh.output_consumer import PrintOutputConsumer
 from ssh.ssh_command import SSHCommand

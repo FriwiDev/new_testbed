@@ -1,4 +1,5 @@
 import threading
+import typing
 
 from gui.box import Box
 from gui.button import ButtonBar, Button
