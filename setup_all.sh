@@ -55,7 +55,7 @@ fi
 
 if ! systemctl is-enabled --quiet lxd; then
     echo "::::LXD not running=>enabling & starting service"
-    systemctl enable lxd --now
+    systemctl enable lxd --now || true
 fi
 
 echo "::Checking permissions for lxc"
@@ -74,6 +74,7 @@ then
         pacman -Sy python3
     else
         apt-get install python3
+        apt-get install python3.11-venv
     fi
 else
     echo "::::Python3=>found"
