@@ -119,11 +119,11 @@ class Service(ABC):
                 return ip
         return None
 
-    def get_reachable_ips_via_for_other(self, intf: Interface, for_switch: bool = False) -> Dict[ipaddress, int]:
+    def get_reachable_ips_via_for_other(self, intf: Interface, for_switch: bool = False) -> Dict[ipaddress.ip_address, int]:
         return self.get_reachable_ips_via_for_other_recursive(intf, [], 0, for_switch)
 
     def get_reachable_ips_via_for_other_recursive(self, intf: Interface, visited: typing.List['Service'], hops: int,
-                                                  for_switch: bool = False) -> Dict[ipaddress, int]:
+                                                  for_switch: bool = False) -> Dict[ipaddress.ip_address, int]:
         ret = {}
         if not for_switch or self.is_controller():
             for ip in intf.ips:
@@ -151,7 +151,7 @@ class Service(ABC):
                     ret[x] = 1
         return ret
 
-    def get_reachable_ips_via(self, intf: Interface, for_switch: bool = False) -> Dict[ipaddress, int]:
+    def get_reachable_ips_via(self, intf: Interface, for_switch: bool = False) -> Dict[ipaddress.ip_address, int]:
         if intf.other_end is None or intf.other_end_service is None:
             return {}
         reachable = intf.other_end_service.get_reachable_ips_via_for_other(intf.other_end, for_switch)
@@ -174,7 +174,7 @@ class Service(ABC):
                 return True
         return False
 
-    def build_routing_table(self, with_tunnel: bool = False, for_switch: bool = False) -> Dict[ipaddress, Interface]:
+    def build_routing_table(self, with_tunnel: bool = False, for_switch: bool = False) -> Dict[ipaddress.ip_address, Interface]:
         routing_table = {}
         routing_hops = {}
         # Add entries to table and replace with shorter options, if any
