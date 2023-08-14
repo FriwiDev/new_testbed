@@ -169,10 +169,15 @@ class DefaultNetworkImplementation(NetworkImplementation):
                                        Command(f"brctl delbr {intf.bind_name}"))
                     # Find an ip for our remote
                     other_intf = link.intf2 if link.service1.executor == node else link.intf1
+                    bind_intf = other_intf.other_end_service.executor.get_interface(intf.bind_name)
+                    other_bind_intf = intf.other_end_service.executor.get_interface(other_intf.bind_name)
                     remote_ip = None
-                    for ip in other_intf.ips:
+                    if not bind_intf or not other_bind_intf:
+                        raise Exception(
+                            "Cold not determine interface pair between " + link.service1.name + " <-> " + link.service2.name)
+                    for ip in other_bind_intf.ips:
                         if not ip.is_loopback:
-                            for network in intf.networks:
+                            for network in bind_intf.networks:
                                 if ip in network:
                                     remote_ip = ip
                     if not remote_ip:
@@ -180,7 +185,7 @@ class DefaultNetworkImplementation(NetworkImplementation):
                     # Create vxlan device used for this service
                     config.add_command(
                         Command(f"ip link add vx-{intf.bind_name} type vxlan id {self.link_vxlanid[str(link.link_id)]} "
-                                f"remote {str(remote_ip)} dstport {self.link_vxlanid[str(link.link_id)]+3400} srcport {self.link_vxlanid[str(link.link_id)]+3400} dev {host_device}"),
+                                f"remote {str(remote_ip)} dstport {self.link_vxlanid[str(link.link_id)]+3400} dev {host_device}"),
                         Command(f"ip link del vx-{intf.bind_name}"))
                     # Add vxlan device to our bridge
                     config.add_command(Command(f"brctl addif {intf.bind_name} vx-{intf.bind_name}"),
