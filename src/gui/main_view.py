@@ -1,12 +1,14 @@
 import math
 import threading
 import time
+import typing
 
 from gui.box import Box
 from gui.button import ButtonBar, Button
 from gui.images import Images
 from gui.view import View
 from live.engine import Engine
+from topo.topo import TopoUtil
 
 
 class MainView(View):
@@ -47,6 +49,14 @@ class MainView(View):
                                      "Arial " + str(int(self.gui_scale * 20)),
                                      on_press=lambda x, y: self.on_action(self.do_destroy_all))
         self.run_box.add_button(self.destroy_button)
+        self.upload_button = Button(40 * self.gui_scale, 40 * self.gui_scale, Images.upload, "U",
+                                    "Arial " + str(int(self.gui_scale * 20)),
+                                    on_press=lambda x, y: self.on_action(self.do_upload))
+        self.run_box.add_button(self.upload_button)
+        self.save_button = Button(40 * self.gui_scale, 40 * self.gui_scale, Images.save, "S",
+                                  "Arial " + str(int(self.gui_scale * 20)),
+                                  on_press=lambda x, y: self.on_action(self.do_save))
+        self.run_box.add_button(self.save_button)
         self.run_box._set_view(self)
 
         self.select_mode = None
@@ -78,7 +88,7 @@ class MainView(View):
         self.box = box
         # self.repaint()
 
-    def set_select_mode(self, selectable: list[Box]):
+    def set_select_mode(self, selectable: typing.List[Box]):
         self.select_mode = selectable
         self.box.update_select_mode()
 
@@ -283,4 +293,19 @@ class MainView(View):
         self.set_message(f"Destroying all services...")
         self.engine.destroy_all()
         self.set_message(f"All services destroyed")
+        self.in_toggle = False
+
+    def do_upload(self):
+        self.set_message(f"Uploading local topology...")
+        self.engine.begin_topology_changes()
+        self.engine.altered_topo = TopoUtil.from_file(self.gui.topo_def)
+        self.engine.flush_topology_changes()
+        self.set_message(f"Topology uploaded!")
+        self.in_toggle = False
+
+    def do_save(self):
+        self.set_message(f"Saving topology...")
+        self.gui.flush_changes(self.box)
+        TopoUtil.to_file(self.gui.topo_def, self.gui.engine.topo)
+        self.set_message(f"Topology saved!")
         self.in_toggle = False

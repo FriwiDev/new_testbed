@@ -1,3 +1,4 @@
+import typing
 from ipaddress import ip_address, ip_network
 
 from gui.gui_data_attachment import GuiDataAttachment
@@ -11,9 +12,9 @@ class Interface(object):
            mac_address: The mac address of the interface"""
         self.name = name
         self.mac_address = mac_address
-        self.ips: list[ip_address] = []
-        self.networks: list[ip_network] = []
-        self.links: list['Link'] = []
+        self.ips: typing.List[ip_address] = []
+        self.networks: typing.List[ip_network] = []
+        self.links: typing.List['Link'] = []
         self.bind_name = None  # Used by network topologies to cache bridge names
         self.other_end_service = None
         self.other_end = None
@@ -29,7 +30,7 @@ class Interface(object):
         self.networks.append(network)
         return self
 
-    def to_dict(self) -> dict:
+    def to_dict(self, without_gui: bool = False) -> dict:
         ip_str = []
         for ip in self.ips:
             ip_str.append(format(ip))
@@ -42,7 +43,7 @@ class Interface(object):
             'networks': network_str,
             'mac_addr': self.mac_address,
             'bind_name': self.bind_name,
-            'gui_data': self.gui_data.to_dict()
+            'gui_data': None if without_gui else self.gui_data.to_dict()
         }
 
     @classmethod

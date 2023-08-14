@@ -1,4 +1,6 @@
+import typing
 from os import PathLike
+from typing import Dict
 
 
 class Command(object):
@@ -9,6 +11,9 @@ class Command(object):
         if self.cmd is None:
             return ""
         return self.cmd
+
+    def __eq__(self, other):
+        return self.cmd == other.cmd
 
 
 class File(object):
@@ -34,11 +39,11 @@ class Instruction(object):
 
 class Configuration(object):
     def __init__(self):
-        self.start_cmds: list[Command] = []
-        self.stop_cmds: list[Command] = []
-        self.files: dict[str, list[(PathLike, PathLike)]] = {}
-        self.start_instructions: list[Instruction] = []
-        self.stop_instructions: list[Instruction] = []
+        self.start_cmds: typing.List[Command] = []
+        self.stop_cmds: typing.List[Command] = []
+        self.files: Dict[str, typing.List[(PathLike, PathLike)]] = {}
+        self.start_instructions: typing.List[Instruction] = []
+        self.stop_instructions: typing.List[Instruction] = []
 
     def add_command(self, start_cmd: Command, stop_cmd: Command):
         self.start_cmds.append(start_cmd)

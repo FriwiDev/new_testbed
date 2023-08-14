@@ -1,4 +1,5 @@
 import time
+import typing
 from abc import ABC, abstractmethod
 from tkinter import Frame, Tk, BOTH, Canvas, Menu, PhotoImage, Button
 
@@ -33,7 +34,7 @@ class View(ABC):
         self.canvas.pack(fill=BOTH, expand=1)
 
         # Drag n drop
-        self._pressed: tuple[int, int, int, int] = None
+        self._pressed: typing.Tuple[int, int, int, int] = None
         self._moved = False
 
     @abstractmethod
@@ -78,7 +79,8 @@ class View(ABC):
         self.frame.winfo_toplevel().title(title)
 
     def create_text(self, x: float or int, y: float or int, text: str, font: str = "Arial 12", angle: int = 0,
-                    fill: str = "black", anchor: str = "center", justify: str = "center") -> tuple[int, int, int, int]:
+                    fill: str = "black", anchor: str = "center", justify: str = "center") -> typing.Tuple[
+        int, int, int, int]:
         t = self.canvas.create_text(x, y, text=text, font=font, angle=angle, fill=fill, anchor=anchor, justify=justify)
         return self.canvas.bbox(t)
 
@@ -152,7 +154,7 @@ class View(ABC):
     def _mouse_move(self, event):
         self.on_mouse_move(event.x, event.y, event.x_root, event.y_root)
 
-    def show_popup(self, x: int, y: int, elements: list[str], callback, images: list[PhotoImage] = None):
+    def show_popup(self, x: int, y: int, elements: typing.List[str], callback, images: typing.List[PhotoImage] = None):
         if self.popup_menu:
             self.popup_menu.destroy()
         self.popup_menu = Menu(self.frame, tearoff=0)

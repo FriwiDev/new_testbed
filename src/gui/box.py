@@ -1,3 +1,6 @@
+import typing
+
+
 class Box(object):
     NORTH = 0
     WEST = 1
@@ -5,7 +8,7 @@ class Box(object):
     EAST = 3
 
     def __init__(self, x: int, y: int, width: int, height: int):
-        self.subboxes: list['Box'] = []
+        self.subboxes: typing.List['Box'] = []
         self.x = x
         self.y = y
         self.width = width
@@ -13,11 +16,13 @@ class Box(object):
         self.resizeable = True
         self.draggable = True
         self.parent = None
-        self.available_bounding_boxes: list[tuple[int, int, int, int, int]] = []  # x1, y1, width, height, angle
-        self.current_box: tuple[int, int, int, int, int] = None
+        self.available_bounding_boxes: typing.List[
+            typing.Tuple[int, int, int, int, int]] = []  # x1, y1, width, height, angle
+        self.current_box: typing.Tuple[int, int, int, int, int] = None
         # Target box, dash, allowed own points, allowed remote points
-        self.lines: list[tuple['Box', tuple[int, int] or None, list[int], list[int]]] = []
-        self.remote_line_endings: list['Box'] = []
+        self.lines: typing.List[
+            typing.Tuple['Box', typing.Tuple[int, int] or None, typing.List[int], typing.List[int]]] = []
+        self.remote_line_endings: typing.List['Box'] = []
 
         self.prev_x = 0
         self.prev_y = 0
@@ -30,7 +35,7 @@ class Box(object):
         self.fill = '#FFFFFF'
         self.focus = False
 
-    def add_line(self, end: 'Box', dash: tuple[int, int] or None):
+    def add_line(self, end: 'Box', dash: typing.Tuple[int, int] or None):
         if self not in end.remote_line_endings:
             end.remote_line_endings.append(self)
         self.lines.append((end, dash, self.allowed_directions.copy(), end.allowed_directions.copy()))
@@ -343,7 +348,7 @@ class Box(object):
                 return box
         return None
 
-    def _get_available_boxes(self, x: int, y: int) -> list[tuple[int, int, int, int, int]]:
+    def _get_available_boxes(self, x: int, y: int) -> typing.List[typing.Tuple[int, int, int, int, int]]:
         ret = []
         for bb in self.available_bounding_boxes:
             x1, y1, width, height, angle = bb
@@ -352,7 +357,7 @@ class Box(object):
         return ret
 
     def _get_closest_spot_in_available_boxes(self, x: int, y: int) \
-            -> tuple[tuple[int, int], tuple[int, int, int, int, int]]:  # Closest x and y + box
+            -> typing.Tuple[typing.Tuple[int, int], typing.Tuple[int, int, int, int, int]]:  # Closest x and y + box
         dist = -1
         ret_point = None
         ret_box = None
@@ -367,8 +372,8 @@ class Box(object):
                     ret_box = box
         return ret_point, ret_box
 
-    def get_closest_spot_in_available_box(self, x: int, y: int, box: tuple[int, int, int, int, int]) \
-            -> tuple[int, int, int, int]:  # local x, y, width, height
+    def get_closest_spot_in_available_box(self, x: int, y: int, box: typing.Tuple[int, int, int, int, int]) \
+            -> typing.Tuple[int, int, int, int]:  # local x, y, width, height
         x1, y1, width, height, angle = box
         if (angle + self.current_box[4]) % 2 == 0:
             # Same effective rotation --> keep width and height
@@ -395,7 +400,7 @@ class Box(object):
 
         return local_x, local_y, local_width, local_height
 
-    def _get_point(self, direction: int) -> tuple[int, int]:
+    def _get_point(self, direction: int) -> typing.Tuple[int, int]:
         if direction == Box.NORTH:
             return self.abs_x() + self.width / 2, self.abs_y()
         elif direction == Box.SOUTH:
@@ -405,8 +410,8 @@ class Box(object):
         elif direction == Box.EAST:
             return self.abs_x() + self.width, self.abs_y() + self.height / 2
 
-    def _generate_line(self, point_a: tuple[int, int], point_b: tuple[int, int], dir_a: int, dir_b: int,
-                       dash: tuple[int, int] or None):
+    def _generate_line(self, point_a: typing.Tuple[int, int], point_b: typing.Tuple[int, int], dir_a: int, dir_b: int,
+                       dash: typing.Tuple[int, int] or None):
         shortest = 20
         points = []
         current = self._walk_point(point_a, dir_a, shortest)
@@ -449,7 +454,7 @@ class Box(object):
 
         self.view.canvas.create_line(points, dash=dash, width=int(1 if self.view.zoom < 1 else self.view.zoom))
 
-    def _walk_point(self, point: tuple[int, int], direction: int, pixels: int) -> tuple[int, int]:
+    def _walk_point(self, point: typing.Tuple[int, int], direction: int, pixels: int) -> typing.Tuple[int, int]:
         if direction == Box.NORTH:
             return point[0], point[1] - pixels
         elif direction == Box.SOUTH:
@@ -459,7 +464,7 @@ class Box(object):
         elif direction == Box.EAST:
             return point[0] + pixels, point[1]
 
-    def _is_good_direction(self, point: tuple[int, int], target: tuple[int, int], direction: int) -> bool:
+    def _is_good_direction(self, point: typing.Tuple[int, int], target: typing.Tuple[int, int], direction: int) -> bool:
         if direction == Box.NORTH:
             return point[1] > target[1]
         elif direction == Box.SOUTH:
@@ -469,7 +474,7 @@ class Box(object):
         elif direction == Box.EAST:
             return point[0] < target[0]
 
-    def _get_recommended_steps(self, point: tuple[int, int], target: tuple[int, int], direction: int,
+    def _get_recommended_steps(self, point: typing.Tuple[int, int], target: typing.Tuple[int, int], direction: int,
                                target_dir: int) -> int:
         if direction == Box.NORTH:
             # Finish if possible
@@ -557,3 +562,7 @@ class Box(object):
 
         for box in self.subboxes:
             box.update_select_mode()
+
+    def clear_boxes(self):
+        self.lines.clear()
+        self.subboxes.clear()

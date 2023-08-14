@@ -1,5 +1,6 @@
 import threading
 import time
+import typing
 
 from ssh.output_consumer import OutputConsumer
 from ssh.ssh_command import SSHCommand
@@ -43,7 +44,8 @@ class IperfClientSSHCommand(SSHCommand, OutputConsumer):
         self.interval_seconds = interval_seconds
         self.consumer = consumer
         self.add_consumer(self)
-        self.results: list[(int, int, int, int)] = []  # From sec, to sec, transfer bytes, transfer bandwidth (bits)
+        self.results: typing.List[
+            (int, int, int, int)] = []  # From sec, to sec, transfer bytes, transfer bandwidth (bits)
 
     def on_out(self, output: str):
         if not output.startswith("[") or "]" not in output:

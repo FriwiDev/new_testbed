@@ -47,4 +47,8 @@ class LocalCommand(object):
             self.process.send_signal(signal.SIGINT)
 
     def encapsule(self, cmd: str):
+        return LocalCommand.encapsule_command(cmd)
+
+    @classmethod
+    def encapsule_command(cls, cmd: str):
         return "\"" + cmd.replace("\\", "\\\\").replace("\"", "\\\"") + "\""

@@ -1,4 +1,6 @@
+import typing
 from ipaddress import ip_address, ip_network
+from typing import Dict
 
 from config.configuration import Configuration, Command
 from network.network_address_generator import BasicNetworkAddressGenerator
@@ -17,8 +19,8 @@ class DefaultNetworkImplementation(NetworkImplementation):
         self.multicast_ip = multicast_ip
         self.base_vxlan_id = base_vxlan_id
         self.link_id_reference = 0
-        self.link_vxlanid: dict[str, int] = {}
-        self.link_vxlan_mapping: dict[str, list[str]] = {}
+        self.link_vxlanid: Dict[str, int] = {}
+        self.link_vxlan_mapping: Dict[str, typing.List[str]] = {}
 
     def set_link_interface_mapping(self, link: 'Link', dev_name1: str, dev_name2: str):
         if not link in self.topo.links:
@@ -145,26 +147,46 @@ class DefaultNetworkImplementation(NetworkImplementation):
                 NetworkUtils.set_up(config, "v" + link.intf1.bind_name)
                 NetworkUtils.set_up(config, "v" + link.intf2.bind_name)
                 # Add qdisc (if required)
-                if link.delay > 0 or link.loss > 0:
+                if link.delay > 0 or link.loss > 0 or link.bandwidth > 0:
                     NetworkUtils.add_qdisc(config, "v" + link.intf1.bind_name, link.delay, link.loss,
-                                           link.delay_variation, link.delay_correlation, link.loss_correlation)
+                                           link.delay_variation, link.delay_correlation, link.loss_correlation,
+                                           link.bandwidth, link.burst)
+                    NetworkUtils.add_qdisc(config, "v" + link.intf2.bind_name, link.delay, link.loss,
+                                           link.delay_variation, link.delay_correlation, link.loss_correlation,
+                                           link.bandwidth, link.burst)
             else:
                 if link.link_type == LinkType.VXLAN:
                     # We only manage one end -> route via vxlan
                     intf = link.intf1 if link.service1.executor == node else link.intf2
                     if link.service1.executor == node:
                         host_device = self.link_vxlan_mapping[str(link.link_id)][0]
+                        other_host_device = self.link_vxlan_mapping[str(link.link_id)][1]
                     else:
                         host_device = self.link_vxlan_mapping[str(link.link_id)][1]
+                        other_host_device = self.link_vxlan_mapping[str(link.link_id)][0]
                     if intf.bind_name is None:
                         intf.bind_name = f"br{link.link_id}"
                     # Create one bridge on which the service can bind
                     config.add_command(Command(f"brctl addbr {intf.bind_name}"),
                                        Command(f"brctl delbr {intf.bind_name}"))
+                    # Find an ip for our remote
+                    bind_intf = node.get_interface(host_device)
+                    other_bind_intf = (link.service2.executor if link.service1.executor == node else link.service1.executor).get_interface(other_host_device)
+                    remote_ip = None
+                    if not bind_intf or not other_bind_intf:
+                        raise Exception(
+                            "Cold not determine interface pair between " + link.service1.name + " <-> " + link.service2.name)
+                    for ip in other_bind_intf.ips:
+                        if not ip.is_loopback:
+                            for network in bind_intf.networks:
+                                if ip in network:
+                                    remote_ip = ip
+                    if not remote_ip:
+                        raise Exception("Remote intf not in same ip network as local interface between " + link.service1.name + " <-> " + link.service2.name)
                     # Create vxlan device used for this service
                     config.add_command(
                         Command(f"ip link add vx-{intf.bind_name} type vxlan id {self.link_vxlanid[str(link.link_id)]} "
-                                f"group {self.multicast_ip} dev {host_device}"),
+                                f"remote {str(remote_ip)} dstport {self.link_vxlanid[str(link.link_id)]+3400} dev {host_device}"),
                         Command(f"ip link del vx-{intf.bind_name}"))
                     # Add vxlan device to our bridge
                     config.add_command(Command(f"brctl addif {intf.bind_name} vx-{intf.bind_name}"),
@@ -189,10 +211,16 @@ class DefaultNetworkImplementation(NetworkImplementation):
                     raise Exception("Unknown link type for link " + link.service1.name + " <-> " + link.service2.name)
 
     def generate_qdisc(self, node: Node, config: Configuration, link: Link):
-        if link.service1.executor == node and (link.delay > 0 or link.loss > 0):
+        if link.service1.executor == node and (link.delay > 0 or link.loss > 0 or link.bandwidth > 0):
             NetworkUtils.add_qdisc(config, ("vx-" if link.link_type is LinkType.VXLAN else "") + link.intf1.bind_name,
                                    link.delay, link.loss,
-                                   link.delay_variation, link.delay_correlation, link.loss_correlation)
+                                   link.delay_variation, link.delay_correlation, link.loss_correlation,
+                                   link.bandwidth, link.burst)
+        if link.service2.executor == node and (link.delay > 0 or link.loss > 0 or link.bandwidth > 0):
+            NetworkUtils.add_qdisc(config, ("vx-" if link.link_type is LinkType.VXLAN else "") + link.intf2.bind_name,
+                                   link.delay, link.loss,
+                                   link.delay_variation, link.delay_correlation, link.loss_correlation,
+                                   link.bandwidth, link.burst)
 
     def to_dict(self) -> dict:
         # Merge own data into super class data

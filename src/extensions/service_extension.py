@@ -1,3 +1,4 @@
+import typing
 from abc import ABC, abstractmethod
 
 
@@ -5,7 +6,7 @@ class ServiceExtension(ABC):
     def __init__(self, name: str, service: 'Service'):
         self.name = name
         self.service = service
-        self.claimed_interfaces: list[str] = []
+        self.claimed_interfaces: typing.List[str] = []
 
     def to_dict(self) -> dict:
         return {

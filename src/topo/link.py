@@ -17,7 +17,8 @@ class Link(object):
                  mac_addr1: str = None, mac_addr2: str = None,
                  delay: int = 0, loss: float = 0,
                  delay_variation: int = 0, delay_correlation: float = 0,
-                 loss_correlation: float = 0):
+                 loss_correlation: float = 0,
+                 bandwidth: int = 0, burst: int = 0):
         """topo: The topology
            service1: one end
            service2: another end
@@ -30,7 +31,10 @@ class Link(object):
            loss: part of packets that should be emulated "lost" on this link (between 0 and 1)
            delay_variation: possible variation of delay in ms
            delay_correlation: correlation of delay variation between packets (between 0 and 1)
-           loss_correlation: correlation of loss variation between packets (between 0 and 1)"""
+           loss_correlation: correlation of loss variation between packets (between 0 and 1)
+           bandwidth: in bit/s
+           burst: in bit/s
+           """
         self.service1 = service1
         self.service2 = service2
         self.link_type = link_type
@@ -43,18 +47,28 @@ class Link(object):
             self.intf1 = service1.get_interface(self.intf_name1)
         else:
             self.intf1 = service1.add_interface_by_name(self.intf_name1)
+            if service1.main_ip is None:
+                service1.main_ip = topo.network_implementation.get_network_address_generator().generate_ip(service1, self.intf1)
+            if service1.main_network is None:
+                service1.main_network = topo.network_implementation.get_network_address_generator().generate_network(service1, self.intf1)
             self.intf1.add_ip(
-                topo.network_implementation.get_network_address_generator().generate_ip(service1, self.intf1),
-                topo.network_implementation.get_network_address_generator().generate_network(service1, self.intf1)
+                service1.main_ip,
+                service1.main_network
             )
         self.intf1.links.append(self)
         if service2.get_interface(self.intf_name2):
             self.intf2 = service2.get_interface(self.intf_name2)
         else:
             self.intf2 = service2.add_interface_by_name(self.intf_name2)
+            if service2.main_ip is None:
+                service2.main_ip = topo.network_implementation.get_network_address_generator().generate_ip(service2,
+                                                                                                           self.intf2)
+            if service2.main_network is None:
+                service2.main_network = topo.network_implementation.get_network_address_generator().generate_network(
+                    service2, self.intf2)
             self.intf2.add_ip(
-                topo.network_implementation.get_network_address_generator().generate_ip(service2, self.intf2),
-                topo.network_implementation.get_network_address_generator().generate_network(service2, self.intf2)
+                service2.main_ip,
+                service2.main_network
             )
         self.intf2.links.append(self)
         # Apply mac addresses to devices, if any were provided
@@ -77,6 +91,8 @@ class Link(object):
         self.delay_variation = delay_variation
         self.delay_correlation = delay_correlation
         self.loss_correlation = loss_correlation
+        self.bandwidth = bandwidth
+        self.burst = burst
         self.link_id = -1
 
     def to_dict(self) -> dict:
@@ -92,6 +108,8 @@ class Link(object):
             'delay_correlation': str(self.delay_correlation),
             'loss': str(self.loss),
             'loss_correlation': str(self.loss_correlation),
+            'bandwidth': str(self.bandwidth),
+            'burst': str(self.burst),
             'link_id': str(self.link_id),
             'link_type': str(self.link_type.name)
         }
@@ -111,6 +129,8 @@ class Link(object):
         ret.delay_correlation = float(in_dict['delay_correlation'])
         ret.loss = float(in_dict['loss'])
         ret.loss_correlation = float(in_dict['loss_correlation'])
+        ret.bandwidth = int(in_dict['bandwidth'])
+        ret.burst = int(in_dict['burst'])
         ret.link_id = int(in_dict['link_id'])
         return ret
 

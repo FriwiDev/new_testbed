@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import typing
 from abc import abstractmethod
 
 from gui.topo_gui_data_attachment import TopoGuiDataAttachment
@@ -38,13 +39,13 @@ class Topo(object):
             service.configure(self)
         self.gui_data_attachment = TopoGuiDataAttachment()
 
-    def to_dict(self) -> dict:
+    def to_dict(self, without_gui: bool = False) -> dict:
         nodes = []
         for n in self.nodes:
-            nodes.append(self.nodes[n].to_dict())
+            nodes.append(self.nodes[n].to_dict(without_gui))
         services = []
         for s in self.services:
-            services.append(self.services[s].to_dict())
+            services.append(self.services[s].to_dict(without_gui))
         links = []
         for link in self.links:
             links.append(link.to_dict())
@@ -73,8 +74,8 @@ class Topo(object):
             ret.gui_data_attachment = TopoGuiDataAttachment.from_dict(in_dict['gui_data'])
         return ret
 
-    def export_topo(self) -> str:
-        return json.dumps(self.to_dict(), indent=4)
+    def export_topo(self, without_gui: bool = False) -> str:
+        return json.dumps(self.to_dict(without_gui), indent=4)
 
     @classmethod
     def import_topo(cls, in_json: str) -> 'Topo':
@@ -121,9 +122,15 @@ class Topo(object):
             raise Exception("Link was already added")
         self.links.append(link)
 
-    def get_links(self, service1: Service, service2: Service) -> list[Link]:
+    def get_links(self, service1: Service, service2: Service) -> typing.List[Link]:
         return [link for link in self.links
                 if (link.service1, link.service2) in ((service1, service2), (service2, service1))]
+
+    def __eq__(self, other: 'Topo') -> bool:
+        return self.export_topo().__eq__(other.export_topo())
+
+    def eq_without_gui(self, other: 'Topo') -> bool:
+        return self.export_topo(True).__eq__(other.export_topo(True))
 
 
 class TopoUtil(object):
@@ -144,7 +151,7 @@ class TopoUtil(object):
         file.close()
 
     @classmethod
-    def run_build(cls, argv: list[str], topo_type: type):
+    def run_build(cls, argv: typing.List[str], topo_type: type):
         if len(argv) <= 1:
             raise Exception("No output dir specified!")
 

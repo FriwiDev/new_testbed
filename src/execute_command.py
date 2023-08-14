@@ -1,11 +1,12 @@
 import sys
+import typing
 
 from ssh.output_consumer import PrintOutputConsumer
 from ssh.ssh_command import SSHCommand
 from topo.topo import TopoUtil
 
 
-def main(argv: list[str]):
+def main(argv: typing.List[str]):
     if len(argv) < 3:
         print("Script requires at least three arguments!")
         exit(1)

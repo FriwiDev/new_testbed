@@ -8,6 +8,7 @@ from gui.stat_box import StatBoxUtil, StatBoxDataSupplier
 from live.engine_component import EngineInterface, EngineComponentStatus, EngineInterfaceState
 from network.network_utils import NetworkUtils
 from ssh.ip_addr_ssh_command import InterfaceState
+from ssh.string_util import StringUtil
 
 
 class InterfaceBox(Box):
@@ -166,14 +167,14 @@ class InterfaceBox(Box):
             us /= 1000
             if us > 1000:
                 usf = float(us) / 1000
-                return format(usf, ".1f").removesuffix(".0") + "s"
+                return StringUtil.remove_suffix(format(usf, ".1f"), ".0") + "s"
             else:
                 return str(us) + "ms"
         else:
             return str(us) + "us"
 
     def format_percent(self, per: float) -> str:
-        return format(per * 100, ".1f").removesuffix(".0") + "%"
+        return StringUtil.remove_suffix(format(per * 100, ".1f"), ".0") + "%"
     
     def on_focus_gain(self):
         self.view.set_active_button_bar(self.button_bar)

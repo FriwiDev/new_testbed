@@ -1,3 +1,5 @@
+from pathlib import Path, PurePath
+
 from ssh.localcommand import LocalCommand
 from topo.node import Node
 
@@ -25,10 +27,14 @@ class FileSendCommand(SSHCommand):
         self.dst = dst
 
     def run(self):
-        inner = f"cat > \""
+        p = ""
         if self.node.ssh_work_dir and self.node.ssh_work_dir != "":
-            inner += f"{self.node.ssh_work_dir}/"
-        inner += f"{self.dst}\""
-        inner1 = f"{self.prefix} /bin/bash -c " + self.encapsule(inner)
-        cmd = f"cat \"{self.src}\" | {self.node.get_ssh_base_command()} " + self.encapsule(inner1)
+            p += f"{self.node.ssh_work_dir}/"
+        p += self.dst
+        inner = f"cat > \"{p}\""
+        inner = f"{self.prefix} /bin/bash -c " + self.encapsule(inner)
+        mkdir = f"mkdir -p \"{str(PurePath(p).parent)}\""
+        mkdir = f"{self.prefix} /bin/bash -c " + self.encapsule(mkdir)
+        cmd = f"{self.node.get_ssh_base_command()} "+self.encapsule(mkdir)+" &&"
+        cmd += f" cat \"{self.src}\" | {self.node.get_ssh_base_command()} " + self.encapsule(inner)
         self._exec(cmd)

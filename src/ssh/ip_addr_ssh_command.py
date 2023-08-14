@@ -1,8 +1,10 @@
 import ipaddress
 from enum import Enum
+from typing import Dict
 
 from ssh.output_consumer import OutputConsumer
 from ssh.ssh_command import SSHCommand
+from ssh.string_util import StringUtil
 from topo.node import Node
 from topo.service import Service
 
@@ -16,7 +18,7 @@ class IpAddrSSHCommand(SSHCommand, OutputConsumer):
         super().__init__(target.executor if isinstance(target, Service) else target,
                          (target.command_prefix() if isinstance(target, Service) else "") + "ip addr")
         self.add_consumer(self)
-        self.results: dict[int, (str, InterfaceState, str, [(ipaddress.ip_address, ipaddress.ip_network)])] = {}
+        self.results: Dict[int, (str, InterfaceState, str, [(ipaddress.ip_address, ipaddress.ip_network)])] = {}
         self.current_interface: None or (int, str, InterfaceState, str, [(ipaddress.ip_address, ipaddress.ip_network)]) \
             = None
 
@@ -25,7 +27,7 @@ class IpAddrSSHCommand(SSHCommand, OutputConsumer):
             if self.current_interface:
                 ind, name, state, mac, li = self.current_interface
                 self.results[ind] = (name, state, mac, li)
-            name = output.split(" ")[1].split("@")[0].removesuffix(":")
+            name = StringUtil.remove_suffix(output.split(" ")[1].split("@")[0], ":")
             state = InterfaceState.UNKNOWN
             for s in output.split(" "):
                 if s == "UNKNOWN" or s == "DOWN" or s == "UP":

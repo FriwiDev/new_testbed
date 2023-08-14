@@ -1,3 +1,5 @@
+import typing
+
 from gui.box import Box
 
 
@@ -10,8 +12,8 @@ class SystemBox(Box):
 
     def __init__(self, x: int, y: int, width: int, height: int):
         super().__init__(x, y, width, height)
-        self.interface_boxes: list[Box] = []
-        self.inner_boxes: list[Box] = []
+        self.interface_boxes: typing.List[Box] = []
+        self.inner_boxes: typing.List[Box] = []
         if self.width < self.calculate_min_width():
             self.width = self.calculate_min_width()
         if self.height < self.calculate_min_height():
@@ -73,7 +75,7 @@ class SystemBox(Box):
                     box.y = y
                     box.on_resize(box.width, box.height)
 
-    def recalculate_box(self, ind: int, box: tuple[int, int, int, int, int]):
+    def recalculate_box(self, ind: int, box: typing.Tuple[int, int, int, int, int]):
         x, y, width, height, angle = box
         if angle == -1:
             b = SystemBox.INTERFACE_BAR_HEIGHT + SystemBox.INTERFACE_BAR_BORDER

@@ -9,7 +9,7 @@ from topo.service import ServiceType
 class Controller(LXCService, ABC):
     """A controller is a service providing instructions to an OpenFlow switch."""
 
-    def __init__(self, name: str, executor: 'Node', service_type: 'ServiceType', image: str = "ubuntu", cpu: str = None,
+    def __init__(self, name: str, executor: 'Node', service_type: 'ServiceType', late_init: bool = False, image: str = "ubuntu", cpu: str = None,
                  cpu_allowance: str = None, memory: str = None,
                  port: int = 6653, protocol: str = 'tcp'):
         """name: name for service
@@ -20,13 +20,13 @@ class Controller(LXCService, ABC):
            memory: string limiting memory usage (None for unlimited, "nMB" for n MB limit, other units work as well)
            port: the port to bind to (for switches to connect)
            protocol: typically tcp or udp"""
-        super().__init__(name, executor, service_type, image, cpu, cpu_allowance, memory)
+        super().__init__(name, executor, service_type, late_init, image, cpu, cpu_allowance, memory)
         self.port = port
         self.protocol = protocol
 
-    def to_dict(self) -> dict:
+    def to_dict(self, without_gui: bool = False) -> dict:
         # Merge own data into super class data
-        return {**super(Controller, self).to_dict(), **{
+        return {**super(Controller, self).to_dict(without_gui), **{
             'port': str(self.port),
             'protocol': self.protocol
         }}
@@ -43,9 +43,10 @@ class Controller(LXCService, ABC):
 class RyuController(Controller):
     """A ryu controller."""
 
-    def __init__(self, name: str, executor: 'Node', cpu: str = None, cpu_allowance: str = None, memory: str = None,
+    def __init__(self, name: str, executor: 'Node', late_init: bool = False, cpu: str = None, cpu_allowance: str = None, memory: str = None,
                  port: int = 6653, protocol: str = 'tcp',
-                 script_path: str = "defaults/simple_switch.py"):
+                 script_path: str = "../examples/defaults/simple_switch.py",
+                 image: str = "ryu"):
         """name: name for service
            executor: node this service is running on
            cpu: string limiting cpu core limits (None for unlimited, "n" for n cores)
@@ -55,12 +56,18 @@ class RyuController(Controller):
            protocol: typically tcp or udp
            script_path: the script (relative to your topology script) to use for this controller.
                         The whole folder the script is in will be copied"""
-        super().__init__(name, executor, ServiceType.RYU, "ryu", cpu, cpu_allowance, memory, port, protocol)
-        self.script_path = "/tmp/" + script_path
+        super().__init__(name, executor, ServiceType.RYU, late_init, image, cpu, cpu_allowance, memory, port, protocol)
         p = Path(script_path)
         if p.is_file():
+            self.script_path = "/tmp/" + p.parent.name + "/" + p.name
             p = p.parent
-        self.add_file(p.absolute(), Path("/tmp"))
+            self.add_file(p.absolute(), Path("/tmp"))
+        elif p.is_dir():
+            self.script_path = "/tmp/" + p.name
+            self.add_file(p.absolute(), Path("/tmp"))
+        else:
+            # We use a default config that is already on the controller
+            self.script_path = script_path
 
     def append_to_configuration(self, config_builder: 'ConfigurationBuilder', config: 'Configuration', create: bool):
         super().append_to_configuration(config_builder, config, create)
@@ -68,13 +75,13 @@ class RyuController(Controller):
         if self.script_path is None:
             config.add_command(
                 Command(self.lxc_prefix() +
-                        f"ryu-manager --verbose &> {log} &"),
-                Command(self.lxc_prefix() + "killall ryu-manager"))
+                        f"bash -c \"echo \\\"ryu-manager --verbose --ofp-tcp-listen-port {self.port}\\\" | at now\""),
+                Command(self.lxc_prefix() + "pkill ryu-manager"))
         else:
             config.add_command(
                 Command(self.lxc_prefix() +
-                        f"ryu-manager --verbose {self.script_path} &> {log} &"),
-                Command(self.lxc_prefix() + "killall ryu-manager"))
+                        f"bash -c \"echo \\\"ryu-manager --verbose  {self.script_path} --ofp-tcp-listen-port {self.port}\\\" | at now\""),
+                Command(self.lxc_prefix() + "pkill ryu-manager"))
 
     def is_switch(self) -> bool:
         return False
@@ -82,9 +89,9 @@ class RyuController(Controller):
     def is_controller(self) -> bool:
         return True
 
-    def to_dict(self) -> dict:
+    def to_dict(self, without_gui: bool = False) -> dict:
         # Merge own data into super class data
-        return {**super(RyuController, self).to_dict(), **{
+        return {**super(RyuController, self).to_dict(without_gui), **{
             'script_path': self.script_path
         }}
 

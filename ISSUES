@@ -1,0 +1,2 @@
+- Tkinter not automatically installed
+- Somehow containers can not ping... again! :( -> sysctl -w net.bridge.bridge-nf-call-iptables=0

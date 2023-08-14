@@ -1,3 +1,4 @@
+import typing
 from abc import abstractmethod, ABC
 from enum import Enum
 
@@ -13,7 +14,7 @@ class Node(ABC):
     """A node that is used to execute services."""
 
     def __init__(self, name: str, node_type: NodeType, ssh_remote: str, ssh_port: int = 22,
-                 ssh_work_dir: str = None):
+                 ssh_work_dir: str = None, ssh_lock_dir: str = None):
         """name: the name of the node
            node_type: type of node for easier identification
            ssh_remote: the connection address for remote devices to connect to (e.g. root@10.0.1.1)
@@ -22,7 +23,8 @@ class Node(ABC):
         self.name = name
         self.type = node_type
         self.ssh_work_dir = ssh_work_dir
-        self.intfs: list[Interface] = [Interface(name="lo").add_ip("127.0.0.1", "127.0.0.0/8")]
+        self.ssh_lock_dir = ssh_lock_dir
+        self.intfs: typing.List[Interface] = [Interface(name="lo").add_ip("127.0.0.1", "127.0.0.0/8")]
         self.current_virtual_device_num = 0
         self.ssh_remote = ssh_remote
         self.ssh_port = ssh_port
@@ -74,7 +76,7 @@ class Node(ABC):
     def get_configuration_builder(self, topo: 'Topo'):
         pass
 
-    def to_dict(self) -> dict:
+    def to_dict(self, without_gui: bool = False) -> dict:
         intfs = []
         for i in self.intfs:
             intfs.append(i.to_dict())
@@ -86,16 +88,18 @@ class Node(ABC):
             'ssh_remote': self.ssh_remote,
             'ssh_port': str(self.ssh_port),
             'ssh_work_dir': self.ssh_work_dir,
+            'ssh_lock_dir': self.ssh_lock_dir,
             'current_virtual_device_num': str(self.current_virtual_device_num),
-            'intfs': intfs,
-            'gui_data': self.gui_data.to_dict()
+            'intfs': [intf.to_dict(without_gui) for intf in self.intfs],
+            'gui_data': None if without_gui else self.gui_data.to_dict()
         }
 
     @classmethod
     def from_dict(cls, in_dict: dict) -> 'Node':
         """Internal method to initialize from dictionary."""
         ret = cls(in_dict['name'],
-                  NodeType[in_dict['type']], in_dict['ssh_remote'], int(in_dict['ssh_port']), in_dict['ssh_work_dir'])
+                  NodeType[in_dict['type']], in_dict['ssh_remote'], int(in_dict['ssh_port']), in_dict['ssh_work_dir'],
+                  in_dict['ssh_lock_dir'])
         ret.current_virtual_device_num = int(in_dict['current_virtual_device_num'])
         ret.intfs.clear()
         for intf in in_dict['intfs']:

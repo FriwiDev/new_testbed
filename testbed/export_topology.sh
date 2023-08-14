@@ -17,6 +17,6 @@ then
   exit 1
 fi
 
-python3 "$( dirname "$0" )/../src/export_topology.py" "$( dirname "$0" )/work/current_topology.json" "$EXPORT_PATH"
+../venv/bin/python "$( dirname "$0" )/../src/export_topology.py" "$( dirname "$0" )/work/current_topology.json" "$EXPORT_PATH"
 
 echo "Topology exported to \"$EXPORT_PATH\""

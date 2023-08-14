@@ -1,5 +1,6 @@
 import sys
 import threading
+import typing
 
 from screeninfo import get_monitors
 
@@ -10,11 +11,14 @@ from gui.interface_box import InterfaceBox
 from gui.main_view import MainView
 from gui.service_box import ServiceBox
 from live.engine import Engine
-from topo.topo import TopoUtil
+from live.engine_topology_change_listener import EngineTopologyChangeListener
+from topo.node import Node
+from topo.service import Service
+from topo.topo import TopoUtil, Topo
 
 
-class Gui(object):
-    def __init__(self, argv: list[str]):
+class Gui(EngineTopologyChangeListener):
+    def __init__(self, argv: typing.List[str]):
         self.argv = argv
 
         fullscreen = "-f" in argv or "--fullscreen" in argv
@@ -33,11 +37,13 @@ class Gui(object):
         self.init_width = self.canvas_width - self.max_width
         self.init_height = self.canvas_height - self.max_height
 
-        self.engine = Engine(argv[0])
+        self.topo_def = argv[0]
+        self.engine = Engine(self.topo_def)
+        self.engine.engine_topology_change_listeners.append(self)
         self.engine.update_all_status()
 
         self.view = MainView(self.engine, self, fullscreen)
-        self.view.gui_scale = self.max_width / 1920  # 1K is standard scale
+        self.view.gui_scale = self.max_height / 1080  # 1K is standard scale
 
         gui_box = Box(-self.canvas_width, -self.canvas_height,
                       self.canvas_width * 2 + self.max_width, self.canvas_height * 2 + self.max_height)
@@ -64,6 +70,47 @@ class Gui(object):
         self.view.set_box(gui_box)
 
         gui_box.add_box(self.main_box)
+
+        self.update_boxes()
+
+    def run(self):
+        update_thread = threading.Thread(target=self.engine.continuous_update)
+        update_thread.start()
+        ifstat_threads = []
+        for node in self.engine.nodes.values():
+            for service in node.services.values():
+                ifstat_thread = threading.Thread(target=lambda: self.engine.continuous_ifstat(service))
+                ifstat_thread.start()
+                ifstat_threads.append(ifstat_thread)
+
+        self.view.run_ui_loop()
+
+        # Flush interface changes
+        self.engine.topo.gui_data_attachment.x = self.main_box.x
+        self.engine.topo.gui_data_attachment.y = self.main_box.y
+        self.engine.topo.gui_data_attachment.zoom = self.view.zoom_goal
+        self.flush_changes(self.view.box)
+
+        TopoUtil.to_file(self.topo_def, self.engine.topo)
+
+        self.engine.stop_updating = True
+        update_thread.join()
+        for x in ifstat_threads:
+            x.join()
+
+    def flush_changes(self, box: Box):
+        if isinstance(box, InterfaceBox):
+            box.rebuild_gui_data()
+        elif isinstance(box, ServiceBox):
+            box.rebuild_gui_data()
+
+        for b in box.subboxes:
+            self.flush_changes(b)
+
+        self.engine.write_topology_to_all(self.engine.topo)
+
+    def update_boxes(self):
+        self.main_box.clear_boxes()
 
         interface_boxes = {}
 
@@ -98,43 +145,16 @@ class Gui(object):
                             interface_box.add_line(interface_boxes[key], dash=(2, 1))
                 # TODO Find out why components shift slightly after reload
                 service_box.on_resize(service_box.width, service_box.height)
+        pass
 
-    def run(self):
-        update_thread = threading.Thread(target=self.engine.continuous_update)
-        update_thread.start()
-        ifstat_threads = []
-        for node in self.engine.nodes.values():
-            for service in node.services.values():
-                ifstat_thread = threading.Thread(target=lambda: self.engine.continuous_ifstat(service))
-                ifstat_thread.start()
-                ifstat_threads.append(ifstat_thread)
+    def on_topology_change(self, old_topo: Topo, new_topo: Topo):
+        self.update_boxes()
 
-        self.view.run_ui_loop()
-
-        # Flush interface changes
-        self.engine.topo.gui_data_attachment.x = self.main_box.x
-        self.engine.topo.gui_data_attachment.y = self.main_box.y
-        self.engine.topo.gui_data_attachment.zoom = self.view.zoom_goal
-        self.flush_changes(self.view.box)
-
-        TopoUtil.to_file(self.argv[0], self.engine.topo)
-
-        self.engine.stop_updating = True
-        update_thread.join()
-        for x in ifstat_threads:
-            x.join()
-
-    def flush_changes(self, box: Box):
-        if isinstance(box, InterfaceBox):
-            box.rebuild_gui_data()
-        elif isinstance(box, ServiceBox):
-            box.rebuild_gui_data()
-
-        for b in box.subboxes:
-            self.flush_changes(b)
+    def on_component_change(self, old_component: Service or Node or None, new_component: Service or Node or None):
+        pass
 
 
-def main(argv: list[str]):
+def main(argv: typing.List[str]):
     if len(argv) < 1:
         print("Script requires one argument!")
         exit(1)

@@ -1,20 +1,22 @@
 import sys
 import time
+import typing
 
 from live.engine import Engine
 from live.engine_component import EngineInterfaceState
 from network.network_utils import NetworkUtils
+from ssh.string_util import StringUtil
 from topo.interface import Interface
 from topo.node import Node
 from topo.service import Service
 
 
-def main(argv: list[str]):
+def main(argv: typing.List[str]):
     if len(argv) < 2:
         print("Script requires two or more arguments!")
         exit(1)
 
-    engine = Engine(argv[0])
+    engine = Engine(argv[0], None if len(argv) < 3 else argv[2])
     engine.update_all_status()
 
     if argv[1].lower() == "start_all":
@@ -207,13 +209,13 @@ def handle_iperf_result(from_sec: int, to_sec: int, transfer: float, bandwidth: 
           f"Bandwidth: {NetworkUtils.format_bytes(bandwidth)}Bits")
 
 
-def resolve_nodes(argv: list[str], engine: Engine) -> list[Node]:
-    nodes: list[Node] = []
+def resolve_nodes(argv: typing.List[str], engine: Engine) -> typing.List[Node]:
+    nodes: typing.List[Node] = []
     for s in argv:
         if s.startswith("service:"):
             continue
         if s.startswith("node:"):
-            node_name = s.removeprefix("node:")
+            node_name = StringUtil.remove_prefix(s, "node:")
             if node_name in engine.topo.nodes.keys():
                 nodes.append(engine.topo.nodes[node_name])
                 continue
@@ -231,13 +233,13 @@ def resolve_nodes(argv: list[str], engine: Engine) -> list[Node]:
     return nodes
 
 
-def resolve_services(argv: list[str], engine: Engine) -> list[Service]:
-    services: list[Service] = []
+def resolve_services(argv: typing.List[str], engine: Engine) -> typing.List[Service]:
+    services: typing.List[Service] = []
     for s in argv:
         if s.startswith("node:"):
             continue
         if s.startswith("service:"):
-            service_name = s.removeprefix("service:")
+            service_name = StringUtil.remove_prefix(s, "service:")
             if service_name in engine.topo.services.keys():
                 services.append(engine.topo.services[service_name])
                 continue

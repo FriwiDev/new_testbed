@@ -1,3 +1,4 @@
+import typing
 from tkinter import PhotoImage
 
 from gui.box import Box
@@ -63,7 +64,7 @@ class ButtonBar(Box):
         super().__init__(x, y, padding * 2, padding * 2)
         self.resizeable = False
         self.draggable = False
-        self.buttons: list[Button] = []
+        self.buttons: typing.List[Button] = []
         self.padding = padding
         self.margin = margin
 

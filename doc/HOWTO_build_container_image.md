@@ -34,9 +34,9 @@ lxc stop <container_name>
 # Create a snapshot of the container
 lxc snapshot <container_name> <snapshot_name>
 # Publish a new image from our snapshot
-lxc publish <container_name>/<snapshot_name> --alias <image_name>  --public
+lxc publish <container_name>/<snapshot_name> --public
 # Export our image to a Gzipped tarball (path without .tar.gz)
-lxc image export <image_name> <path>
+lxc image export <container_name>/<snapshot_name> <path>
 ```
 
 Now you can distribute the image inside the tarball and import the image anywhere with
@@ -51,7 +51,8 @@ Here are two examples for ryu and openvswitch.
 
 ### Ryu Controller
 ```shell
-lxc remote add --protocol simplestreams ubuntu-minimal https://cloud-images.ubuntu.com/minimal/releases/
+lxc remote add --protocol simplestreams ubuntu-minimal https://cloud-images.ubuntu.com/minimal/releases/ || true
+lxc rm -f ryu || true
 lxc init ubuntu-minimal:focal ryu --profile default --profile macvlan
 lxc start ryu
 sleep 3 #Allow container to perform dhcp and establish a connection
@@ -65,7 +66,7 @@ lxc profile remove ryu macvlan
 lxc start ryu
 lxc stop ryu
 lxc snapshot ryu snap1
-lxc publish ryu/snap1 --alias ryu --public
+lxc publish ryu/snap1 --public
 lxc image export ryu img/ryu-ubuntu-20.04-minimal
 lxc rm ryu
 ```
@@ -73,7 +74,8 @@ lxc rm ryu
 ### OpenVSwitch
 
 ```shell
-lxc remote add --protocol simplestreams ubuntu-minimal https://cloud-images.ubuntu.com/minimal/releases/
+lxc remote add --protocol simplestreams ubuntu-minimal https://cloud-images.ubuntu.com/minimal/releases/ || true
+lxc rm -f ovs || true
 lxc init ubuntu-minimal:focal ovs --profile default --profile macvlan
 lxc start ovs
 sleep 3 #Allow container to perform dhcp and establish a connection
@@ -92,7 +94,7 @@ lxc profile remove ovs macvlan
 lxc start ovs
 lxc stop ovs
 lxc snapshot ovs snap1
-lxc publish ovs/snap1 --alias ovs --public
+lxc publish ovs/snap1 --public
 lxc image export ovs img/ovs-ubuntu-20.04-minimal
 lxc rm ovs
 ```
@@ -100,7 +102,8 @@ lxc rm ovs
 ### Basic host
 
 ```shell
-lxc remote add --protocol simplestreams ubuntu-minimal https://cloud-images.ubuntu.com/minimal/releases/
+lxc remote add --protocol simplestreams ubuntu-minimal https://cloud-images.ubuntu.com/minimal/releases/ || true
+lxc rm -f simple-host || true
 lxc init ubuntu-minimal:focal simple-host --profile default --profile macvlan
 lxc start simple-host
 sleep 3 #Allow container to perform dhcp and establish a connection
@@ -114,7 +117,7 @@ lxc profile remove simple-host macvlan
 lxc start simple-host
 lxc stop simple-host
 lxc snapshot simple-host snap1
-lxc publish simple-host/snap1 --alias simple-host --public
+lxc publish simple-host/snap1 --public
 lxc image export simple-host img/simple-host-ubuntu-20.04-minimal
 lxc rm simple-host
 ```

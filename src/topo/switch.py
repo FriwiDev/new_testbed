@@ -1,5 +1,6 @@
 import ipaddress
 import re
+import typing
 from abc import ABC
 
 from config.configuration import Command
@@ -15,9 +16,11 @@ class Switch(LXCService, ABC):
 
     dpid_len = 16  # digits in dpid passed to switch
 
-    def __init__(self, name, executor: 'Node', service_type: 'ServiceType', image: str = "ubuntu", cpu: str = None,
+    def __init__(self, name, executor: 'Node', service_type: 'ServiceType', late_init: bool = False,
+                 image: str = "ubuntu", cpu: str = None,
                  cpu_allowance: str = None, memory: str = None, dpid: str = None, opts: str = '',
-                 listen_port: int = None, controllers: list['Controller'] = None):
+                 listen_port: int = None, controllers: typing.List['Controller'] = None,
+                 gateway_to_subnets: typing.List[ipaddress.ip_network] = None):
         """name: name for switch
            executor: node this service is running on
            service_type: the type of this service for easier identification
@@ -28,21 +31,27 @@ class Switch(LXCService, ABC):
            opts: additional switch options
            listenPort: port to listen on for dpctl connections
            controllers: the controllers to attach to this switch"""
-        super().__init__(name, executor, service_type, image, cpu, cpu_allowance, memory)
+        super().__init__(name, executor, service_type, late_init, image, cpu, cpu_allowance, memory)
         if controllers is None:
             controllers = []
+        self.late_init = late_init
         self.dpid = self.default_dpid(dpid)
         self.opts = opts
         self.listen_port = listen_port
         self.controllers = controllers
+        self.gateway_to_subnets = gateway_to_subnets if gateway_to_subnets else []
 
-    def to_dict(self) -> dict:
+    def is_switch_exclude(self, intf: Interface):
+        return False
+
+    def to_dict(self, without_gui: bool = False) -> dict:
         # Merge own data into super class data
-        return {**super(Switch, self).to_dict(), **{
+        return {**super(Switch, self).to_dict(without_gui), **{
             'dpid': self.dpid,
             'opts': self.opts,
             'listen_port': str(self.listen_port),
-            'controllers': [cont.name for cont in self.controllers]
+            'controllers': [cont.name for cont in self.controllers],
+            'gateway_to_subnets': [str(g) for g in self.gateway_to_subnets]
         }}
 
     @classmethod
@@ -53,6 +62,7 @@ class Switch(LXCService, ABC):
         ret.opts = in_dict['opts']
         ret.listen_port = None if in_dict['listen_port'] == "None" else int(in_dict['listen_port'])
         ret.controllers = [topo.get_service(name) for name in in_dict['controllers']]
+        ret.gateway_to_subnets = [ipaddress.ip_network(v) for v in in_dict['gateway_to_subnets']]
         return ret
 
     def default_dpid(self, dpid=None):
@@ -67,6 +77,8 @@ class Switch(LXCService, ABC):
             if nums:
                 dpid = hex(int(nums[0]))[2:]
             else:
+                if self.late_init:
+                    return
                 raise Exception('Unable to derive default datapath ID - '
                                 'please either specify a dpid or use a '
                                 'canonical switch name such as s23.')
@@ -76,9 +88,10 @@ class Switch(LXCService, ABC):
 class OVSSwitch(Switch):
     """Open vSwitch switch."""
 
-    def __init__(self, name, executor: 'Node', cpu: str = None, cpu_allowance: str = None, memory: str = None,
+    def __init__(self, name, executor: 'Node', late_init: bool = False, image: str = "ovs", cpu: str = None,
+                 cpu_allowance: str = None, memory: str = None,
                  dpid=None, opts='', listen_port=None,
-                 controllers: list['Controller'] = None,
+                 controllers: typing.List['Controller'] = None,
                  fail_mode='secure', datapath='kernel', inband=False, protocols=None, reconnectms=1000,
                  stp=False, local_ip: ipaddress.ip_address or str or None = None,
                  local_network: ipaddress.ip_address or str or None = None,
@@ -101,7 +114,8 @@ class OVSSwitch(Switch):
            local_ip: local ip address for switch device
            local_network: network for local_ip
            local_mac: mac address for local switch device"""
-        super().__init__(name, executor, ServiceType.OVS, "ovs", cpu, cpu_allowance, memory, dpid=dpid, opts=opts,
+        super().__init__(name, executor, ServiceType.OVS, late_init, image, cpu, cpu_allowance, memory, dpid=dpid,
+                         opts=opts,
                          listen_port=listen_port, controllers=controllers)
         self.fail_mode = fail_mode
         self.datapath = datapath
@@ -121,7 +135,7 @@ class OVSSwitch(Switch):
             if isinstance(self.local_ip, str):
                 self.local_ip = ipaddress.ip_address(self.local_ip)
         else:
-            self.local_ip = topo.network_implementation \
+            self.local_ip = self.main_ip if self.main_ip is not None else topo.network_implementation \
                 .get_network_address_generator().generate_ip(self, Interface(self.name, self.local_mac))
         if self.local_network:
             if isinstance(self.local_network, str):
@@ -182,7 +196,7 @@ class OVSSwitch(Switch):
         # Command to add interfaces
         intfs = ''
         for intf in self.intfs:
-            if len(intf.links) > 0 and not intf.other_end_service.is_controller():
+            if len(intf.links) > 0 and not intf.other_end_service.is_controller() and not self.is_switch_exclude(intf):
                 intfs += ' -- add-port %s %s' % (self.name, intf.name)
         # Command to create controller entries
         clist = []
@@ -191,12 +205,14 @@ class OVSSwitch(Switch):
             for link in config_builder.topo.links:
                 if link.intf1 in self.intfs or link.intf2 in self.intfs:
                     # We are connected to this link
-                    other = link.intf1 if link.intf2 in self.intfs else link.intf2
-                    for ip in other.ips:
-                        if not ip.is_loopback:
-                            # We found a non-loopback address that is reachable by us
-                            found_ip = ip
-                            break
+                    match = link.intf2.other_end_service if link.intf2 in self.intfs else link.intf1.other_end_service
+                    if match == c:
+                        other = link.intf1 if link.intf2 in self.intfs else link.intf2
+                        for ip in other.ips:
+                            if not ip.is_loopback:
+                                # We found a non-loopback address that is reachable by us
+                                found_ip = ip
+                                break
                 if found_ip is not None:
                     break
             if found_ip is None:
@@ -238,8 +254,9 @@ class OVSSwitch(Switch):
                 net = intf.networks[i]
                 if not net.is_loopback:
                     # For some reason route exists when it is added on stop - maybe auto generated
-                    config.add_command(Command(f"{self.lxc_prefix()} ip route del {str(net)} dev {intf.name} || true"),
-                                       Command())
+                    config.add_command(
+                        Command(f"{self.lxc_prefix()} ip route del {str(net)} dev {intf.name} || true"),
+                        Command())
         return
 
     def is_switch(self) -> bool:
@@ -248,9 +265,9 @@ class OVSSwitch(Switch):
     def is_controller(self) -> bool:
         return False
 
-    def to_dict(self) -> dict:
+    def to_dict(self, without_gui: bool = False) -> dict:
         # Merge own data into super class data
-        return {**super(OVSSwitch, self).to_dict(), **{
+        return {**super(OVSSwitch, self).to_dict(without_gui), **{
             'fail_mode': self.fail_mode,
             'datapath': self.datapath,
             'inband': str(self.inband),
