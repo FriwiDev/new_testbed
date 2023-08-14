@@ -160,17 +160,18 @@ class DefaultNetworkImplementation(NetworkImplementation):
                     intf = link.intf1 if link.service1.executor == node else link.intf2
                     if link.service1.executor == node:
                         host_device = self.link_vxlan_mapping[str(link.link_id)][0]
+                        other_host_device = self.link_vxlan_mapping[str(link.link_id)][1]
                     else:
                         host_device = self.link_vxlan_mapping[str(link.link_id)][1]
+                        other_host_device = self.link_vxlan_mapping[str(link.link_id)][0]
                     if intf.bind_name is None:
                         intf.bind_name = f"br{link.link_id}"
                     # Create one bridge on which the service can bind
                     config.add_command(Command(f"brctl addbr {intf.bind_name}"),
                                        Command(f"brctl delbr {intf.bind_name}"))
                     # Find an ip for our remote
-                    other_intf = link.intf2 if link.service1.executor == node else link.intf1
-                    bind_intf = other_intf.other_end_service.executor.get_interface(intf.bind_name)
-                    other_bind_intf = intf.other_end_service.executor.get_interface(other_intf.bind_name)
+                    bind_intf = node.get_interface(host_device)
+                    other_bind_intf = (link.service2.executor if link.service1.executor == node else link.service1.executor).get_interface(other_host_device)
                     remote_ip = None
                     if not bind_intf or not other_bind_intf:
                         raise Exception(
