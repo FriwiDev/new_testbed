@@ -167,10 +167,20 @@ class DefaultNetworkImplementation(NetworkImplementation):
                     # Create one bridge on which the service can bind
                     config.add_command(Command(f"brctl addbr {intf.bind_name}"),
                                        Command(f"brctl delbr {intf.bind_name}"))
+                    # Find an ip for our remote
+                    other_intf = link.intf2 if link.service1.executor == node else link.intf1
+                    remote_ip = None
+                    for ip in other_intf.ips:
+                        if not ip.is_loopback:
+                            for network in intf.networks:
+                                if ip in network:
+                                    remote_ip = ip
+                    if not remote_ip:
+                        raise Exception("Remote intf not in same ip network as local interface between " + link.service1.name + " <-> " + link.service2.name)
                     # Create vxlan device used for this service
                     config.add_command(
                         Command(f"ip link add vx-{intf.bind_name} type vxlan id {self.link_vxlanid[str(link.link_id)]} "
-                                f"group {self.multicast_ip} dev {host_device}"),
+                                f"remote {str(remote_ip)} dstport {self.link_vxlanid[str(link.link_id)]+3400} srcport {self.link_vxlanid[str(link.link_id)]+3400} dev {host_device}"),
                         Command(f"ip link del vx-{intf.bind_name}"))
                     # Add vxlan device to our bridge
                     config.add_command(Command(f"brctl addif {intf.bind_name} vx-{intf.bind_name}"),
