@@ -76,12 +76,12 @@ class RyuController(Controller):
             config.add_command(
                 Command(self.lxc_prefix() +
                         f"ryu-manager --verbose --ofp-tcp-listen-port {self.port} &"),
-                Command(self.lxc_prefix() + "killall ryu-manager"))
+                Command(self.lxc_prefix() + "pkill ryu-manager"))
         else:
             config.add_command(
                 Command(self.lxc_prefix() +
                         f"ryu-manager --verbose {self.script_path} --ofp-tcp-listen-port {self.port} &"),
-                Command(self.lxc_prefix() + "killall ryu-manager"))
+                Command(self.lxc_prefix() + "pkill ryu-manager"))
 
     def is_switch(self) -> bool:
         return False
