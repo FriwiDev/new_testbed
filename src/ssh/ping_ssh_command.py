@@ -47,7 +47,7 @@ class PingSSHCommand(SSHCommand, OutputConsumer):
         elif "packets transmitted" in output:
             self.packets_transmitted = int(args[0])
             self.packets_received = int(args[3])
-            self.time = int(args[StringUtil.get_index_of(args, "time") + 1].removesuffix("ms"))
+            self.time = int(args[9].removesuffix("ms"))  # StringUtil.get_index_of(args, "time") + 1
         elif output.startswith("rtt"):
             values = args[3].split("/")
             self.min = float(values[0])
