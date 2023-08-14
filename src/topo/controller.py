@@ -75,12 +75,12 @@ class RyuController(Controller):
         if self.script_path is None:
             config.add_command(
                 Command(self.lxc_prefix() +
-                        f"bash -c \"ryu-manager --verbose --ofp-tcp-listen-port {self.port} > \\\"{log}\\\" | at now\""),
+                        f"ryu-manager --verbose --ofp-tcp-listen-port {self.port} | at now"),
                 Command(self.lxc_prefix() + "pkill ryu-manager"))
         else:
             config.add_command(
                 Command(self.lxc_prefix() +
-                        f"bash -c \"ryu-manager --verbose  \\\"{self.script_path}\\\" --ofp-tcp-listen-port {self.port} > \\\"{log}\\\" | at now\""),
+                        f"ryu-manager --verbose  {self.script_path} --ofp-tcp-listen-port {self.port} | at now"),
                 Command(self.lxc_prefix() + "pkill ryu-manager"))
 
     def is_switch(self) -> bool:
