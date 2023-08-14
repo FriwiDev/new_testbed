@@ -3,6 +3,7 @@ from typing import Dict
 
 from ssh.output_consumer import OutputConsumer
 from ssh.ssh_command import SSHCommand
+from ssh.string_util import StringUtil
 from topo.node import Node
 from topo.service import Service
 
@@ -57,18 +58,18 @@ class TcQdiscSSHCommand(SSHCommand, OutputConsumer):
 
     def parse_micro_seconds(self, arg: str) -> int:
         if arg.endswith("us"):
-            return int(float(arg.removesuffix("us")))
+            return int(float(StringUtil.remove_suffix(arg, "us")))
         if arg.endswith("ms"):
-            return int(float(arg.removesuffix("ms")) * 1000)
+            return int(float(StringUtil.remove_suffix(arg, "ms")) * 1000)
         if arg.endswith("s"):
-            return int(float(arg.removesuffix("s")) * 1000 * 1000)
+            return int(float(StringUtil.remove_suffix(arg, "s")) * 1000 * 1000)
         if not arg.replace(".", "").isdigit():
             return 0
         return int(float(arg))
 
     def parse_percent(self, arg: str) -> float:
         if arg.endswith("%"):
-            return float(arg.removesuffix("%")) / 100
+            return float(StringUtil.remove_suffix(arg, "%")) / 100
         if not arg.replace(".", "").isdigit():
             return 0
         return float(arg)

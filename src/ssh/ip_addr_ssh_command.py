@@ -4,6 +4,7 @@ from typing import Dict
 
 from ssh.output_consumer import OutputConsumer
 from ssh.ssh_command import SSHCommand
+from ssh.string_util import StringUtil
 from topo.node import Node
 from topo.service import Service
 
@@ -26,7 +27,7 @@ class IpAddrSSHCommand(SSHCommand, OutputConsumer):
             if self.current_interface:
                 ind, name, state, mac, li = self.current_interface
                 self.results[ind] = (name, state, mac, li)
-            name = output.split(" ")[1].split("@")[0].removesuffix(":")
+            name = StringUtil.remove_suffix(output.split(" ")[1].split("@")[0], ":")
             state = InterfaceState.UNKNOWN
             for s in output.split(" "):
                 if s == "UNKNOWN" or s == "DOWN" or s == "UP":

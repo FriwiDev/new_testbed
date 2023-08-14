@@ -5,6 +5,7 @@ import typing
 from live.engine import Engine
 from live.engine_component import EngineInterfaceState
 from network.network_utils import NetworkUtils
+from ssh.string_util import StringUtil
 from topo.interface import Interface
 from topo.node import Node
 from topo.service import Service
@@ -214,7 +215,7 @@ def resolve_nodes(argv: typing.List[str], engine: Engine) -> typing.List[Node]:
         if s.startswith("service:"):
             continue
         if s.startswith("node:"):
-            node_name = s.removeprefix("node:")
+            node_name = StringUtil.remove_prefix(s, "node:")
             if node_name in engine.topo.nodes.keys():
                 nodes.append(engine.topo.nodes[node_name])
                 continue
@@ -238,7 +239,7 @@ def resolve_services(argv: typing.List[str], engine: Engine) -> typing.List[Serv
         if s.startswith("node:"):
             continue
         if s.startswith("service:"):
-            service_name = s.removeprefix("service:")
+            service_name = StringUtil.remove_prefix(s, "service:")
             if service_name in engine.topo.services.keys():
                 services.append(engine.topo.services[service_name])
                 continue

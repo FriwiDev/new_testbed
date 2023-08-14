@@ -17,3 +17,17 @@ class StringUtil(object):
                 return ret
             ret += 1
         return None
+
+    @classmethod
+    def remove_suffix(cls, s: str, suffix: str):
+        if s.endswith(suffix):
+            return s[:len(s)-len(suffix)]
+        else:
+            return s
+
+    @classmethod
+    def remove_prefix(cls, s: str, prefix: str):
+        if s.startswith(prefix):
+            return s[len(prefix):]
+        else:
+            return s

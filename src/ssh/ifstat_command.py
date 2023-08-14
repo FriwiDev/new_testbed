@@ -2,6 +2,7 @@ import typing
 
 from ssh.output_consumer import OutputConsumer
 from ssh.ssh_command import SSHCommand
+from ssh.string_util import StringUtil
 from topo.node import Node
 from topo.service import Service
 
@@ -53,11 +54,11 @@ class IfstatSSHCommand(SSHCommand, OutputConsumer):
 
     def parse(self, arg: str) -> int:
         if arg.endswith("K"):
-            return int(arg.removesuffix("K")) * 1000
+            return int(StringUtil.remove_suffix(arg, "K")) * 1000
         if arg.endswith("M"):
-            return int(arg.removesuffix("M")) * 1000 * 1000
+            return int(StringUtil.remove_suffix(arg, "M")) * 1000 * 1000
         if arg.endswith("G"):
-            return int(arg.removesuffix("G")) * 1000 * 1000 * 1000
+            return int(StringUtil.remove_suffix(arg, "G")) * 1000 * 1000 * 1000
         if arg.endswith("T"):
-            return int(arg.removesuffix("T")) * 1000 * 1000 * 1000 * 1000
+            return int(StringUtil.remove_suffix(arg, "T")) * 1000 * 1000 * 1000 * 1000
         return int(arg)

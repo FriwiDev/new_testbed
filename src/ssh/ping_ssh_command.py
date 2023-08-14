@@ -48,7 +48,7 @@ class PingSSHCommand(SSHCommand, OutputConsumer):
             self.packets_transmitted = int(args[0])
             self.packets_received = int(args[3])
             if StringUtil.get_index_of(args, "time") is not None:
-                self.time = int(args[StringUtil.get_index_of(args, "time") + 1].removesuffix("ms"))
+                self.time = int(StringUtil.remove_suffix(args[StringUtil.get_index_of(args, "time") + 1], "ms"))
             else:
                 self.time = -1
         elif output.startswith("rtt"):
