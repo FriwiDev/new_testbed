@@ -136,9 +136,9 @@ class LocalEdgeslicing(Topo):
         esmf1 = ESMF(name="ESMF1", executor=node1, network="net1", coordinators=[], vpn_gateways=[vpn1, vpn2], networks=networks, domain_controller=dsmf1, slice_id_range=Range(1000, 1999), tunnel_id_range=Range(1000, 1999))
         dsmf2 = DSMF(name="DSMF2", executor=node2, network="net2", controllers=[controller2], vpn_gateways=[vpn1, vpn2], networks=networks, switches=[switch2a, switch2b], network_borders=network_borders_net2)
         esmf2 = ESMF(name="ESMF2", executor=node2, network="net2", coordinators=[], vpn_gateways=[vpn1, vpn2], networks=networks, domain_controller=dsmf2, slice_id_range=Range(2000, 2999), tunnel_id_range=Range(2000, 2999))
-        dtmf = DSMF(name="DTMF", executor=node1, network="bn", controllers=[controllerbn], vpn_gateways=[vpn1, vpn2],
+        dtmf = DSMF(name="DTMF", executor=nodebn, network="bn", controllers=[controllerbn], vpn_gateways=[vpn1, vpn2],
                      networks=networks, switches=[switchbna, switchbnb], network_borders=network_borders_bn)
-        ctmf = ESMF(name="CTMF", executor=node1, network="bn", coordinators=[], vpn_gateways=[vpn1, vpn2],
+        ctmf = ESMF(name="CTMF", executor=nodebn, network="bn", coordinators=[], vpn_gateways=[vpn1, vpn2],
                      networks=networks, domain_controller=dtmf, slice_id_range=Range(3000, 3999),
                      tunnel_id_range=Range(3000, 3999))
         esmf1.coordinators.append(esmf2)
