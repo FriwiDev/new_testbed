@@ -1,4 +1,5 @@
 from ipaddress import ip_address, ip_network
+from typing import Dict
 
 from config.configuration import Configuration, Command
 from network.network_address_generator import BasicNetworkAddressGenerator
@@ -17,8 +18,8 @@ class DefaultNetworkImplementation(NetworkImplementation):
         self.multicast_ip = multicast_ip
         self.base_vxlan_id = base_vxlan_id
         self.link_id_reference = 0
-        self.link_vxlanid: dict[str, int] = {}
-        self.link_vxlan_mapping: dict[str, list[str]] = {}
+        self.link_vxlanid: Dict[str, int] = {}
+        self.link_vxlan_mapping: Dict[str, typing.List[str]] = {}
 
     def set_link_interface_mapping(self, link: 'Link', dev_name1: str, dev_name2: str):
         if not link in self.topo.links:

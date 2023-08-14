@@ -87,7 +87,7 @@ class MainView(View):
         self.box = box
         # self.repaint()
 
-    def set_select_mode(self, selectable: list[Box]):
+    def set_select_mode(self, selectable: typing.List[Box]):
         self.select_mode = selectable
         self.box.update_select_mode()
 

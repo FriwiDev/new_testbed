@@ -4,7 +4,7 @@ from config.export.file_exporter import FileConfigurationExporter
 from topo.topo import TopoUtil
 
 
-def main(argv: list[str]):
+def main(argv: typing.List[str]):
     if len(argv) != 2:
         print("Script requires exactly two arguments!")
         exit(1)

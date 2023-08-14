@@ -1,7 +1,8 @@
 import sys
 
-from platforms.linux_server.linux_node import LinuxNode
 from topo.edgeslicing.dsmf_service import DSMFService
+
+from platforms.linux_server.linux_node import LinuxNode
 from topo.node import NodeType
 from topo.topo import Topo, TopoUtil
 
@@ -23,7 +24,7 @@ class SimpleDSMF(Topo):
 
 
 # Boilerplate code to export topology from ./generate_topology.sh script
-def main(argv: list[str]):
+def main(argv: typing.List[str]):
     TopoUtil.run_build(argv, SimpleDSMF)
 
 

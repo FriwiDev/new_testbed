@@ -2,6 +2,7 @@ import math
 import threading
 import time
 from threading import Lock
+from typing import Dict
 
 from gui.box import Box
 from gui.images import Images
@@ -26,7 +27,7 @@ class StatBox(Box):
         self.y_axis = "<Unknown>"
         self.x_unit = StatBox.DEFAULT_UNIT
         self.y_unit = StatBox.DEFAULT_UNIT
-        self.data: dict[float, (float, str)] = {}  # X -> (Y, color)
+        self.data: Dict[float, (float, str)] = {}  # X -> (Y, color)
         self.minimal_y = 0  # None would mean scaling lower y value dynamically
         self.data_lock = Lock()
         self.data_supplier = None

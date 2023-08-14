@@ -25,7 +25,7 @@ class LXCService(Service, ABC):
         self.cpu = cpu
         self.cpu_allowance = cpu_allowance
         self.memory = memory
-        self.files: list[(PathLike, PathLike)] = []
+        self.files: typing.List[(PathLike, PathLike)] = []
 
     def add_file(self, local_file: PathLike, container_dir: PathLike):
         if not str(container_dir).startswith("/"):

@@ -10,7 +10,7 @@ class IfstatSSHCommand(SSHCommand, OutputConsumer):
                          (target.command_prefix() if isinstance(target,
                                                                 Service) else "") + f"timeout {timeout} ifstat")
         self.add_consumer(self)
-        self.interfaces: list[str] = []
+        self.interfaces: typing.List[str] = []
         self.consumer = consumer
         self.old_ifstat = False
 

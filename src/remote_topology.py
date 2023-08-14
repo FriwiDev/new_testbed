@@ -9,7 +9,7 @@ from topo.node import Node
 from topo.service import Service
 
 
-def main(argv: list[str]):
+def main(argv: typing.List[str]):
     if len(argv) < 2:
         print("Script requires two or more arguments!")
         exit(1)
@@ -207,8 +207,8 @@ def handle_iperf_result(from_sec: int, to_sec: int, transfer: float, bandwidth: 
           f"Bandwidth: {NetworkUtils.format_bytes(bandwidth)}Bits")
 
 
-def resolve_nodes(argv: list[str], engine: Engine) -> list[Node]:
-    nodes: list[Node] = []
+def resolve_nodes(argv: typing.List[str], engine: Engine) -> typing.List[Node]:
+    nodes: typing.List[Node] = []
     for s in argv:
         if s.startswith("service:"):
             continue
@@ -231,8 +231,8 @@ def resolve_nodes(argv: list[str], engine: Engine) -> list[Node]:
     return nodes
 
 
-def resolve_services(argv: list[str], engine: Engine) -> list[Service]:
-    services: list[Service] = []
+def resolve_services(argv: typing.List[str], engine: Engine) -> typing.List[Service]:
+    services: typing.List[Service] = []
     for s in argv:
         if s.startswith("node:"):
             continue

@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Dict
 
 from ssh.output_consumer import OutputConsumer
 from ssh.ssh_command import SSHCommand
@@ -13,7 +14,7 @@ class LxcContainerListCommand(SSHCommand, OutputConsumer):
     def __init__(self, target: Node):
         super().__init__(target, "lxc ls")
         self.add_consumer(self)
-        self.results: dict[str, LXCContainerStatus] = {}
+        self.results: Dict[str, LXCContainerStatus] = {}
 
     def on_out(self, output: str):
         split = output.split("|")

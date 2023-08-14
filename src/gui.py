@@ -17,7 +17,7 @@ from topo.topo import TopoUtil, Topo
 
 
 class Gui(EngineTopologyChangeListener):
-    def __init__(self, argv: list[str]):
+    def __init__(self, argv: typing.List[str]):
         self.argv = argv
 
         fullscreen = "-f" in argv or "--fullscreen" in argv
@@ -153,7 +153,7 @@ class Gui(EngineTopologyChangeListener):
         pass
 
 
-def main(argv: list[str]):
+def main(argv: typing.List[str]):
     if len(argv) < 1:
         print("Script requires one argument!")
         exit(1)

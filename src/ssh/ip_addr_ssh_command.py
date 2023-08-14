@@ -1,5 +1,6 @@
 import ipaddress
 from enum import Enum
+from typing import Dict
 
 from ssh.output_consumer import OutputConsumer
 from ssh.ssh_command import SSHCommand
@@ -16,7 +17,7 @@ class IpAddrSSHCommand(SSHCommand, OutputConsumer):
         super().__init__(target.executor if isinstance(target, Service) else target,
                          (target.command_prefix() if isinstance(target, Service) else "") + "ip addr")
         self.add_consumer(self)
-        self.results: dict[int, (str, InterfaceState, str, [(ipaddress.ip_address, ipaddress.ip_network)])] = {}
+        self.results: Dict[int, (str, InterfaceState, str, [(ipaddress.ip_address, ipaddress.ip_network)])] = {}
         self.current_interface: None or (int, str, InterfaceState, str, [(ipaddress.ip_address, ipaddress.ip_network)]) \
             = None
 

@@ -1,3 +1,6 @@
+from typing import Dict
+
+
 class GuiDataAttachment(object):
     def __init__(self, x: int = 0, y: int = 0, width: int = 0, height: int = 0):
         self.x = x
@@ -7,7 +10,7 @@ class GuiDataAttachment(object):
         self.debug = False
         self.stat_data = []
 
-    def to_dict(self) -> dict[str, int]:
+    def to_dict(self) -> Dict[str, int]:
         return {"x": self.x, "y": self.y, "width": self.width, "height": self.height, "stat_data": self.stat_data,
                 "debug": self.debug}
 

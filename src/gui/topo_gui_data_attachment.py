@@ -1,10 +1,13 @@
+from typing import Dict
+
+
 class TopoGuiDataAttachment(object):
     def __init__(self, x: int = -1, y: int = -1, zoom: int = 100):
         self.x = x
         self.y = y
         self.zoom = zoom
 
-    def to_dict(self) -> dict[str, int]:
+    def to_dict(self) -> Dict[str, int]:
         return {"x": self.x, "y": self.y, "zoom": self.zoom}
 
     @classmethod

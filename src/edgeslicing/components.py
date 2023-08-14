@@ -1,7 +1,5 @@
 import ipaddress
 import json
-import pprint
-from abc import ABC
 from enum import Enum
 
 from config.configuration import Command
@@ -453,7 +451,7 @@ class VPNGateway(SimpleLXCHost):
 class QueueableOVSSwitch(OVSSwitch):
     def __init__(self, name, executor: 'Node', late_init: bool = False, network: str = None, cpu: str = None, cpu_allowance: str = None,
                  memory: str = None, dpid=None, opts='', listen_port=None,
-                 controllers: list['Controller'] = None,
+                 controllers: typing.List['Controller'] = None,
                  fail_mode='secure', datapath='kernel', inband=False, protocols=None, reconnectms=1000,
                  stp=False, local_ip: ipaddress.ip_address or str or None = None,
                  local_network: ipaddress.ip_address or str or None = None,

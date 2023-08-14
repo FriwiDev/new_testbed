@@ -121,7 +121,7 @@ class Topo(object):
             raise Exception("Link was already added")
         self.links.append(link)
 
-    def get_links(self, service1: Service, service2: Service) -> list[Link]:
+    def get_links(self, service1: Service, service2: Service) -> typing.List[Link]:
         return [link for link in self.links
                 if (link.service1, link.service2) in ((service1, service2), (service2, service1))]
 
@@ -150,7 +150,7 @@ class TopoUtil(object):
         file.close()
 
     @classmethod
-    def run_build(cls, argv: list[str], topo_type: type):
+    def run_build(cls, argv: typing.List[str], topo_type: type):
         if len(argv) <= 1:
             raise Exception("No output dir specified!")
 

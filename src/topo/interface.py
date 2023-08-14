@@ -11,9 +11,9 @@ class Interface(object):
            mac_address: The mac address of the interface"""
         self.name = name
         self.mac_address = mac_address
-        self.ips: list[ip_address] = []
-        self.networks: list[ip_network] = []
-        self.links: list['Link'] = []
+        self.ips: typing.List[ip_address] = []
+        self.networks: typing.List[ip_network] = []
+        self.links: typing.List['Link'] = []
         self.bind_name = None  # Used by network topologies to cache bridge names
         self.other_end_service = None
         self.other_end = None

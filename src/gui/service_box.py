@@ -198,7 +198,7 @@ class ServiceBox(SystemBox):
             self.view.set_message(f"Destroyed {self.service.get_name()}")
         self.view.in_toggle = False
 
-    def _list_boxes(self, parent: Box) -> list[Box]:
+    def _list_boxes(self, parent: Box) -> typing.List[Box]:
         ret = list(parent.subboxes)
         for box in parent.subboxes:
             for sub in self._list_boxes(box):

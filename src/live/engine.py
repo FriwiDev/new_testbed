@@ -1,6 +1,7 @@
 import ipaddress
 import os
 import time
+from typing import Dict
 
 from config.configuration import Configuration
 from config.export.ssh_exporter import SSHConfigurationExporter
@@ -46,7 +47,7 @@ class Engine(object):
                 raise Exception("No nodes in topology or no local node given but using multi-node setup!")
             local_node = list(topo.nodes.values())[0]
         self.local_node = local_node
-        self.nodes: dict[str, EngineNode] = {}
+        self.nodes: Dict[str, EngineNode] = {}
         for node in topo.nodes.values():
             self.nodes[node.name] = EngineNode(self, node, topo)
         self.stop_updating = False

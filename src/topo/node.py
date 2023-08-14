@@ -23,7 +23,7 @@ class Node(ABC):
         self.type = node_type
         self.ssh_work_dir = ssh_work_dir
         self.ssh_lock_dir = ssh_lock_dir
-        self.intfs: list[Interface] = [Interface(name="lo").add_ip("127.0.0.1", "127.0.0.0/8")]
+        self.intfs: typing.List[Interface] = [Interface(name="lo").add_ip("127.0.0.1", "127.0.0.0/8")]
         self.current_virtual_device_num = 0
         self.ssh_remote = ssh_remote
         self.ssh_port = ssh_port

@@ -18,8 +18,8 @@ class Switch(LXCService, ABC):
     def __init__(self, name, executor: 'Node', service_type: 'ServiceType', late_init: bool = False,
                  image: str = "ubuntu", cpu: str = None,
                  cpu_allowance: str = None, memory: str = None, dpid: str = None, opts: str = '',
-                 listen_port: int = None, controllers: list['Controller'] = None,
-                 gateway_to_subnets: list[ipaddress.ip_network] = None):
+                 listen_port: int = None, controllers: typing.List['Controller'] = None,
+                 gateway_to_subnets: typing.List[ipaddress.ip_network] = None):
         """name: name for switch
            executor: node this service is running on
            service_type: the type of this service for easier identification
@@ -90,7 +90,7 @@ class OVSSwitch(Switch):
     def __init__(self, name, executor: 'Node', late_init: bool = False, image: str = "ovs", cpu: str = None,
                  cpu_allowance: str = None, memory: str = None,
                  dpid=None, opts='', listen_port=None,
-                 controllers: list['Controller'] = None,
+                 controllers: typing.List['Controller'] = None,
                  fail_mode='secure', datapath='kernel', inband=False, protocols=None, reconnectms=1000,
                  stp=False, local_ip: ipaddress.ip_address or str or None = None,
                  local_network: ipaddress.ip_address or str or None = None,

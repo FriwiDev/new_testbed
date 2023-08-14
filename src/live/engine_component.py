@@ -2,6 +2,7 @@ import ipaddress
 from abc import ABC, abstractmethod
 from enum import Enum
 from ipaddress import ip_network, ip_address
+from typing import Dict
 
 from extensions.macvlan_extension import MacVlanServiceExtension
 from extensions.wireguard_extension import WireguardServiceExtension
@@ -42,7 +43,7 @@ class EngineInterface(EngineComponent):
         super().__init__(engine, component)
         self.extension = None
         self.parent = parent
-        self.live_ips: list[(ip_address, ip_network)] = []
+        self.live_ips: typing.List[(ip_address, ip_network)] = []
         self.live_mac: str or None = None
         self.interface_state: EngineInterfaceState = EngineInterfaceState.UNKNOWN
         self.ifstat: (int, int) or None = None
@@ -56,7 +57,7 @@ class EngineService(EngineComponent):
     def __init__(self, engine: 'Engine', component: Service, parent: 'EngineNode'):
         super().__init__(engine, component)
         self.parent = parent
-        self.intfs: dict[str, EngineInterface] = {}
+        self.intfs: Dict[str, EngineInterface] = {}
         for intf in component.intfs:
             self.intfs[intf.name] = EngineInterface(engine, intf, self)
         for ext in component.extensions.values():
@@ -89,11 +90,11 @@ class EngineService(EngineComponent):
 class EngineNode(EngineComponent):
     def __init__(self, engine: 'Engine', component: Node, topo: Topo):
         super().__init__(engine, component)
-        self.services: dict[str, EngineService] = {}
+        self.services: Dict[str, EngineService] = {}
         for service in topo.services.values():
             if service.executor == component:
                 self.services[service.name] = EngineService(engine, service, self)
-        self.intfs: dict[str, EngineInterface] = {}
+        self.intfs: Dict[str, EngineInterface] = {}
         for intf in component.intfs:
             self.intfs[intf.name] = EngineInterface(engine, intf, self)
 

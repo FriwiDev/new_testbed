@@ -40,7 +40,8 @@ class ClassUtil(object):
 
 class CommandUtil(object):
     @classmethod
-    def run_command(cls, cmd: list[str], list_output: bool = False, do_output: bool = True) -> (int, list[str]):
+    def run_command(cls, cmd: typing.List[str], list_output: bool = False, do_output: bool = True) -> (
+    int, typing.List[str]):
         ret = []
         process = subprocess.Popen(cmd,
                                    stdout=subprocess.PIPE,

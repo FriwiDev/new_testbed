@@ -1,3 +1,5 @@
+from typing import Dict
+
 from ssh.output_consumer import OutputConsumer
 from ssh.ssh_command import SSHCommand
 from ssh.string_util import StringUtil
@@ -14,7 +16,7 @@ class PingSSHCommand(SSHCommand, OutputConsumer):
                          (source.command_prefix() if isinstance(source, Service) else "") +
                          f"ping {count_str} {str(target)}")
         self.add_consumer(self)
-        self.ping_results: dict[int, (str or (int, float))] = {}
+        self.ping_results: Dict[int, (str or (int, float))] = {}
         self.packets_transmitted: int or None = None
         self.packets_received: int or None = None
         self.time: int or None = None

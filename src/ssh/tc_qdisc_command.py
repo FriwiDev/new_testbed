@@ -1,3 +1,5 @@
+from typing import Dict
+
 from ssh.output_consumer import OutputConsumer
 from ssh.ssh_command import SSHCommand
 from topo.node import Node
@@ -11,7 +13,7 @@ class TcQdiscSSHCommand(SSHCommand, OutputConsumer):
                                                                 Service) else "") + f"tc qdisc")
         self.add_consumer(self)
         # Dev name, delay, delay_variation, delay_correlation, loss, loss_correlation
-        self.results: dict[str, (int, int, float, float, float)] = {}
+        self.results: Dict[str, (int, int, float, float, float)] = {}
 
     def on_out(self, output: str):
         while "  " in output:
@@ -70,7 +72,7 @@ class TcQdiscSSHCommand(SSHCommand, OutputConsumer):
             return 0
         return float(arg)
 
-    def find_ind(self, ind: int, arg: str, li: list[str]) -> int:
+    def find_ind(self, ind: int, arg: str, li: typing.List[str]) -> int:
         for i in range(ind, len(li)):
             if li[i] == arg:
                 return i

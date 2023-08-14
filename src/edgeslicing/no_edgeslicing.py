@@ -49,7 +49,7 @@ class NoEdgeslicing(Topo):
 
 
 # Boilerplate code to export topology from ./generate_topology.sh script
-def main(argv: list[str]):
+def main(argv: typing.List[str]):
     TopoUtil.run_build(argv, NoEdgeslicing)
 
 
