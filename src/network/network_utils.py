@@ -83,7 +83,7 @@ class NetworkUtils(ABC):
 
             config.add_command(
                 Command(cmd),
-                Command(f"{prefix}tc qdisc delete dev {dev_name} root netem || true")
+                Command(f"{prefix}tc qdisc delete dev {dev_name} root || true")
             )
 
             if bandwidth > 0:
@@ -101,7 +101,7 @@ class NetworkUtils(ABC):
                 config.add_command(
                     Command(f"{prefix}tc qdisc add dev {dev_name} root tbf rate {bandwidth} burst {int(burst/8)} "
                             f"limit {int(burst/8)}"),
-                    Command(f"{prefix}tc qdisc delete dev {dev_name} root tbf || true")
+                    Command(f"{prefix}tc qdisc delete dev {dev_name} root || true")
                 )
 
     @classmethod
