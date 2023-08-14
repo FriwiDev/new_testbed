@@ -14,7 +14,7 @@ def main(argv: list[str]):
         print("Script requires two or more arguments!")
         exit(1)
 
-    engine = Engine(argv[0])
+    engine = Engine(argv[0], None if len(argv) < 3 else argv[2])
     engine.update_all_status()
 
     if argv[1].lower() == "start_all":

@@ -26,7 +26,7 @@ from topo.topo import Topo, TopoUtil
 
 class Engine(object):
     def __init__(self, topo: Topo or str or None = None,
-                 local_node: Node or None = None):
+                 local_node: Node or str or None = None):
         if not topo:
             cmd = LockReadSSHCommand(local_node, "/tmp", "current_topology.json")
             cmd.run()
@@ -38,6 +38,9 @@ class Engine(object):
             topo = TopoUtil.from_file(topo)
         self.topo = topo
         self.altered_topo: Topo or None = None
+        if isinstance(local_node, str):
+            if local_node in self.topo.nodes.keys():
+                local_node = self.topo.nodes[local_node]
         if not local_node:
             if len(topo.nodes) != 1:
                 raise Exception("No nodes in topology or no local node given but using multi-node setup!")
