@@ -1,4 +1,4 @@
-Pillow==10.0.0
+Pillow==10.0.1
 setuptools==68.1.2
 screeninfo==0.8.1
 networkx~=3.1
