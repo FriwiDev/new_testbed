@@ -2,7 +2,7 @@ Pillow==10.0.0
 setuptools==68.1.2
 screeninfo==0.8.1
 networkx~=3.1
-aiohttp==3.8.5
+aiohttp==3.8.6
 requests==2.31.0
 ryu~=4.34
 cryptography~=41.0.3
