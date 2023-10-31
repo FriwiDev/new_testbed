@@ -125,6 +125,21 @@ To export scripts that can be run later on any linux system, run:
 ./export_topology.sh [export_path]
 ```
 
+## Troubleshooting
+
+If you believe that something is not working, make sure to open an issue on this repository so we can look into the issue you are having. Some common issues are described here.
+
+#### Containers can not reach each other
+Sometimes containers can not reach each other. This can be due to network configuration errors the testbed can not influence, bugs or third party software blocking traffic (such as firewalls). In this case make sure to use a tool like tcpdump or wireshark to find out where traffic is being blocked and then investigate into what could block the specific traffic. A common utility blocking traffic for our testbed is iptables, which can be circumvented by running the following command:
+
+```bash
+sysctl -w net.bridge.bridge-nf-call-iptables=0
+```
+This command is being run automatically when you launch the testbed for the first time, so errors related to this may occur after the first reboot. You can of course always run `setup.sh` again to apply the correct environment again (good for startup scripts).
+
+#### A component has not been successfully installed
+Sometimes the installation script may not be able to install all requirements that you need. This particulary applies to tkinter, which might sometimes be detected as already installed while it is in fact not. Please make sure to find out from error messages if a required tool is missing and install it yourself afterwards.
+
 ## Credits
 
 Part of this work is inspired or taken from [Distrinet](https://github.com/Giuseppe1992/Distrinet).
