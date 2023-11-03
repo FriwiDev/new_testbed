@@ -152,4 +152,4 @@ This mainly applies to the service definitions for ryu and ovs.
 
 ## License
 
-TBA
+This piece of software is licensed under the GNU General Public License v3. Please consult the LICENSE file accompanying this repository for further details.
